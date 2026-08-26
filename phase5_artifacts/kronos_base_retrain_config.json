@@ -1,0 +1,44 @@
+{
+  "model": "NeoQuasar/Kronos-base",
+  "tokenizer": "NeoQuasar/Kronos-Tokenizer-base",
+  "use_gpu": false,
+  "device": "cpu",
+  "data": {
+    "tickers": [
+      "AAPL",
+      "MSFT",
+      "GOOGL",
+      "AMZN",
+      "TSLA"
+    ],
+    "interval": "1d",
+    "columns": [
+      "timestamps",
+      "open",
+      "high",
+      "low",
+      "close",
+      "volume",
+      "amount"
+    ]
+  },
+  "horizon": {
+    "target_horizon": 5,
+    "lookback_window": 512,
+    "predict_window": 5,
+    "note": "predict 5 days ahead; evaluate RankIC/IC vs realized 5d returns"
+  },
+  "training": {
+    "tokenizer_epochs": "(deferred - requires GPU)",
+    "basemodel_epochs": "(deferred - requires GPU)",
+    "batch_size": null,
+    "tokenizer_lr": 0.0002,
+    "predictor_lr": 1e-06
+  },
+  "expected_improvement_simulation": {
+    "basis": "Kronos paper RankIC by horizon (base model, cross-sectional)",
+    "assumed_rankic_1d": 0.02,
+    "assumed_rankic_5d": 0.08,
+    "directional_accuracy_estimate_5d": "~55-58% per-ticker (vs 45.7-48.9% at 1d in our Phase 3)"
+  }
+}

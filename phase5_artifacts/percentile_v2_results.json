@@ -1,0 +1,26 @@
+{
+  "V2A_pure_percentile": {
+    "total_ret_pct": -6.1,
+    "ann_ret_pct": -4.06,
+    "sharpe": -0.402,
+    "max_dd_pct": -15.15,
+    "win_rate_pct": NaN,
+    "exposure_pct": 0.0
+  },
+  "V2B_percentile_regime": {
+    "total_ret_pct": -1.79,
+    "ann_ret_pct": -1.02,
+    "sharpe": -0.132,
+    "max_dd_pct": -9.1,
+    "win_rate_pct": NaN,
+    "exposure_pct": 0.0
+  },
+  "V1_fixed_regime": {
+    "total_ret_pct": -3.02,
+    "ann_ret_pct": -2.02,
+    "sharpe": -0.317,
+    "max_dd_pct": -8.43,
+    "win_rate_pct": NaN,
+    "exposure_pct": 0.0
+  }
+}

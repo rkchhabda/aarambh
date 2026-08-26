@@ -1,0 +1,97 @@
+{
+  "AAPL": {
+    "val_accuracy": 0.5418,
+    "features": [
+      "ret_1",
+      "ret_5",
+      "ret_10",
+      "log_vol_chg",
+      "rsi_14",
+      "macd",
+      "bb_pos",
+      "atr_14",
+      "obv_slope",
+      "sma_ratio",
+      "rvol_5",
+      "rvol_20"
+    ],
+    "seq_len": 32,
+    "hidden": 64
+  },
+  "MSFT": {
+    "val_accuracy": 0.5303,
+    "features": [
+      "ret_1",
+      "ret_5",
+      "ret_10",
+      "log_vol_chg",
+      "rsi_14",
+      "macd",
+      "bb_pos",
+      "atr_14",
+      "obv_slope",
+      "sma_ratio",
+      "rvol_5",
+      "rvol_20"
+    ],
+    "seq_len": 32,
+    "hidden": 64
+  },
+  "GOOGL": {
+    "val_accuracy": 0.5677,
+    "features": [
+      "ret_1",
+      "ret_5",
+      "ret_10",
+      "log_vol_chg",
+      "rsi_14",
+      "macd",
+      "bb_pos",
+      "atr_14",
+      "obv_slope",
+      "sma_ratio",
+      "rvol_5",
+      "rvol_20"
+    ],
+    "seq_len": 32,
+    "hidden": 64
+  },
+  "AMZN": {
+    "val_accuracy": 0.562,
+    "features": [
+      "ret_1",
+      "ret_5",
+      "ret_10",
+      "log_vol_chg",
+      "rsi_14",
+      "macd",
+      "bb_pos",
+      "atr_14",
+      "obv_slope",
+      "sma_ratio",
+      "rvol_5",
+      "rvol_20"
+    ],
+    "seq_len": 32,
+    "hidden": 64
+  },
+  "TSLA": {
+    "val_accuracy": 0.5735,
+    "features": [
+      "ret_1",
+      "ret_5",
+      "ret_10",
+      "log_vol_chg",
+      "rsi_14",
+      "macd",
+      "bb_pos",
+      "atr_14",
+      "obv_slope",
+      "sma_ratio",
+      "rvol_5",
+      "rvol_20"
+    ],
+    "seq_len": 32,
+    "hidden": 64
+  }
+}

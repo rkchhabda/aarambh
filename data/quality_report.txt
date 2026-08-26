@@ -1,0 +1,69 @@
+KRONOS PHASE 1 - DATA QUALITY REPORT (AAPL, daily)
+============================================================
+=== TRAIN ===
+Total rows      : 1054
+Date range      : 2020-08-26 -> 2024-11-01
+Duplicate dates : 0
+Sorted          : True
+Missing values  : 0 
+OHLC violations : 0
+Outliers (>5 std):
+    open   : 0 outliers (>5 sigma)
+    high   : 0 outliers (>5 sigma)
+    low    : 0 outliers (>5 sigma)
+    close  : 0 outliers (>5 sigma)
+    volume :   4 outliers (>5 sigma). Worst: 2020-09-04 value=332607200.00 z=6.93
+Zero-volume rows: 0
+Summary statistics (mean / std / min / max):
+    open   : mean=          161.94  std=          29.57  min=          104.54  max=          236.48
+    high   : mean=          163.69  std=          29.64  min=          110.19  max=          237.49
+    low    : mean=          160.27  std=          29.52  min=          103.10  max=          234.45
+    close  : mean=          162.05  std=          29.62  min=          106.84  max=          236.48
+    volume : mean=   79,912,110.34  std=  36,462,445.22  min=   24,048,300.00  max=  332,607,200.00
+    amount : mean=12,415,910,048.52  std=4,998,418,253.66  min=4,568,455,580.36  max=72,722,752,207.47
+
+=== VAL ===
+Total rows      : 226
+Date range      : 2024-11-04 -> 2025-09-30
+Duplicate dates : 0
+Sorted          : True
+Missing values  : 0 
+OHLC violations : 0
+Outliers (>5 std):
+    open   : 0 outliers (>5 sigma)
+    high   : 0 outliers (>5 sigma)
+    low    : 0 outliers (>5 sigma)
+    close  : 0 outliers (>5 sigma)
+    volume :   1 outliers (>5 sigma). Worst: 2025-04-09 value=184395900.00 z=5.40
+Zero-volume rows: 0
+Summary statistics (mean / std / min / max):
+    open   : mean=          222.85  std=          17.98  min=          171.95  max=          258.19
+    high   : mean=          225.53  std=          17.55  min=          190.34  max=          260.10
+    low    : mean=          220.58  std=          18.25  min=          169.21  max=          257.63
+    close  : mean=          223.22  std=          18.08  min=          172.42  max=          259.02
+    volume : mean=   55,083,730.53  std=  23,949,725.76  min=   23,234,700.00  max=  184,395,900.00
+    amount : mean=12,182,634,954.52  std=5,061,713,993.94  min=5,999,199,823.63  max=40,198,489,150.00
+
+=== TEST ===
+Total rows      : 226
+Date range      : 2025-10-01 -> 2026-08-25
+Duplicate dates : 0
+Sorted          : True
+Missing values  : 0 
+OHLC violations : 0
+Outliers (>5 std):
+    open   : 0 outliers (>5 sigma)
+    high   : 0 outliers (>5 sigma)
+    low    : 0 outliers (>5 sigma)
+    close  : 0 outliers (>5 sigma)
+    volume :   1 outliers (>5 sigma). Worst: 2026-06-26 value=261775500.00 z=9.68
+Zero-volume rows: 0
+Summary statistics (mean / std / min / max):
+    open   : mean=          279.10  std=          22.82  min=          246.60  max=          340.03
+    high   : mean=          282.19  std=          23.34  min=          248.85  max=          344.57
+    low    : mean=          276.35  std=          22.72  min=          243.42  max=          337.35
+    close  : mean=          279.34  std=          23.18  min=          245.27  max=          340.08
+    volume : mean=   48,996,128.32  std=  21,991,027.44  min=   17,910,600.00  max=  261,775,500.00
+    amount : mean=13,733,422,361.96  std=6,392,697,804.25  min=4,904,101,342.27  max=74,286,651,070.45
+
+Cross-split timestamp overlap: 0 (PASS)

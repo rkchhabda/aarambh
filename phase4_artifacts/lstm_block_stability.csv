@@ -1,0 +1,6 @@
+block,params,oos_ret_pct,sharpe,maxdd_pct,active_pct,win_rate
+2025-04-29,"{'mode': 'linear', 'k': 3.0, 'band': 0.02, 'cap': 1.0, 'allow_short': True, 'target_vol': None}",0.01,0.03,-0.95,100.0,52.3
+2025-08-04,"{'mode': 'binary', 'thr_long': 0.55, 'allow_short': False, 'target_vol': None}",0.0,0.0,0.0,0.0,
+2025-11-05,"{'mode': 'binary', 'thr_long': 0.5, 'allow_short': False, 'target_vol': 0.015}",12.46,2.22,-9.81,53.0,42.9
+2026-02-12,"{'mode': 'binary', 'thr_long': 0.5, 'allow_short': False, 'target_vol': 0.015}",15.36,2.49,-9.05,100.0,53.8
+2026-05-19,"{'mode': 'binary', 'thr_long': 0.5, 'allow_short': False, 'target_vol': 0.015}",-1.66,-0.09,-14.65,100.0,54.5

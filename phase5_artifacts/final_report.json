@@ -1,0 +1,59 @@
+{
+  "results": {
+    "1_phase4_aapl_long_only_5bps": {
+      "total_ret_pct": 75.55,
+      "ann_ret_pct": 44.83,
+      "sharpe": 1.582,
+      "max_dd_pct": -13.82,
+      "win_rate_pct": 53.82,
+      "exposure_pct": 97.98
+    },
+    "2_multiticker_long_only_5bps": {
+      "total_ret_pct": 65.69,
+      "ann_ret_pct": 38.86,
+      "sharpe": 1.839,
+      "max_dd_pct": -13.88,
+      "win_rate_pct": 55.33,
+      "exposure_pct": 100.0
+    },
+    "2b_multiticker_regime_long_5bps": {
+      "total_ret_pct": 17.8,
+      "ann_ret_pct": 12.74,
+      "sharpe": 0.984,
+      "max_dd_pct": -9.78,
+      "win_rate_pct": 53.47,
+      "exposure_pct": 95.39
+    },
+    "3_ls_regime_ideal_5bps": {
+      "total_ret_pct": -1.51,
+      "ann_ret_pct": -0.9,
+      "sharpe": -0.142,
+      "max_dd_pct": -7.47,
+      "win_rate_pct": 49.67,
+      "exposure_pct": 43.52
+    },
+    "3_ls_regime_retail_15bps": {
+      "total_ret_pct": -3.02,
+      "ann_ret_pct": -2.02,
+      "sharpe": -0.317,
+      "max_dd_pct": -8.43,
+      "win_rate_pct": 49.01,
+      "exposure_pct": 43.52
+    },
+    "3_ls_regime_high_vol_30bps": {
+      "total_ret_pct": -5.23,
+      "ann_ret_pct": -3.7,
+      "sharpe": -0.58,
+      "max_dd_pct": -9.98,
+      "win_rate_pct": 45.7,
+      "exposure_pct": 43.52
+    },
+    "benchmark_buyhold_portfolio": {
+      "total_ret_pct": 73.82,
+      "sharpe": 1.679,
+      "max_dd_pct": -17.73
+    }
+  },
+  "verdict": "NO-GO",
+  "n_test_days": 347
+}

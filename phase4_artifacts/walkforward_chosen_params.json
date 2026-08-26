@@ -1,0 +1,284 @@
+{
+  "xgb": {
+    "stats": {
+      "total_return": 0.12689433149555307,
+      "ann_return": 0.09973223559468675,
+      "ann_vol": 0.12383940890385925,
+      "sharpe": 0.8053352036920031,
+      "max_drawdown": -0.10956015712757328,
+      "exposure": 0.30120227650045034,
+      "active_days_pct": 46.48318042813456,
+      "win_rate_active": 34.868421052631575,
+      "n_days": 327,
+      "bh_total_return": 0.5328842112891812,
+      "bh_sharpe": 1.448990699211831,
+      "bh_max_dd": -0.1379852725681736,
+      "signal": "xgb"
+    },
+    "chosen": [
+      {
+        "mode": "binary",
+        "thr_long": 0.6,
+        "allow_short": false,
+        "target_vol": 0.01,
+        "train_prefix_sharpe": 0.916
+      },
+      {
+        "mode": "binary",
+        "thr_long": 0.6,
+        "allow_short": false,
+        "target_vol": null,
+        "train_prefix_sharpe": 0.721
+      },
+      {
+        "mode": "binary",
+        "thr_long": 0.525,
+        "allow_short": false,
+        "target_vol": 0.01,
+        "train_prefix_sharpe": 1.111
+      },
+      {
+        "mode": "binary",
+        "thr_long": 0.525,
+        "allow_short": false,
+        "target_vol": 0.015,
+        "train_prefix_sharpe": 1.24
+      },
+      {
+        "mode": "binary",
+        "thr_long": 0.525,
+        "allow_short": false,
+        "target_vol": 0.015,
+        "train_prefix_sharpe": 1.263
+      }
+    ]
+  },
+  "lstm": {
+    "stats": {
+      "total_return": 0.2758958373056719,
+      "ann_return": 0.20564004276958708,
+      "ann_vol": 0.18887650120380162,
+      "sharpe": 1.0887539818820409,
+      "max_drawdown": -0.14649405297280593,
+      "exposure": 0.03930421658370908,
+      "active_days_pct": 70.64220183486239,
+      "win_rate_active": 51.94805194805194,
+      "n_days": 327,
+      "bh_total_return": 0.5328842112891812,
+      "bh_sharpe": 1.448990699211831,
+      "bh_max_dd": -0.1379852725681736,
+      "signal": "lstm"
+    },
+    "chosen": [
+      {
+        "mode": "linear",
+        "k": 3.0,
+        "band": 0.02,
+        "cap": 1.0,
+        "allow_short": true,
+        "target_vol": null,
+        "train_prefix_sharpe": 0.137
+      },
+      {
+        "mode": "binary",
+        "thr_long": 0.55,
+        "allow_short": false,
+        "target_vol": null,
+        "train_prefix_sharpe": 0.28
+      },
+      {
+        "mode": "binary",
+        "thr_long": 0.5,
+        "allow_short": false,
+        "target_vol": 0.015,
+        "train_prefix_sharpe": 0.951
+      },
+      {
+        "mode": "binary",
+        "thr_long": 0.5,
+        "allow_short": false,
+        "target_vol": 0.015,
+        "train_prefix_sharpe": 1.173
+      },
+      {
+        "mode": "binary",
+        "thr_long": 0.5,
+        "allow_short": false,
+        "target_vol": 0.015,
+        "train_prefix_sharpe": 1.245
+      }
+    ]
+  },
+  "kronos": {
+    "stats": {
+      "total_return": -0.12165108990017415,
+      "ann_return": -0.08809217042369126,
+      "ann_vol": 0.15439106656800713,
+      "sharpe": -0.570578158321666,
+      "max_drawdown": -0.2789475676200014,
+      "exposure": 0.4243246394424061,
+      "active_days_pct": 35.16819571865443,
+      "win_rate_active": 40.869565217391305,
+      "n_days": 327,
+      "bh_total_return": 0.5328842112891812,
+      "bh_sharpe": 1.448990699211831,
+      "bh_max_dd": -0.1379852725681736,
+      "signal": "kronos"
+    },
+    "chosen": [
+      {
+        "mode": "linear",
+        "k": 3.0,
+        "band": 0.02,
+        "cap": 1.0,
+        "allow_short": true,
+        "target_vol": null,
+        "train_prefix_sharpe": 1.622
+      },
+      {
+        "mode": "linear",
+        "k": 5.0,
+        "band": 0.02,
+        "cap": 1.0,
+        "allow_short": true,
+        "target_vol": null,
+        "train_prefix_sharpe": 1.329
+      },
+      {
+        "mode": "binary",
+        "thr_long": 0.6,
+        "allow_short": false,
+        "target_vol": null,
+        "train_prefix_sharpe": 1.159
+      },
+      {
+        "mode": "binary",
+        "thr_long": 0.6,
+        "allow_short": false,
+        "target_vol": null,
+        "train_prefix_sharpe": 1.043
+      },
+      {
+        "mode": "binary",
+        "thr_long": 0.575,
+        "allow_short": false,
+        "target_vol": null,
+        "train_prefix_sharpe": 0.782
+      }
+    ]
+  },
+  "lstm+kronos": {
+    "stats": {
+      "total_return": -0.07677876445465648,
+      "ann_return": -0.04900378572726444,
+      "ann_vol": 0.1592095352500028,
+      "sharpe": -0.3077942891442714,
+      "max_drawdown": -0.2582124559498731,
+      "exposure": 0.40967285350871907,
+      "active_days_pct": 33.02752293577982,
+      "win_rate_active": 39.81481481481482,
+      "n_days": 327,
+      "bh_total_return": 0.5328842112891812,
+      "bh_sharpe": 1.448990699211831,
+      "bh_max_dd": -0.1379852725681736,
+      "signal": "lstm+kronos"
+    },
+    "chosen": [
+      {
+        "mode": "linear",
+        "k": 8.0,
+        "band": 0.02,
+        "cap": 1.0,
+        "allow_short": true,
+        "target_vol": null,
+        "train_prefix_sharpe": 1.605
+      },
+      {
+        "mode": "linear",
+        "k": 8.0,
+        "band": 0.02,
+        "cap": 1.0,
+        "allow_short": true,
+        "target_vol": null,
+        "train_prefix_sharpe": 1.267
+      },
+      {
+        "mode": "binary",
+        "thr_long": 0.6,
+        "allow_short": false,
+        "target_vol": null,
+        "train_prefix_sharpe": 1.312
+      },
+      {
+        "mode": "binary",
+        "thr_long": 0.6,
+        "allow_short": false,
+        "target_vol": null,
+        "train_prefix_sharpe": 1.223
+      },
+      {
+        "mode": "binary",
+        "thr_long": 0.6,
+        "allow_short": false,
+        "target_vol": null,
+        "train_prefix_sharpe": 0.897
+      }
+    ]
+  },
+  "xgb+lstm+kronos": {
+    "stats": {
+      "total_return": 0.1104293710352422,
+      "ann_return": 0.08814441627216768,
+      "ann_vol": 0.12283110269745884,
+      "sharpe": 0.7176066512182442,
+      "max_drawdown": -0.111966112567635,
+      "exposure": 0.3383033711883201,
+      "active_days_pct": 32.7217125382263,
+      "win_rate_active": 38.31775700934579,
+      "n_days": 327,
+      "bh_total_return": 0.5328842112891812,
+      "bh_sharpe": 1.448990699211831,
+      "bh_max_dd": -0.1379852725681736,
+      "signal": "xgb+lstm+kronos"
+    },
+    "chosen": [
+      {
+        "mode": "linear",
+        "k": 8.0,
+        "band": 0.02,
+        "cap": 1.0,
+        "allow_short": true,
+        "target_vol": null,
+        "train_prefix_sharpe": 1.596
+      },
+      {
+        "mode": "binary",
+        "thr_long": 0.575,
+        "allow_short": false,
+        "target_vol": null,
+        "train_prefix_sharpe": 1.241
+      },
+      {
+        "mode": "binary",
+        "thr_long": 0.575,
+        "allow_short": false,
+        "target_vol": null,
+        "train_prefix_sharpe": 1.376
+      },
+      {
+        "mode": "binary",
+        "thr_long": 0.575,
+        "allow_short": false,
+        "target_vol": null,
+        "train_prefix_sharpe": 1.279
+      },
+      {
+        "mode": "binary",
+        "thr_long": 0.575,
+        "allow_short": false,
+        "target_vol": null,
+        "train_prefix_sharpe": 0.924
+      }
+    ]
+  }
+}
