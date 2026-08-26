@@ -1,5 +1,6 @@
 # Quant Signal API + Dashboard - Production Container
-FROM python:3.11-slim
+FROM python:3.12-slim
+RUN pip install --upgrade pip
 
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
@@ -28,3 +29,5 @@ EXPOSE 8000 8501
 
 # Default command runs API; override in docker-compose for dashboard
 CMD ["uvicorn", "service.app:app", "--host", "0.0.0.0", "--port", "8000"]
+
+RUN pip install --upgrade pip
