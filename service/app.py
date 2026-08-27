@@ -14,6 +14,7 @@ import pandas as pd
 import ta
 import torch
 from fastapi import FastAPI, HTTPException, Header
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 # ------------------------------------------------------------
@@ -60,6 +61,18 @@ FEATURES = ["ret_1", "ret_5", "ret_10", "log_vol_chg", "rsi_14", "macd",
             "bb_pos", "atr_14", "obv_slope", "sma_ratio", "rvol_5", "rvol_20"]
 
 app = FastAPI(title="Quant Signal API (NSE)", version="1.0.0")
+
+# Mount static files for web portal (at /app to avoid API conflicts)
+static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+if os.path.exists(static_dir):
+    app.mount("/app", StaticFiles(directory=static_dir, html=True), name="static")
+
+# Redirect root to /app
+from fastapi.responses import RedirectResponse
+
+@app.get("/")
+def root():
+    return RedirectResponse(url="/app/")
 
 # ------------------------------------------------------------
 # LSTM Model Definition

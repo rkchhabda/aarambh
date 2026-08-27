@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: gaurvideep-api
+    env: python
+    buildCommand: pip install -r service/requirements.txt
+    startCommand: uvicorn service.app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11
+      - key: ROOT_PATH
+        value: ""
+    routes:
+      - type: rewrite
+        source: /app/*
+        destination: /app/index.html
+        action: rewrite

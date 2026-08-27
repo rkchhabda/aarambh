@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GaurviDEEP - Quant Signal API</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0d1117; color: #c9d1d9; min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 2rem; }
+        .container { max-width: 800px; width: 100%; }
+        h1 { color: #58a6ff; margin-bottom: 0.5rem; }
+        .subtitle { color: #8b949e; margin-bottom: 2rem; }
+        .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; }
+        .card h2 { color: #58a6ff; margin-bottom: 1rem; font-size: 1.25rem; }
+        .form-group { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        input, select { padding: 0.5rem 0.75rem; border: 1px solid #30363d; border-radius: 6px; background: #0d1117; color: #c9d1d9; font-size: 1rem; }
+        input[type="text"] { flex: 1; min-width: 200px; }
+        button { background: #238636; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; font-size: 1rem; cursor: pointer; transition: background 0.2s; }
+        button:hover { background: #2ea043; }
+        button:disabled { background: #30363d; cursor: not-allowed; }
+        .result { background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 1rem; margin-top: 1rem; font-family: monospace; font-size: 0.875rem; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+        .error { color: #f85149; }
+        .success { color: #3fb950; }
+        .endpoint-info { font-size: 0.875rem; color: #8b949e; }
+        code { background: #161b22; padding: 0.125rem 0.375rem; border-radius: 4px; color: #a5d6ff; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
+        .metric { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 1rem; text-align: center; }
+        .metric-value { font-size: 1.5rem; font-weight: bold; color: #58a6ff; }
+        .metric-label { color: #8b949e; font-size: 0.875rem; }
+        .signal-BUY { color: #3fb950; }
+        .signal-SELL { color: #f85149; }
+        .signal-HOLD { color: #d29922; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📈 GaurviDEEP Quant Signals</h1>
+        <p class="subtitle">NSE Indian Stock Signals via SMA Crossover Strategy</p>
+
+        <div class="card">
+            <h2>Get Signal</h2>
+            <div class="form-group">
+                <input type="text" id="tickerInput" placeholder="Enter NSE Ticker (e.g., RELIANCE)" value="RELIANCE">
+                <input type="text" id="apiKeyInput" placeholder="API Key" value="">
+                <button id="getSignalBtn">Get Signal</button>
+            </div>
+            <p class="endpoint-info">POST <code>/v1/signal</code> — Requires <code>X-API-Key</code> header</p>
+            <div id="result" class="result hidden"></div>
+        </div>
+
+        <div class="card">
+            <h2>Signal Display</h2>
+            <div class="grid" id="signalDisplay">
+                <div class="metric"><div class="metric-value" id="signalTicker">-</div><div class="metric-label">Ticker</div></div>
+                <div class="metric"><div class="metric-value" id="signalPrice">-</div><div class="metric-label">Price (₹)</div></div>
+                <div class="metric"><div class="metric-value" id="signalSma">-</div><div class="metric-label">SMA 20</div></div>
+                <div class="metric"><div class="metric-value signal-HOLD" id="signalAction">-</div><div class="metric-label">Signal</div></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>API Endpoints</h2>
+            <ul style="line-height: 2;">
+                <li><code>GET /health</code> — Service health & loaded models</li>
+                <li><code>POST /v1/signal</code> — Get BUY/SELL/HOLD signal (requires API key)</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const btn = document.getElementById('getSignalBtn');
+        const resultDiv = document.getElementById('result');
+        const display = document.getElementById('signalDisplay');
+
+        btn.addEventListener('click', async () => {
+            const ticker = document.getElementById('tickerInput').value.trim().toUpperCase();
+            const apiKey = document.getElementById('apiKeyInput').value.trim();
+
+            if (!ticker) { alert('Enter a ticker'); return; }
+            if (!apiKey) { alert('Enter your API key'); return; }
+
+            btn.disabled = true;
+            btn.textContent = 'Fetching...';
+            resultDiv.classList.add('hidden');
+
+            try {
+                const res = await fetch('/v1/signal', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-API-Key': apiKey
+                    },
+                    body: JSON.stringify({ ticker })
+                });
+
+                const data = await res.json();
+
+                if (!res.ok) {
+                    throw new Error(data.detail || `HTTP ${res.status}`);
+                }
+
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+                resultDiv.className = 'result success';
+                resultDiv.classList.remove('hidden');
+
+                document.getElementById('signalTicker').textContent = data.ticker;
+                document.getElementById('signalPrice').textContent = data.price;
+                document.getElementById('signalSma').textContent = data.sma_20;
+                const signalEl = document.getElementById('signalAction');
+                signalEl.textContent = data.signal;
+                signalEl.className = 'metric-value signal-' + data.signal;
+
+            } catch (err) {
+                resultDiv.textContent = 'Error: ' + err.message;
+                resultDiv.className = 'result error';
+                resultDiv.classList.remove('hidden');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Get Signal';
+            }
+        });
+    </script>
+</body>
+</html>
