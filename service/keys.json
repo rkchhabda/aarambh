@@ -22,5 +22,11 @@
     "owner": "demo@internal",
     "created": 1787751135,
     "calls_today": 0
+  },
+  "df398cca4bb08d7c317b7479b1880f39017cfb855f7aad77618480741ec993f6": {
+    "tier": "pro",
+    "owner": "test",
+    "created": 1787791310,
+    "calls_today": 0
   }
 }

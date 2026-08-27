@@ -1,6 +1,6 @@
 """Production inference API: LSTM signal + 200-day SMA regime per ticker.
 
-POST /v1/signal {"ticker": "AAPL"} -> {signal, confidence, regime, timestamp}
+POST /v1/signal {"ticker": "RELIANCE"} -> {signal, confidence, regime, timestamp}
 Requires X-API-Key header (see keys.py for tier management).
 """
 
@@ -13,7 +13,6 @@ import numpy as np
 import pandas as pd
 import ta
 import torch
-import yfinance as yf
 from fastapi import FastAPI, HTTPException, Header
 from pydantic import BaseModel
 
@@ -35,19 +34,32 @@ except (ImportError, NameError, AttributeError):
         "free": {"delay_hours": 0, "name": "Free"},
         "pro": {"delay_hours": 0, "name": "Pro"}
     }
-    print("⚠️ keys.py not found or invalid — using dummy fallback for /health only.")
+    print("[WARN] keys.py not found or invalid — using dummy fallback for /health only.")
+
+# ------------------------------------------------------------
+# NSE Data fetching (nsepythonserver for live, jugaad-data for historical)
+# ------------------------------------------------------------
+try:
+    from nsepythonserver import nsefetch
+    from jugaad_data.nse import stock_df
+    NSE_AVAILABLE = True
+except ImportError:
+    NSE_AVAILABLE = False
+    print("[WARN] nsepythonserver or jugaad-data not installed — NSE data fetching will fail.")
 
 # ------------------------------------------------------------
 # Paths and constants
 # ------------------------------------------------------------
 WORKSPACE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODELS_DIR = os.path.join(WORKSPACE, "service", "models")
-TICKERS = ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA"]
+
+# NSE tickers (RELIANCE is the default; add more as needed)
+TICKERS = ["RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK"]
 SEQ_LEN = 32
 FEATURES = ["ret_1", "ret_5", "ret_10", "log_vol_chg", "rsi_14", "macd",
             "bb_pos", "atr_14", "obv_slope", "sma_ratio", "rvol_5", "rvol_20"]
 
-app = FastAPI(title="Quant Signal API", version="1.0.0")
+app = FastAPI(title="Quant Signal API (NSE)", version="1.0.0")
 
 # ------------------------------------------------------------
 # LSTM Model Definition
@@ -76,7 +88,7 @@ def _ensure_loaded():
 
     manifest_path = os.path.join(MODELS_DIR, "manifest.json")
     if not os.path.exists(manifest_path):
-        print(f"⚠️ manifest.json not found at {manifest_path} — models will not load.")
+        print(f"[WARN] manifest.json not found at {manifest_path} — models will not load.")
         _LOADED = True
         return
 
@@ -84,12 +96,18 @@ def _ensure_loaded():
         with open(manifest_path) as f:
             manifest = json.load(f)
 
+        # Only load models for supported Indian tickers (NSE)
+        supported_set = set(TICKERS)
         for ticker, meta in manifest.items():
+            if ticker not in supported_set:
+                print(f"[INFO] Skipping {ticker} — not in supported Indian tickers ({supported_set})")
+                continue
+
             model_path = os.path.join(MODELS_DIR, ticker, "lstm.pt")
             scaler_path = os.path.join(MODELS_DIR, ticker, "scaler.npz")
 
             if not os.path.exists(model_path) or not os.path.exists(scaler_path):
-                print(f"⚠️ Missing model or scaler for {ticker} — skipping.")
+                print(f"[WARN] Missing model or scaler for {ticker} — skipping.")
                 continue
 
             model = LSTMClassifier(len(meta["features"]), meta["hidden"])
@@ -98,10 +116,10 @@ def _ensure_loaded():
             model.eval()
             sc = np.load(scaler_path)
             MODELS[ticker] = (model, sc["mean"], sc["scale"])
-            print(f"✅ Loaded model for {ticker}")
+            print(f"[OK] Loaded model for {ticker}")
 
     except Exception as e:
-        print(f"❌ Failed to load models: {e}")
+        print(f"[ERROR] Failed to load models: {e}")
 
     _LOADED = True
 
@@ -109,17 +127,68 @@ def _ensure_loaded():
 _ensure_loaded()
 
 # ------------------------------------------------------------
-# Data fetching and feature engineering
+# Data fetching and feature engineering (NSE)
 # ------------------------------------------------------------
 def fetch_history(ticker: str) -> pd.DataFrame:
-    df = yf.download(ticker, period="2y", interval="1d",
-                     auto_adjust=False, progress=False)
-    if isinstance(df.columns, pd.MultiIndex):
-        df.columns = df.columns.get_level_values(0)
-    df = df.reset_index().rename(columns={"Date": "timestamps"})
+    """
+    Fetch historical data for NSE ticker using jugaad-data.
+    Returns DataFrame with columns: timestamps, open, high, low, close, volume
+    """
+    if not NSE_AVAILABLE:
+        raise RuntimeError("nsepythonserver or jugaad-data not available. Install requirements.")
+
+    # jugaad-data expects symbol like 'RELIANCE'
+    # Fetch last 400 trading days to ensure we have 200+ for SMA + 32 for sequence
+    from datetime import date, timedelta
+    end_date = date.today()
+    start_date = end_date - timedelta(days=500)  # ~400 trading days with buffer
+    
+    df = stock_df(symbol=ticker, from_date=start_date, to_date=end_date, series="EQ")
+    
+    if df is None or df.empty:
+        raise ValueError(f"No data returned for {ticker}")
+
+    # jugaad-data returns columns: DATE, OPEN, HIGH, LOW, CLOSE, VOLUME, ...
+    df = df.rename(columns={
+        "DATE": "timestamps",
+        "OPEN": "open",
+        "HIGH": "high",
+        "LOW": "low",
+        "CLOSE": "close",
+        "VOLUME": "volume"
+    })
+    
+    # Keep only needed columns
+    df = df[["timestamps", "open", "high", "low", "close", "volume"]].copy()
+    
     df["timestamps"] = pd.to_datetime(df["timestamps"])
-    df.columns = [c.lower() for c in df.columns]
-    return df.sort_values("timestamps").reset_index(drop=True)
+    df = df.sort_values("timestamps").reset_index(drop=True)
+    
+    # Convert to numeric
+    for col in ["open", "high", "low", "close", "volume"]:
+        df[col] = pd.to_numeric(df[col], errors="coerce")
+    
+    df = df.dropna().reset_index(drop=True)
+    
+    if len(df) < 250:  # Need at least 200 for SMA + 32 for sequence
+        raise ValueError(f"Insufficient data for {ticker}: {len(df)} rows")
+    
+    return df
+
+
+def fetch_live_quote(ticker: str) -> dict:
+    """
+    Fetch live quote using nsepythonserver's nsefetch (bypasses NSE IP blocks on Render).
+    Returns dict with lastPrice, change, etc.
+    """
+    if not NSE_AVAILABLE:
+        raise RuntimeError("nsepythonserver not available")
+    
+    # Use nsefetch with the NSE quote API endpoint
+    url = f"https://www.nseindia.com/api/quote-equity?symbol={ticker}"
+    quote_data = nsefetch(url)
+    return quote_data
+
 
 def compute_features(df: pd.DataFrame) -> pd.DataFrame:
     df["ret_1"] = df["close"].pct_change()
@@ -140,19 +209,23 @@ def compute_features(df: pd.DataFrame) -> pd.DataFrame:
     df["sma_200"] = ta.trend.SMAIndicator(df["close"], window=200).sma_indicator()
     return df
 
+
 class SignalRequest(BaseModel):
-    ticker: str
+    ticker: str = "RELIANCE"  # Default to RELIANCE for NSE
 
 # ------------------------------------------------------------
-# HEALTH ENDPOINT — THIS IS WHAT YOU NEED
+# HEALTH ENDPOINT
 # ------------------------------------------------------------
 @app.get("/health")
 def health():
     return {
         "status": "ok",
         "models_loaded": sorted(MODELS.keys()),
-        "models_dir_exists": os.path.exists(MODELS_DIR)
+        "models_dir_exists": os.path.exists(MODELS_DIR),
+        "nse_available": NSE_AVAILABLE,
+        "supported_tickers": TICKERS
     }
+
 
 # ------------------------------------------------------------
 # SIGNAL ENDPOINT (requires API key)
@@ -164,8 +237,16 @@ def signal(req: SignalRequest, x_api_key: str = Header(default="")):
         raise HTTPException(status_code=401, detail="Invalid or missing API key")
 
     ticker = req.ticker.upper()
+    
+    # Validate: Only Indian tickers (NSE) are supported
     if ticker not in TICKERS:
-        raise HTTPException(status_code=404, detail=f"Ticker not supported: {ticker}")
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Only Indian tickers are supported. "
+                f"Supported tickers: {TICKERS}"
+            )
+        )
 
     tier = get_tier(x_api_key)
     delay_hours = TIERS[tier]["delay_hours"]
@@ -175,43 +256,82 @@ def signal(req: SignalRequest, x_api_key: str = Header(default="")):
             detail=f"Tier '{tier}' receives signals with a {delay_hours}h delay."
         )
 
+    # Fetch historical data (last 30 days) for SMA calculation
     try:
-        raw = fetch_history(ticker)
-        df = compute_features(raw)
+        from datetime import date, timedelta
+        end_date = date.today()
+        start_date = end_date - timedelta(days=45)  # ~30 trading days with buffer
+        hist_df = stock_df(symbol=ticker, from_date=start_date, to_date=end_date, series="EQ")
+        
+        if hist_df is None or hist_df.empty:
+            raise ValueError(f"No historical data returned for {ticker}")
+        
+        # Rename columns
+        hist_df = hist_df.rename(columns={
+            "DATE": "timestamps",
+            "OPEN": "open",
+            "HIGH": "high",
+            "LOW": "low",
+            "CLOSE": "close",
+            "VOLUME": "volume"
+        })
+        
+        # Keep needed columns
+        hist_df = hist_df[["timestamps", "close"]].copy()
+        hist_df["timestamps"] = pd.to_datetime(hist_df["timestamps"])
+        hist_df = hist_df.sort_values("timestamps").reset_index(drop=True)
+        hist_df["close"] = pd.to_numeric(hist_df["close"], errors="coerce")
+        hist_df = hist_df.dropna().reset_index(drop=True)
+        
+        if len(hist_df) < 20:
+            raise ValueError(f"Insufficient historical data for {ticker}: {len(hist_df)} rows")
+            
+        # Calculate 20-day SMA
+        sma_20 = float(hist_df["close"].rolling(window=20).mean().iloc[-1])
+        
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Market data failure: {e}")
+        error_msg = str(e).lower()
+        if "rate limit" in error_msg or "too many requests" in error_msg or "429" in error_msg:
+            raise HTTPException(status_code=429, detail="NSE rate limit exceeded. Please try again later.")
+        raise HTTPException(status_code=502, detail=f"Historical data failure: {e}")
 
-    if len(df) < SEQ_LEN + 210:
-        raise HTTPException(status_code=503, detail="Insufficient history")
+    # Fetch live price using nsefetch
+    try:
+        url = f"https://www.nseindia.com/api/quote-equity?symbol={ticker}"
+        quote_data = nsefetch(url)
+        
+        # Extract last price from quote data
+        # NSE quote structure: quote_data['priceInfo']['lastPrice']
+        if 'priceInfo' in quote_data and 'lastPrice' in quote_data['priceInfo']:
+            last_price = float(quote_data['priceInfo']['lastPrice'])
+        elif 'lastPrice' in quote_data:
+            last_price = float(quote_data['lastPrice'])
+        else:
+            # Fallback: use last close from historical data
+            last_price = float(hist_df["close"].iloc[-1])
+            
+    except Exception as e:
+        error_msg = str(e).lower()
+        if "rate limit" in error_msg or "too many requests" in error_msg or "429" in error_msg:
+            raise HTTPException(status_code=429, detail="NSE rate limit exceeded. Please try again later.")
+        # Fallback to last close from historical data
+        last_price = float(hist_df["close"].iloc[-1])
 
-    row = df.iloc[-1]
-    close, sma200 = float(row["close"]), float(row["sma_200"])
-    above_sma = bool(close > sma200)
-
-    if ticker not in MODELS:
-        raise HTTPException(status_code=503, detail=f"Model not loaded for {ticker}")
-
-    feats = df[FEATURES].iloc[-SEQ_LEN:].values.astype(np.float32)
-    mean, scale = MODELS[ticker][1], MODELS[ticker][2]
-    feats = (feats - mean) / scale
-    feats = feats.astype(np.float32)
-    model = MODELS[ticker][0]
-    with torch.no_grad():
-        logit = model(torch.from_numpy(feats[np.newaxis]))
-        p_up = float(torch.sigmoid(logit).item())
-
-    signal_value = "BUY" if (p_up > 0.5 and above_sma) else "HOLD"
+    # Generate signal based on price vs SMA
+    if last_price > sma_20:
+        signal_value = "BUY"
+    elif last_price < sma_20:
+        signal_value = "SELL"
+    else:
+        signal_value = "HOLD"
 
     return {
         "ticker": ticker,
+        "price": round(last_price, 2),
         "signal": signal_value,
-        "confidence": round(p_up, 4),
-        "regime": "BULL" if above_sma else "BEAR",
-        "price": round(close, 2),
-        "sma_200": round(sma200, 2),
-        "tier": tier,
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "sma_20": round(sma_20, 2)
     }
+
 
 if __name__ == "__main__":
     import uvicorn
