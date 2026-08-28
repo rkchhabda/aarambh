@@ -92,6 +92,16 @@ else:
 def root():
     return RedirectResponse(url="/app/")
 
+@app.get("/debug/static")
+def debug_static():
+    info = {"static_dir": static_dir}
+    if static_dir and os.path.exists(os.path.join(static_dir, "index.html")):
+        with open(os.path.join(static_dir, "index.html"), "r") as f:
+            first_200 = f.read(200)
+        info["index_title"] = first_200
+        info["file_size"] = os.path.getsize(os.path.join(static_dir, "index.html"))
+    return info
+
 # ------------------------------------------------------------
 # Load Ensemble Models
 # ------------------------------------------------------------
