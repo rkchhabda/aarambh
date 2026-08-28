@@ -140,21 +140,54 @@ _ensure_loaded()
 # Data fetching and feature engineering (yfinance for Indian stocks)
 # ------------------------------------------------------------
 def fetch_history(ticker: str) -> pd.DataFrame:
-    # Try primary download
-    df = yf.download(ticker, period="2y", interval="1d",
-                     auto_adjust=False, progress=False, threads=False)
+    """Fetch historical data with retries and session handling for Render compatibility."""
+    import requests
+    from requests.adapters import HTTPAdapter
+    from urllib3.util.retry import Retry
     
-    # Handle multi-index columns
-    if isinstance(df.columns, pd.MultiIndex):
-        df.columns = df.columns.get_level_values(0)
+    # Create session with retry strategy
+    session = requests.Session()
+    retry_strategy = Retry(
+        total=3,
+        backoff_factor=1,
+        status_forcelist=[429, 500, 502, 503, 504],
+    )
+    adapter = HTTPAdapter(max_retries=retry_strategy)
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
+    session.headers.update({
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+    })
     
-    # Check if we got data
-    if df is None or df.empty:
-        # Try alternative: longer period
-        df = yf.download(ticker, period="5y", interval="1d",
-                         auto_adjust=False, progress=False, threads=False)
+    # Try yfinance with session
+    try:
+        df = yf.download(ticker, period="2y", interval="1d",
+                         auto_adjust=False, progress=False, threads=False, session=session)
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.get_level_values(0)
+    except Exception as e:
+        print(f"yfinance download error: {e}")
+        df = pd.DataFrame()
+    
+    # Fallback: try 5y period
+    if df is None or df.empty:
+        try:
+            df = yf.download(ticker, period="5y", interval="1d",
+                             auto_adjust=False, progress=False, threads=False, session=session)
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = df.columns.get_level_values(0)
+        except Exception:
+            df = pd.DataFrame()
+    
+    # Fallback: try with different parameters
+    if df is None or df.empty:
+        try:
+            df = yf.download(ticker, start="2022-01-01", end=None,
+                             interval="1d", auto_adjust=False, progress=False, threads=False, session=session)
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = df.columns.get_level_values(0)
+        except Exception:
+            df = pd.DataFrame()
     
     if df is None or df.empty:
         raise ValueError(f"No data returned for {ticker} - check symbol or network")
