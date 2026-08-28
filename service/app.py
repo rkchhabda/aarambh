@@ -63,9 +63,23 @@ FEATURES = ["ret_1", "ret_5", "ret_10", "log_vol_chg", "rsi_14", "macd",
 app = FastAPI(title="Quant Signal API (NSE)", version="1.0.0")
 
 # Mount static files for web portal (at /app to avoid API conflicts)
-static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
-if os.path.exists(static_dir):
+# Try multiple paths for local vs Render deployment
+possible_static_dirs = [
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "static"),  # Local: service/static
+    os.path.join(os.getcwd(), "service", "static"),                      # Render: repo_root/service/static
+    "/opt/render/project/src/service/static",                            # Render absolute path
+]
+static_dir = None
+for d in possible_static_dirs:
+    if os.path.exists(d):
+        static_dir = d
+        break
+
+if static_dir:
     app.mount("/app", StaticFiles(directory=static_dir, html=True), name="static")
+    print(f"[INFO] Mounted static files from: {static_dir}")
+else:
+    print("[WARN] Static directory not found in any expected location")
 
 # Redirect root to /app
 from fastapi.responses import RedirectResponse
