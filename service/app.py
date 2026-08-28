@@ -26,6 +26,7 @@ WORKSPACE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODELS_DIR = os.path.join(WORKSPACE, "service", "models")
 
 # Nifty 100 tickers (with .NS suffix for Yahoo Finance)
+# Removed delisted/invalid: ZOMATO, TATAMOTORS, ADANITRANS, GMRINFRA, LTIM, MCDOWELL-N, PEL
 TICKERS = [
     "ADANIENT.NS", "ADANIPORTS.NS", "APOLLOHOSP.NS", "ASIANPAINT.NS", "AXISBANK.NS",
     "BAJAJ-AUTO.NS", "BAJFINANCE.NS", "BAJAJFINSV.NS", "BPCL.NS", "BHARTIARTL.NS",
@@ -35,27 +36,27 @@ TICKERS = [
     "INDUSINDBK.NS", "INFY.NS", "JSWSTEEL.NS", "KOTAKBANK.NS", "LT.NS",
     "M&M.NS", "MARUTI.NS", "NESTLEIND.NS", "NTPC.NS", "ONGC.NS",
     "POWERGRID.NS", "RELIANCE.NS", "SBILIFE.NS", "SBIN.NS", "SUNPHARMA.NS",
-    "TCS.NS", "TATACONSUM.NS", "TATAMOTORS.NS", "TATASTEEL.NS", "TECHM.NS",
+    "TCS.NS", "TATACONSUM.NS", "TATASTEEL.NS", "TECHM.NS",
     "TITAN.NS", "ULTRACEMCO.NS", "UPL.NS", "WIPRO.NS", "ADANIGREEN.NS",
-    "ADANITRANS.NS", "AMBUJACEM.NS", "APOLLOTYRE.NS", "ASHOKLEY.NS", "ASTRAL.NS",
+    "AMBUJACEM.NS", "APOLLOTYRE.NS", "ASHOKLEY.NS", "ASTRAL.NS",
     "AUROPHARMA.NS", "BALKRISIND.NS", "BANDHANBNK.NS", "BANKBARODA.NS", "BEL.NS",
     "BHEL.NS", "BIOCON.NS", "BOSCHLTD.NS", "CANBK.NS", "CHOLAFIN.NS",
     "COLPAL.NS", "CONCOR.NS", "CROMPTON.NS", "CUMMINSIND.NS", "DABUR.NS",
     "DALBHARAT.NS", "DEEPAKNTR.NS", "DLF.NS", "EDELWEISS.NS", "EMAMILTD.NS",
     "ENDURANCE.NS", "ESCORTS.NS", "EXIDEIND.NS", "FEDERALBNK.NS", "GAIL.NS",
-    "GLENMARK.NS", "GMRINFRA.NS", "GODREJCP.NS", "GODREJPROP.NS", "GRANULES.NS",
+    "GLENMARK.NS", "GODREJCP.NS", "GODREJPROP.NS", "GRANULES.NS",
     "HAVELLS.NS", "HINDPETRO.NS", "ICICIGI.NS", "ICICIPRULI.NS", "IDEA.NS",
     "IDFCFIRSTB.NS", "IGL.NS", "INDIGO.NS", "INDUSTOWER.NS", "JINDALSTEL.NS",
-    "JUBLFOOD.NS", "LICHSGFIN.NS", "LTIM.NS", "LUPIN.NS", "MARICO.NS",
-    "MAXHEALTH.NS", "MCDOWELL-N.NS", "MFSL.NS", "MOTHERSON.NS", "MPHASIS.NS",
+    "JUBLFOOD.NS", "LICHSGFIN.NS", "LUPIN.NS", "MARICO.NS",
+    "MAXHEALTH.NS", "MFSL.NS", "MOTHERSON.NS", "MPHASIS.NS",
     "MRF.NS", "MUTHOOTFIN.NS", "NAUKRI.NS", "NAVINFLUOR.NS", "NBCC.NS",
-    "NMDC.NS", "OBEROIRLTY.NS", "PAGEIND.NS", "PEL.NS", "PERSISTENT.NS",
+    "NMDC.NS", "OBEROIRLTY.NS", "PAGEIND.NS", "PERSISTENT.NS",
     "PETRONET.NS", "PFC.NS", "PIDILITIND.NS", "PIIND.NS", "PNB.NS",
     "POLYCAB.NS", "PVRINOX.NS", "RAMCOCEM.NS", "RBLBANK.NS", "RECLTD.NS",
     "SAIL.NS", "SHREECEM.NS", "SIEMENS.NS", "SRF.NS", "SYNGENE.NS",
     "TATACHEM.NS", "TATACOMM.NS", "TATAPOWER.NS", "TORNTPHARM.NS", "TORNTPOWER.NS",
     "TRENT.NS", "TVSMOTOR.NS", "UBL.NS", "UNIONBANK.NS", "VBL.NS",
-    "VEDL.NS", "VOLTAS.NS", "WHIRLPOOL.NS", "ZOMATO.NS", "ZYDUSLIFE.NS"
+    "VEDL.NS", "VOLTAS.NS", "WHIRLPOOL.NS", "ZYDUSLIFE.NS"
 ]
 SEQ_LEN = 32
 
@@ -140,12 +141,16 @@ _ensure_loaded()
 # ------------------------------------------------------------
 def fetch_history(ticker: str) -> pd.DataFrame:
     df = yf.download(ticker, period="2y", interval="1d",
-                     auto_adjust=False, progress=False)
+                     auto_adjust=False, progress=False, threads=False)
+    if df is None or df.empty:
+        raise ValueError(f"No data returned for {ticker} - check symbol or network")
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = df.columns.get_level_values(0)
     df = df.reset_index().rename(columns={"Date": "timestamps"})
     df["timestamps"] = pd.to_datetime(df["timestamps"])
     df.columns = [c.lower() for c in df.columns]
+    if df.empty or len(df) < 50:
+        raise ValueError(f"Insufficient data for {ticker}: {len(df)} rows")
     return df.sort_values("timestamps").reset_index(drop=True)
 
 def compute_features(df: pd.DataFrame) -> pd.DataFrame:
