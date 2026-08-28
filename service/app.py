@@ -102,6 +102,13 @@ def debug_static():
         info["file_size"] = os.path.getsize(os.path.join(static_dir, "index.html"))
     return info
 
+@app.get("/app/portal", response_class=HTMLResponse)
+def serve_portal():
+    if static_dir and os.path.exists(os.path.join(static_dir, "index.html")):
+        with open(os.path.join(static_dir, "index.html"), "r") as f:
+            return HTMLResponse(content=f.read())
+    return HTMLResponse(content="<h1>Portal not found</h1>", status_code=404)
+
 # ------------------------------------------------------------
 # Load Ensemble Models
 # ------------------------------------------------------------
