@@ -1,7 +1,7 @@
 """Production inference API: Ensemble (XGB + RF + LR) + 200-day SMA regime.
 
-POST /v1/signal {"ticker": "AAPL"} -> {signal, confidence, regime, timestamp}
-Requires X-API-Key header (see keys.py for tier management).
+POST /v1/signal {"ticker": "RELIANCE.NS"} -> {signal, confidence, regime, timestamp}
+No API key required (defaults to pro tier).
 """
 
 import os
@@ -20,46 +20,58 @@ from fastapi.responses import RedirectResponse
 from pydantic import BaseModel
 
 # ------------------------------------------------------------
-# SAFE IMPORT for keys.py (fallback if missing or broken)
-# ------------------------------------------------------------
-try:
-    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-    from keys import validate_api_key, get_tier, TIERS  # noqa: E402
-except (ImportError, NameError, AttributeError):
-    def validate_api_key(key):
-        return {"tier": "free"} if key else None
-    def get_tier(key):
-        return "free"
-    TIERS = {
-        "free": {"delay_hours": 0, "name": "Free"},
-        "pro": {"delay_hours": 0, "name": "Pro"}
-    }
-    print("[WARN] keys.py not found — using dummy fallback.")
-
-# ------------------------------------------------------------
 # Paths and constants
 # ------------------------------------------------------------
 WORKSPACE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODELS_DIR = os.path.join(WORKSPACE, "service", "models")
 
-# US tickers for ensemble model
-TICKERS = ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA"]
+# Nifty 100 tickers (with .NS suffix for Yahoo Finance)
+TICKERS = [
+    "ADANIENT.NS", "ADANIPORTS.NS", "APOLLOHOSP.NS", "ASIANPAINT.NS", "AXISBANK.NS",
+    "BAJAJ-AUTO.NS", "BAJFINANCE.NS", "BAJAJFINSV.NS", "BPCL.NS", "BHARTIARTL.NS",
+    "BRITANNIA.NS", "CIPLA.NS", "COALINDIA.NS", "DIVISLAB.NS", "DRREDDY.NS",
+    "EICHERMOT.NS", "GRASIM.NS", "HCLTECH.NS", "HDFCBANK.NS", "HDFCLIFE.NS",
+    "HEROMOTOCO.NS", "HINDALCO.NS", "HINDUNILVR.NS", "ICICIBANK.NS", "ITC.NS",
+    "INDUSINDBK.NS", "INFY.NS", "JSWSTEEL.NS", "KOTAKBANK.NS", "LT.NS",
+    "M&M.NS", "MARUTI.NS", "NESTLEIND.NS", "NTPC.NS", "ONGC.NS",
+    "POWERGRID.NS", "RELIANCE.NS", "SBILIFE.NS", "SBIN.NS", "SUNPHARMA.NS",
+    "TCS.NS", "TATACONSUM.NS", "TATAMOTORS.NS", "TATASTEEL.NS", "TECHM.NS",
+    "TITAN.NS", "ULTRACEMCO.NS", "UPL.NS", "WIPRO.NS", "ADANIGREEN.NS",
+    "ADANITRANS.NS", "AMBUJACEM.NS", "APOLLOTYRE.NS", "ASHOKLEY.NS", "ASTRAL.NS",
+    "AUROPHARMA.NS", "BALKRISIND.NS", "BANDHANBNK.NS", "BANKBARODA.NS", "BEL.NS",
+    "BHEL.NS", "BIOCON.NS", "BOSCHLTD.NS", "CANBK.NS", "CHOLAFIN.NS",
+    "COLPAL.NS", "CONCOR.NS", "CROMPTON.NS", "CUMMINSIND.NS", "DABUR.NS",
+    "DALBHARAT.NS", "DEEPAKNTR.NS", "DLF.NS", "EDELWEISS.NS", "EMAMILTD.NS",
+    "ENDURANCE.NS", "ESCORTS.NS", "EXIDEIND.NS", "FEDERALBNK.NS", "GAIL.NS",
+    "GLENMARK.NS", "GMRINFRA.NS", "GODREJCP.NS", "GODREJPROP.NS", "GRANULES.NS",
+    "HAVELLS.NS", "HINDPETRO.NS", "ICICIGI.NS", "ICICIPRULI.NS", "IDEA.NS",
+    "IDFCFIRSTB.NS", "IGL.NS", "INDIGO.NS", "INDUSTOWER.NS", "JINDALSTEL.NS",
+    "JUBLFOOD.NS", "LICHSGFIN.NS", "LTIM.NS", "LUPIN.NS", "MARICO.NS",
+    "MAXHEALTH.NS", "MCDOWELL-N.NS", "MFSL.NS", "MOTHERSON.NS", "MPHASIS.NS",
+    "MRF.NS", "MUTHOOTFIN.NS", "NAUKRI.NS", "NAVINFLUOR.NS", "NBCC.NS",
+    "NMDC.NS", "OBEROIRLTY.NS", "PAGEIND.NS", "PEL.NS", "PERSISTENT.NS",
+    "PETRONET.NS", "PFC.NS", "PIDILITIND.NS", "PIIND.NS", "PNB.NS",
+    "POLYCAB.NS", "PVRINOX.NS", "RAMCOCEM.NS", "RBLBANK.NS", "RECLTD.NS",
+    "SAIL.NS", "SHREECEM.NS", "SIEMENS.NS", "SRF.NS", "SYNGENE.NS",
+    "TATACHEM.NS", "TATACOMM.NS", "TATAPOWER.NS", "TORNTPHARM.NS", "TORNTPOWER.NS",
+    "TRENT.NS", "TVSMOTOR.NS", "UBL.NS", "UNIONBANK.NS", "VBL.NS",
+    "VEDL.NS", "VOLTAS.NS", "WHIRLPOOL.NS", "ZOMATO.NS", "ZYDUSLIFE.NS"
+]
 SEQ_LEN = 32
 
 # Feature list must match what you used for training the ensemble
 FEATURES = ["ret_1", "ret_5", "ret_10", "log_vol_chg", "rsi_14", "macd",
             "bb_pos", "atr_14", "obv_slope", "sma_ratio", "rvol_5", "rvol_20"]
 
-app = FastAPI(title="Quant Signal API (Ensemble)", version="2.0.0")
+app = FastAPI(title="Quant Signal API (Ensemble - Nifty 100)", version="3.0.0")
 
 # ------------------------------------------------------------
 # Mount static files for web portal (at /app to avoid API conflicts)
-# Try multiple paths for local vs Render deployment
 # ------------------------------------------------------------
 possible_static_dirs = [
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "static"),  # Local: service/static
-    os.path.join(os.getcwd(), "service", "static"),                      # Render: repo_root/service/static
-    "/opt/render/project/src/service/static",                            # Render absolute path
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "static"),
+    os.path.join(os.getcwd(), "service", "static"),
+    "/opt/render/project/src/service/static",
 ]
 static_dir = None
 for d in possible_static_dirs:
@@ -90,7 +102,6 @@ def _ensure_loaded():
     if _LOADED:
         return
 
-    # Check which model files exist (match actual file names)
     model_file_map = {
         "xgb": "xgboost.pkl",
         "rf": "randomforest.pkl",
@@ -111,12 +122,9 @@ def _ensure_loaded():
 
     meta_model = joblib.load(meta_path)
     
-    # If we have multiple base models, use stacking. If only one, use it directly.
     if len(available_models) == 1:
-        # Single model - meta_model is actually the base model
         ensemble_models = available_models
     elif len(available_models) > 1:
-        # Multiple models - use stacking
         ensemble_models = available_models
     else:
         ensemble_models = {}
@@ -128,7 +136,7 @@ def _ensure_loaded():
 _ensure_loaded()
 
 # ------------------------------------------------------------
-# Data fetching and feature engineering (yfinance for US stocks)
+# Data fetching and feature engineering (yfinance for Indian stocks)
 # ------------------------------------------------------------
 def fetch_history(ticker: str) -> pd.DataFrame:
     df = yf.download(ticker, period="2y", interval="1d",
@@ -171,32 +179,24 @@ def health():
         "status": "ok",
         "model_type": "ensemble (XGB + RF + LR + meta)",
         "models_loaded": list(ensemble_models.keys()) if ensemble_models else [],
-        "meta_loaded": meta_model is not None
+        "meta_loaded": meta_model is not None,
+        "supported_tickers": len(TICKERS)
     }
 
 # ------------------------------------------------------------
-# SIGNAL ENDPOINT (uses ensemble)
+# SIGNAL ENDPOINT (no API key required, defaults to pro tier)
 # ------------------------------------------------------------
 @app.post("/v1/signal")
 def signal(req: SignalRequest, x_api_key: str = Header(default="")):
-    # 1. Authenticate
-    tier_info = validate_api_key(x_api_key)
-    if tier_info is None:
-        raise HTTPException(status_code=401, detail="Invalid or missing API key")
-
-    tier = get_tier(x_api_key)
-    delay_hours = TIERS[tier]["delay_hours"]
-    if delay_hours:
-        raise HTTPException(
-            status_code=403,
-            detail=f"Tier '{tier}' receives signals with a {delay_hours}h delay."
-        )
+    # No API key required - default to pro tier (no delay)
+    tier = "pro"
+    delay_hours = 0
 
     ticker = req.ticker.upper()
     if ticker not in TICKERS:
-        raise HTTPException(status_code=404, detail=f"Ticker not supported: {ticker}")
+        raise HTTPException(status_code=404, detail=f"Ticker not supported: {ticker}. Use format: RELIANCE.NS")
 
-    # 2. Fetch and compute features
+    # Fetch and compute features
     try:
         raw = fetch_history(ticker)
         df = compute_features(raw)
@@ -206,24 +206,21 @@ def signal(req: SignalRequest, x_api_key: str = Header(default="")):
     if len(df) < SEQ_LEN + 210:
         raise HTTPException(status_code=503, detail="Insufficient history")
 
-    # 3. Regime filter (200-day SMA)
+    # Regime filter (200-day SMA)
     row = df.iloc[-1]
     close, sma200 = float(row["close"]), float(row["sma_200"])
     above_sma = bool(close > sma200)
 
-    # 4. Get features for the last row
-    #    Ensemble uses the LAST ROW features, not a sequence
+    # Get features for the last row
     feature_row = df[FEATURES].iloc[-1].values.astype(np.float32).reshape(1, -1)
 
-    # 5. Predict with ensemble
+    # Predict with ensemble
     if ensemble_models is None or meta_model is None:
         raise HTTPException(status_code=503, detail="Ensemble models not loaded.")
 
-    # Check if we're using stacking (multiple base models) or single model
     model_names = list(ensemble_models.keys())
     
     if len(model_names) == 1:
-        # Single model case - meta_model IS the base model
         model = ensemble_models[model_names[0]]
         try:
             if hasattr(model, "predict_proba"):
@@ -234,7 +231,6 @@ def signal(req: SignalRequest, x_api_key: str = Header(default="")):
             print(f"Error with {model_names[0]}: {e}")
             final_prob = 0.5
     else:
-        # Stacking case - multiple base models
         proba = []
         for name, model in ensemble_models.items():
             try:
@@ -250,7 +246,7 @@ def signal(req: SignalRequest, x_api_key: str = Header(default="")):
         stacked_input = np.array(proba).reshape(1, -1)
         final_prob = meta_model.predict_proba(stacked_input)[0][1]
 
-    # 6. Apply regime filter (long-only: BUY only if above SMA and prob > 0.5)
+    # Apply regime filter (long-only: BUY only if above SMA and prob > 0.5)
     signal_value = "BUY" if (final_prob > 0.5 and above_sma) else "HOLD"
 
     return {

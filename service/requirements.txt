@@ -9,3 +9,5 @@ xgboost==3.4.0
 requests==2.32.3
 yfinance==0.2.51
 python-multipart==0.0.9
+streamlit==1.62.0
+plotly==7.0.0
