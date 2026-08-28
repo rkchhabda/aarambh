@@ -7,13 +7,14 @@ No API key required (defaults to pro tier).
 import os
 import sys
 import json
+import time
 from datetime import datetime, timezone
 
 import numpy as np
 import pandas as pd
 import ta
 import joblib
-import yfinance as yf
+import requests
 from fastapi import FastAPI, HTTPException, Header
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
@@ -137,66 +138,65 @@ def _ensure_loaded():
 _ensure_loaded()
 
 # ------------------------------------------------------------
-# Data fetching and feature engineering (yfinance for Indian stocks)
+# Data fetching and feature engineering (Yahoo Finance API directly)
 # ------------------------------------------------------------
 def fetch_history(ticker: str) -> pd.DataFrame:
-    """Fetch historical data with retries and session handling for Render compatibility."""
+    """Fetch historical data using Yahoo Finance chart API directly."""
     import requests
-    from requests.adapters import HTTPAdapter
-    from urllib3.util.retry import Retry
+    import time
     
-    # Create session with retry strategy
-    session = requests.Session()
-    retry_strategy = Retry(
-        total=3,
-        backoff_factor=1,
-        status_forcelist=[429, 500, 502, 503, 504],
-    )
-    adapter = HTTPAdapter(max_retries=retry_strategy)
-    session.mount("https://", adapter)
-    session.mount("http://", adapter)
-    session.headers.update({
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+    # Yahoo Finance chart API
+    # https://query1.finance.yahoo.com/v8/finance/chart/RELIANCE.NS?period1=...&period2=...&interval=1d
+    period2 = int(time.time())
+    period1 = period2 - (2 * 365 * 24 * 60 * 60)  # 2 years ago
+    
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}"
+    params = {
+        "period1": period1,
+        "period2": period2,
+        "interval": "1d",
+        "includePrePost": "false",
+        "events": "div,splits"
+    }
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    }
+    
+    try:
+        resp = requests.get(url, params=params, headers=headers, timeout=30)
+        resp.raise_for_status()
+        data = resp.json()
+    except Exception as e:
+        raise ValueError(f"API request failed for {ticker}: {e}")
+    
+    result = data.get("chart", {}).get("result", [])
+    if not result:
+        raise ValueError(f"No data returned for {ticker}")
+    
+    result = result[0]
+    timestamps = result.get("timestamp", [])
+    quotes = result.get("indicators", {}).get("quote", [{}])[0]
+    adjclose = result.get("indicators", {}).get("adjclose", [{}])[0].get("adjclose", [])
+    
+    if not timestamps:
+        raise ValueError(f"No timestamps for {ticker}")
+    
+    df = pd.DataFrame({
+        "timestamps": [datetime.fromtimestamp(ts) for ts in timestamps],
+        "open": quotes.get("open", []),
+        "high": quotes.get("high", []),
+        "low": quotes.get("low", []),
+        "close": quotes.get("close", []),
+        "volume": quotes.get("volume", []),
     })
     
-    # Try yfinance with session
-    try:
-        df = yf.download(ticker, period="2y", interval="1d",
-                         auto_adjust=False, progress=False, threads=False, session=session)
-        if isinstance(df.columns, pd.MultiIndex):
-            df.columns = df.columns.get_level_values(0)
-    except Exception as e:
-        print(f"yfinance download error: {e}")
-        df = pd.DataFrame()
+    if adjclose and len(adjclose) == len(timestamps):
+        df["adj close"] = adjclose
     
-    # Fallback: try 5y period
-    if df is None or df.empty:
-        try:
-            df = yf.download(ticker, period="5y", interval="1d",
-                             auto_adjust=False, progress=False, threads=False, session=session)
-            if isinstance(df.columns, pd.MultiIndex):
-                df.columns = df.columns.get_level_values(0)
-        except Exception:
-            df = pd.DataFrame()
+    # Remove rows with NaN close
+    df = df.dropna(subset=["close"])
     
-    # Fallback: try with different parameters
-    if df is None or df.empty:
-        try:
-            df = yf.download(ticker, start="2022-01-01", end=None,
-                             interval="1d", auto_adjust=False, progress=False, threads=False, session=session)
-            if isinstance(df.columns, pd.MultiIndex):
-                df.columns = df.columns.get_level_values(0)
-        except Exception:
-            df = pd.DataFrame()
-    
-    if df is None or df.empty:
-        raise ValueError(f"No data returned for {ticker} - check symbol or network")
-    
-    df = df.reset_index().rename(columns={"Date": "timestamps"})
-    df["timestamps"] = pd.to_datetime(df["timestamps"])
-    df.columns = [c.lower() for c in df.columns]
-    
-    if df.empty or len(df) < 50:
+    if len(df) < 50:
         raise ValueError(f"Insufficient data for {ticker}: {len(df)} rows")
     
     return df.sort_values("timestamps").reset_index(drop=True)
