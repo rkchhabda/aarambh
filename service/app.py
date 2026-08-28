@@ -140,17 +140,32 @@ _ensure_loaded()
 # Data fetching and feature engineering (yfinance for Indian stocks)
 # ------------------------------------------------------------
 def fetch_history(ticker: str) -> pd.DataFrame:
+    # Try primary download
     df = yf.download(ticker, period="2y", interval="1d",
                      auto_adjust=False, progress=False, threads=False)
-    if df is None or df.empty:
-        raise ValueError(f"No data returned for {ticker} - check symbol or network")
+    
+    # Handle multi-index columns
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = df.columns.get_level_values(0)
+    
+    # Check if we got data
+    if df is None or df.empty:
+        # Try alternative: longer period
+        df = yf.download(ticker, period="5y", interval="1d",
+                         auto_adjust=False, progress=False, threads=False)
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
+    
+    if df is None or df.empty:
+        raise ValueError(f"No data returned for {ticker} - check symbol or network")
+    
     df = df.reset_index().rename(columns={"Date": "timestamps"})
     df["timestamps"] = pd.to_datetime(df["timestamps"])
     df.columns = [c.lower() for c in df.columns]
+    
     if df.empty or len(df) < 50:
         raise ValueError(f"Insufficient data for {ticker}: {len(df)} rows")
+    
     return df.sort_values("timestamps").reset_index(drop=True)
 
 def compute_features(df: pd.DataFrame) -> pd.DataFrame:
