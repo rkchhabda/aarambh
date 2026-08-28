@@ -13,6 +13,6 @@ services:
     autoDeploy: true
     routes:
       - type: rewrite
-        source: /app
-        destination: /app/
+        source: /app/*
+        destination: /app/index.html
         action: rewrite

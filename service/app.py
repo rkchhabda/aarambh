@@ -17,8 +17,23 @@ import joblib
 import requests
 from fastapi import FastAPI, HTTPException, Header
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, HTMLResponse
 from pydantic import BaseModel
+
+# Load portal HTML at import time (file-based, works everywhere)
+def _load_portal_html():
+    candidates = [
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "static", "index.html"),
+        os.path.join(os.getcwd(), "service", "static", "index.html"),
+        "/opt/render/project/src/service/static/index.html",
+    ]
+    for path in candidates:
+        if os.path.exists(path):
+            with open(path, "r", encoding="utf-8") as f:
+                return f.read()
+    return "<h1>Portal not found</h1>"
+
+PORTAL_HTML = _load_portal_html()
 
 # ------------------------------------------------------------
 # Paths and constants
@@ -65,49 +80,19 @@ SEQ_LEN = 32
 FEATURES = ["ret_1", "ret_5", "ret_10", "log_vol_chg", "rsi_14", "macd",
             "bb_pos", "atr_14", "obv_slope", "sma_ratio", "rvol_5", "rvol_20"]
 
-app = FastAPI(title="Quant Signal API (Ensemble - Nifty 100)", version="3.0.0")
+app = FastAPI(title="Aarambh_Quant Signal API", version="4.0.0")
 
 # ------------------------------------------------------------
-# Mount static files for web portal (at /app to avoid API conflicts)
+# Serve portal directly from Python (no StaticFiles needed)
 # ------------------------------------------------------------
-possible_static_dirs = [
-    os.path.join(os.path.dirname(os.path.abspath(__file__)), "static"),
-    os.path.join(os.getcwd(), "service", "static"),
-    "/opt/render/project/src/service/static",
-]
-static_dir = None
-for d in possible_static_dirs:
-    if os.path.exists(d):
-        static_dir = d
-        break
-
-if static_dir:
-    app.mount("/app", StaticFiles(directory=static_dir, html=True), name="static")
-    print(f"[INFO] Mounted static files from: {static_dir}")
-else:
-    print("[WARN] Static directory not found in any expected location")
-
-# Redirect root to /app
 @app.get("/")
 def root():
     return RedirectResponse(url="/app/")
 
-@app.get("/debug/static")
-def debug_static():
-    info = {"static_dir": static_dir}
-    if static_dir and os.path.exists(os.path.join(static_dir, "index.html")):
-        with open(os.path.join(static_dir, "index.html"), "r") as f:
-            first_200 = f.read(200)
-        info["index_title"] = first_200
-        info["file_size"] = os.path.getsize(os.path.join(static_dir, "index.html"))
-    return info
-
-@app.get("/app/portal", response_class=HTMLResponse)
+@app.get("/app/", response_class=HTMLResponse)
+@app.get("/app", response_class=HTMLResponse)
 def serve_portal():
-    if static_dir and os.path.exists(os.path.join(static_dir, "index.html")):
-        with open(os.path.join(static_dir, "index.html"), "r") as f:
-            return HTMLResponse(content=f.read())
-    return HTMLResponse(content="<h1>Portal not found</h1>", status_code=404)
+    return HTMLResponse(content=PORTAL_HTML)
 
 # ------------------------------------------------------------
 # Load Ensemble Models
