@@ -138,70 +138,32 @@ def _ensure_loaded():
 _ensure_loaded()
 
 # ------------------------------------------------------------
-# Data fetching and feature engineering (Yahoo Finance API directly)
+# Data fetching - use cached features (no live API calls)
 # ------------------------------------------------------------
-def fetch_history(ticker: str) -> pd.DataFrame:
-    """Fetch historical data using Yahoo Finance chart API directly."""
-    import requests
-    import time
-    
-    # Yahoo Finance chart API
-    # https://query1.finance.yahoo.com/v8/finance/chart/RELIANCE.NS?period1=...&period2=...&interval=1d
-    period2 = int(time.time())
-    period1 = period2 - (2 * 365 * 24 * 60 * 60)  # 2 years ago
-    
-    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{ticker}"
-    params = {
-        "period1": period1,
-        "period2": period2,
-        "interval": "1d",
-        "includePrePost": "false",
-        "events": "div,splits"
-    }
-    headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-    }
-    
-    try:
-        resp = requests.get(url, params=params, headers=headers, timeout=30)
-        resp.raise_for_status()
-        data = resp.json()
-    except Exception as e:
-        raise ValueError(f"API request failed for {ticker}: {e}")
-    
-    result = data.get("chart", {}).get("result", [])
-    if not result:
-        raise ValueError(f"No data returned for {ticker}")
-    
-    result = result[0]
-    timestamps = result.get("timestamp", [])
-    quotes = result.get("indicators", {}).get("quote", [{}])[0]
-    adjclose = result.get("indicators", {}).get("adjclose", [{}])[0].get("adjclose", [])
-    
-    if not timestamps:
-        raise ValueError(f"No timestamps for {ticker}")
-    
-    df = pd.DataFrame({
-        "timestamps": [datetime.fromtimestamp(ts) for ts in timestamps],
-        "open": quotes.get("open", []),
-        "high": quotes.get("high", []),
-        "low": quotes.get("low", []),
-        "close": quotes.get("close", []),
-        "volume": quotes.get("volume", []),
-    })
-    
-    if adjclose and len(adjclose) == len(timestamps):
-        df["adj close"] = adjclose
-    
-    # Remove rows with NaN close
-    df = df.dropna(subset=["close"])
-    
-    if len(df) < 50:
-        raise ValueError(f"Insufficient data for {ticker}: {len(df)} rows")
-    
-    return df.sort_values("timestamps").reset_index(drop=True)
+# Load ticker cache at startup
+_CACHE_PATH = os.path.join(MODELS_DIR, "ticker_cache.json")
+_TICKER_CACHE = {}
 
-def compute_features(df: pd.DataFrame) -> pd.DataFrame:
+def _load_cache():
+    global _TICKER_CACHE
+    if os.path.exists(_CACHE_PATH):
+        with open(_CACHE_PATH) as f:
+            _TICKER_CACHE = json.load(f)
+        print(f"[OK] Loaded ticker cache: {len(_TICKER_CACHE)} tickers")
+    else:
+        print("[WARN] Ticker cache not found")
+
+_load_cache()
+
+def fetch_cached_features(ticker: str) -> dict:
+    """Get cached features and market data for a ticker."""
+    if not _TICKER_CACHE:
+        _load_cache()
+    
+    if ticker not in _TICKER_CACHE:
+        raise ValueError(f"No cached data for {ticker}")
+    
+    return _TICKER_CACHE[ticker]
     df["ret_1"] = df["close"].pct_change()
     df["ret_5"] = df["close"].pct_change(5)
     df["ret_10"] = df["close"].pct_change(10)
@@ -249,23 +211,19 @@ def signal(req: SignalRequest, x_api_key: str = Header(default="")):
     if ticker not in TICKERS:
         raise HTTPException(status_code=404, detail=f"Ticker not supported: {ticker}. Use format: RELIANCE.NS")
 
-    # Fetch and compute features
+    # Get cached features and market data
     try:
-        raw = fetch_history(ticker)
-        df = compute_features(raw)
+        cached = fetch_cached_features(ticker)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Market data failure: {e}")
 
-    if len(df) < SEQ_LEN + 210:
-        raise HTTPException(status_code=503, detail="Insufficient history")
+    close = cached["close"]
+    sma200 = cached["sma_200"]
+    above_sma = cached["above_sma"]
+    features = cached["features"]
 
-    # Regime filter (200-day SMA)
-    row = df.iloc[-1]
-    close, sma200 = float(row["close"]), float(row["sma_200"])
-    above_sma = bool(close > sma200)
-
-    # Get features for the last row
-    feature_row = df[FEATURES].iloc[-1].values.astype(np.float32).reshape(1, -1)
+    # Build feature row for ensemble
+    feature_row = np.array([[features[f] for f in FEATURES]], dtype=np.float32)
 
     # Predict with ensemble
     if ensemble_models is None or meta_model is None:
