@@ -164,23 +164,6 @@ def fetch_cached_features(ticker: str) -> dict:
         raise ValueError(f"No cached data for {ticker}")
     
     return _TICKER_CACHE[ticker]
-    df["ret_1"] = df["close"].pct_change()
-    df["ret_5"] = df["close"].pct_change(5)
-    df["ret_10"] = df["close"].pct_change(10)
-    df["log_vol_chg"] = np.log(df["volume"] + 1).diff()
-    df["rsi_14"] = ta.momentum.RSIIndicator(df["close"], window=14).rsi()
-    df["macd"] = ta.trend.MACD(df["close"]).macd_diff()
-    bb = ta.volatility.BollingerBands(df["close"], window=20)
-    df["bb_pos"] = (df["close"] - bb.bollinger_mavg()) / bb.bollinger_wband()
-    df["atr_14"] = ta.volatility.AverageTrueRange(
-        df["high"], df["low"], df["close"], window=14).average_true_range() / df["close"]
-    df["obv_slope"] = ta.volume.OnBalanceVolumeIndicator(
-        df["close"], df["volume"]).on_balance_volume().diff(5)
-    df["sma_ratio"] = df["close"] / ta.trend.SMAIndicator(df["close"], window=20).sma_indicator() - 1
-    df["rvol_5"] = df["ret_1"].rolling(5).std()
-    df["rvol_20"] = df["ret_1"].rolling(20).std()
-    df["sma_200"] = ta.trend.SMAIndicator(df["close"], window=200).sma_indicator()
-    return df
 
 class SignalRequest(BaseModel):
     ticker: str
