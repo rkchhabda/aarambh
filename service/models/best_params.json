@@ -1,4 +1,6 @@
 {
+  "horizon": "5d",
+  "features": ["bb_pos", "macd", "obv_slope", "sma_ratio", "cci", "ret_10", "williams_r", "rsi_14", "atr_14", "roc_10"],
   "XGBoost": {
     "max_depth": 4,
     "n_estimators": 150,

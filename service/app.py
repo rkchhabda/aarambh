@@ -76,9 +76,9 @@ TICKERS = [
 ]
 SEQ_LEN = 32
 
-# Feature list must match what you used for training the ensemble
-FEATURES = ["ret_1", "ret_5", "ret_10", "log_vol_chg", "rsi_14", "macd",
-            "bb_pos", "atr_14", "obv_slope", "sma_ratio", "rvol_5", "rvol_20"]
+# Feature list must match what you used for training the ensemble (v2: 10 features, 5d horizon)
+FEATURES = ["bb_pos", "macd", "obv_slope", "sma_ratio", "cci", "ret_10",
+            "williams_r", "rsi_14", "atr_14", "roc_10"]
 
 app = FastAPI(title="Aarambh_Quant Signal API", version="4.0.0")
 
@@ -177,10 +177,12 @@ class SignalRequest(BaseModel):
 def health():
     return {
         "status": "ok",
-        "model_type": "ensemble (XGB + RF + LR + meta)",
+        "model_type": "ensemble v2 (XGB + RF + LR + meta, 5d horizon)",
         "models_loaded": list(ensemble_models.keys()) if ensemble_models else [],
         "meta_loaded": meta_model is not None,
-        "supported_tickers": len(TICKERS)
+        "supported_tickers": len(TICKERS),
+        "features": len(FEATURES),
+        "horizon": "5d"
     }
 
 # ------------------------------------------------------------
