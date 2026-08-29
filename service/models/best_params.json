@@ -1,0 +1,22 @@
+{
+  "XGBoost": {
+    "max_depth": 4,
+    "n_estimators": 150,
+    "learning_rate": 0.011838126510539218,
+    "subsample": 0.8416625141352716,
+    "colsample_bytree": 0.7723606863290965,
+    "min_child_weight": 3,
+    "reg_alpha": 0.4827937834863728,
+    "reg_lambda": 0.009862474186005745
+  },
+  "RandomForest": {
+    "n_estimators": 400,
+    "max_depth": 5,
+    "min_samples_leaf": 49
+  },
+  "LogisticRegression": {
+    "C": 0.0745934328572655,
+    "penalty": "l1"
+  },
+  "meta": "LR1"
+}
