@@ -41,44 +41,40 @@ PORTAL_HTML = _load_portal_html()
 WORKSPACE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODELS_DIR = os.path.join(WORKSPACE, "service", "models")
 
-# Nifty 100 tickers (with .NS suffix for Yahoo Finance)
-# Removed delisted/invalid: ZOMATO, TATAMOTORS, ADANITRANS, GMRINFRA, LTIM, MCDOWELL-N, PEL
-TICKERS = [
-    "ADANIENT.NS", "ADANIPORTS.NS", "APOLLOHOSP.NS", "ASIANPAINT.NS", "AXISBANK.NS",
-    "BAJAJ-AUTO.NS", "BAJFINANCE.NS", "BAJAJFINSV.NS", "BPCL.NS", "BHARTIARTL.NS",
-    "BRITANNIA.NS", "CIPLA.NS", "COALINDIA.NS", "DIVISLAB.NS", "DRREDDY.NS",
-    "EICHERMOT.NS", "GRASIM.NS", "HCLTECH.NS", "HDFCBANK.NS", "HDFCLIFE.NS",
-    "HEROMOTOCO.NS", "HINDALCO.NS", "HINDUNILVR.NS", "ICICIBANK.NS", "ITC.NS",
-    "INDUSINDBK.NS", "INFY.NS", "JSWSTEEL.NS", "KOTAKBANK.NS", "LT.NS",
-    "M&M.NS", "MARUTI.NS", "NESTLEIND.NS", "NTPC.NS", "ONGC.NS",
-    "POWERGRID.NS", "RELIANCE.NS", "SBILIFE.NS", "SBIN.NS", "SUNPHARMA.NS",
-    "TCS.NS", "TATACONSUM.NS", "TATASTEEL.NS", "TECHM.NS",
-    "TITAN.NS", "ULTRACEMCO.NS", "UPL.NS", "WIPRO.NS", "ADANIGREEN.NS",
-    "AMBUJACEM.NS", "APOLLOTYRE.NS", "ASHOKLEY.NS", "ASTRAL.NS",
-    "AUROPHARMA.NS", "BALKRISIND.NS", "BANDHANBNK.NS", "BANKBARODA.NS", "BEL.NS",
-    "BHEL.NS", "BIOCON.NS", "BOSCHLTD.NS", "CANBK.NS", "CHOLAFIN.NS",
-    "COLPAL.NS", "CONCOR.NS", "CROMPTON.NS", "CUMMINSIND.NS", "DABUR.NS",
-    "DALBHARAT.NS", "DEEPAKNTR.NS", "DLF.NS", "EDELWEISS.NS", "EMAMILTD.NS",
-    "ENDURANCE.NS", "ESCORTS.NS", "EXIDEIND.NS", "FEDERALBNK.NS", "GAIL.NS",
-    "GLENMARK.NS", "GODREJCP.NS", "GODREJPROP.NS", "GRANULES.NS",
-    "HAVELLS.NS", "HINDPETRO.NS", "ICICIGI.NS", "ICICIPRULI.NS", "IDEA.NS",
-    "IDFCFIRSTB.NS", "IGL.NS", "INDIGO.NS", "INDUSTOWER.NS", "JINDALSTEL.NS",
-    "JUBLFOOD.NS", "LICHSGFIN.NS", "LUPIN.NS", "MARICO.NS",
-    "MAXHEALTH.NS", "MFSL.NS", "MOTHERSON.NS", "MPHASIS.NS",
-    "MRF.NS", "MUTHOOTFIN.NS", "NAUKRI.NS", "NAVINFLUOR.NS", "NBCC.NS",
-    "NMDC.NS", "OBEROIRLTY.NS", "PAGEIND.NS", "PERSISTENT.NS",
-    "PETRONET.NS", "PFC.NS", "PIDILITIND.NS", "PIIND.NS", "PNB.NS",
-    "POLYCAB.NS", "PVRINOX.NS", "RAMCOCEM.NS", "RBLBANK.NS", "RECLTD.NS",
-    "SAIL.NS", "SHREECEM.NS", "SIEMENS.NS", "SRF.NS", "SYNGENE.NS",
-    "TATACHEM.NS", "TATACOMM.NS", "TATAPOWER.NS", "TORNTPHARM.NS", "TORNTPOWER.NS",
-    "TRENT.NS", "TVSMOTOR.NS", "UBL.NS", "UNIONBANK.NS", "VBL.NS",
-    "VEDL.NS", "VOLTAS.NS", "WHIRLPOOL.NS", "ZYDUSLIFE.NS"
-]
+# Ensure repo root is importable so `features.*` and `rebuild_cache_v2` resolve
+# regardless of the working directory the service is started from.
+if WORKSPACE not in sys.path:
+    sys.path.insert(0, WORKSPACE)
+
+import threading
+try:
+    from rebuild_cache_v2 import rebuild_cache
+except Exception as _imp_err:
+    print(f"[WARN] cache auto-refresh unavailable: {_imp_err}")
+    rebuild_cache = None
+
+CACHE_REFRESH_HOURS = float(os.environ.get("CACHE_REFRESH_HOURS", "24"))
+
+# Nifty 100 tickers — single source of truth (train == serve).
+from features.universe import TICKERS
+
 SEQ_LEN = 32
 
 # Feature list must match what you used for training the ensemble (v2: 10 features, 5d horizon)
 FEATURES = ["bb_pos", "macd", "obv_slope", "sma_ratio", "cci", "ret_10",
             "williams_r", "rsi_14", "atr_14", "roc_10"]
+
+# Decision threshold, tuned on validation (stored in features.json by retrain_v2.py).
+# High confidence is required for the signal to carry a positive return edge.
+_THRESHOLD = 0.5
+_manifest_path = os.path.join(MODELS_DIR, "features.json")
+if os.path.exists(_manifest_path):
+    try:
+        with open(_manifest_path) as f:
+            _manifest = json.load(f)
+        _THRESHOLD = float(_manifest.get("threshold", 0.5))
+    except Exception:
+        pass
 
 app = FastAPI(title="Aarambh_Quant Signal API", version="4.0.0")
 
@@ -99,10 +95,11 @@ def serve_portal():
 # ------------------------------------------------------------
 ensemble_models = None
 meta_model = None
+scaler = None
 _LOADED = False
 
 def _ensure_loaded():
-    global ensemble_models, meta_model, _LOADED
+    global ensemble_models, meta_model, scaler, _LOADED
     if _LOADED:
         return
 
@@ -125,6 +122,14 @@ def _ensure_loaded():
         return
 
     meta_model = joblib.load(meta_path)
+
+    # Feature scaler (trained alongside the ensemble; LR base needs it).
+    scaler_path = os.path.join(MODELS_DIR, "scaler.pkl")
+    if os.path.exists(scaler_path):
+        scaler = joblib.load(scaler_path)
+        print("[OK] Loaded feature scaler")
+    else:
+        print("[WARN] scaler.pkl not found - serving unscaled features")
     
     if len(available_models) == 1:
         ensemble_models = available_models
@@ -138,6 +143,48 @@ def _ensure_loaded():
     print(f"[OK] Ensemble ready with {len(ensemble_models)} base model(s)")
 
 _ensure_loaded()
+
+# ------------------------------------------------------------
+# Feature-schema assertion (fail loudly on train/serve skew)
+# ------------------------------------------------------------
+def _assert_feature_schema():
+    manifest_path = os.path.join(MODELS_DIR, "features.json")
+    if not os.path.exists(manifest_path):
+        print("[WARN] features.json manifest missing - cannot assert feature parity.")
+        return
+    with open(manifest_path) as f:
+        manifest = json.load(f)
+    expected = manifest.get("features", [])
+    if expected and expected != FEATURES:
+        raise RuntimeError(
+            f"Feature schema mismatch! Model trained on {expected}, "
+            f"service serves {FEATURES}. Retrain or fix FEATURES."
+        )
+    print(f"[OK] Feature schema verified ({len(FEATURES)} features, horizon={manifest.get('horizon')})")
+
+_assert_feature_schema()
+
+# ------------------------------------------------------------
+# Background cache auto-refresh (keeps live signals current)
+# ------------------------------------------------------------
+def _refresh_cache_loop():
+    # Refresh immediately on boot (in the background), then on a fixed interval,
+    # so the service serves current data instead of the committed stale cache.
+    if rebuild_cache is None:
+        return
+    while True:
+        try:
+            new_cache = rebuild_cache()
+            global _TICKER_CACHE
+            _TICKER_CACHE = new_cache
+            print(f"[OK] Auto-refreshed ticker cache ({len(new_cache)} tickers)")
+        except Exception as e:
+            print(f"[WARN] Cache refresh failed: {e}")
+        time.sleep(CACHE_REFRESH_HOURS * 3600)
+
+if rebuild_cache is not None:
+    threading.Thread(target=_refresh_cache_loop, daemon=True).start()
+    print(f"[OK] Cache auto-refresh scheduled every {CACHE_REFRESH_HOURS}h (first run on boot)")
 
 # ------------------------------------------------------------
 # Data fetching - use cached features (no live API calls)
@@ -182,7 +229,8 @@ def health():
         "meta_loaded": meta_model is not None,
         "supported_tickers": len(TICKERS),
         "features": len(FEATURES),
-        "horizon": "5d"
+        "horizon": "5d",
+        "threshold": _THRESHOLD
     }
 
 # ------------------------------------------------------------
@@ -211,6 +259,8 @@ def signal(req: SignalRequest, x_api_key: str = Header(default="")):
 
     # Build feature row for ensemble
     feature_row = np.array([[features[f] for f in FEATURES]], dtype=np.float32)
+    if scaler is not None:
+        feature_row = scaler.transform(feature_row)
 
     # Predict with ensemble
     if ensemble_models is None or meta_model is None:
@@ -244,8 +294,8 @@ def signal(req: SignalRequest, x_api_key: str = Header(default="")):
         stacked_input = np.array(proba).reshape(1, -1)
         final_prob = meta_model.predict_proba(stacked_input)[0][1]
 
-    # Apply regime filter (long-only: BUY only if above SMA and prob > 0.5)
-    signal_value = "BUY" if (final_prob > 0.5 and above_sma) else "HOLD"
+    # Apply regime filter (long-only: BUY only if above SMA and prob > threshold)
+    signal_value = "BUY" if (final_prob > _THRESHOLD and above_sma) else "HOLD"
 
     return {
         "ticker": ticker,

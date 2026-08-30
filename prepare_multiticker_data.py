@@ -24,84 +24,25 @@ os.makedirs(MULTI_DIR, exist_ok=True)
 
 YEARS_BACK = 5
 
-NIFTY_100 = [
-    "RELIANCE.NS", "TCS.NS", "INFY.NS", "HDFCBANK.NS", "ICICIBANK.NS",
-    "HINDUNILVR.NS", "SBIN.NS", "BHARTIARTL.NS", "ITC.NS", "KOTAKBANK.NS",
-    "LT.NS", "WIPRO.NS", "HCLTECH.NS", "ASIANPAINT.NS", "MARUTI.NS",
-    "TITAN.NS", "BAJFINANCE.NS", "NTPC.NS", "ONGC.NS", "POWERGRID.NS",
-    "ULTRACEMCO.NS", "AXISBANK.NS", "ADANIPORTS.NS", "JSWSTEEL.NS",
-    "TATASTEEL.NS", "TECHM.NS", "INDUSINDBK.NS", "HDFCLIFE.NS", "SBIN.NS",
-    "BAJAJFINSV.NS", "HDFC.NS", "M&M.NS", "ADANIENT.NS", "COALINDIA.NS",
-    "SUNPHARMA.NS", "TATAMOTORS.NS", "TATASTL.NS", "VEDL.NS", "HERO.NS",
-    "BRITANNIA.NS", "GRASIM.NS", "APOLLOHOSP.NS", "CIPLA.NS", "DIVISLAB.NS",
-    "DRREDDY.NS", "EICHERMOT.NS", "HINDALCO.NS", "INDIGO.NS", "PIDILITIND.NS",
-    "SBILIFE.NS", "SHREECEM.NS", "SIEMENS.NS", "TATACONSUM.NS", "TATAPOWER.NS",
-    "UPL.NS", "BAJAJ-AUTO.NS", "BHARATFORG.NS", "BOSCHLTD.NS", "COFORGE.NS",
-    "DABUR.NS", "GODREJCP.NS", "HAVELS.NS", "IGL.NS", "JUBLFOOD.NS",
-    "MARICO.NS", "MOTHERSUMI.NS", "PEL.NS", "PIIND.NS", "SRTRANSFIN.NS",
-    "TORNTPHARM.NS", "VOLTAS.NS", "WHIRLPOOL.NS", "YESBANK.NS", "ZEEL.NS",
-    "NHPC.NS", "PFC.NS", "RECLTD.NS", "SAIL.NS", "IDEA.NS",
-    "BANKBARODA.NS", "CANBK.NS", "PNB.NS", "UNIONBANK.NS", "FEDERALBNK.NS",
-    "IDFCFIRSTB.NS", "RBLBANK.NS", "MUTHOOTFIN.NS", "LUPIN.NS", "MANAPPURAM.NS",
-    "PAGEIND.NS", "BANDHANBNK.NS", "GODREJPROP.NS", "DLF.NS", "PHOENIXLTD.NS",
-    "PRESTIGE.NS", "SOBHA.NS", "OBEROIRLTY.NS", "SUNTV.NS", "TVSMOTOR.NS",
-    "ASHOKLEY.NS", "ESCORTS.NS", "AMBUJACEM.NS", "ACC.NS", "RAMCOCEM.NS",
-]
-# Deduplicate while preserving order
-NIFTY_100 = list(dict.fromkeys(NIFTY_100))
+# Unified tradable universe (train == serve). Single source in features.universe.
+from features.universe import TICKERS as NIFTY_100
 
 # ============================================================
-# FEATURE ENGINEERING (same 12 features as inference)
+# FEATURE ENGINEERING (shared definition, 12-feature subset)
 # ============================================================
+from features.indicators import compute_features
+
+FEAT_12 = ["ret_1", "ret_5", "ret_10", "log_vol_chg", "rsi_14", "macd",
+           "bb_pos", "atr_14", "obv_slope", "sma_ratio", "rvol_5", "rvol_20"]
+
+
 def add_features(df):
-    """Add technical indicators to OHLCV data. Returns df with features + target."""
-    df = df.copy()
-    df = df.sort_values("date").reset_index(drop=True)
-
-    c = df["Close"]
-    h = df["High"]
-    l = df["Low"]
-    v = df["Volume"]
-
-    # Returns
-    df["ret_1"] = c.pct_change(1)
-    df["ret_5"] = c.pct_change(5)
-    df["ret_10"] = c.pct_change(10)
-
-    # Volume change
-    df["log_vol_chg"] = np.log(v + 1).diff()
-
-    # RSI
-    df["rsi_14"] = ta.momentum.RSIIndicator(c, window=14).rsi()
-
-    # MACD (diff = macd line - signal line)
-    macd = ta.trend.MACD(c)
-    df["macd"] = macd.macd_diff()
-
-    # Bollinger Bands position
-    bb = ta.volatility.BollingerBands(c, window=20)
-    df["bb_pos"] = (c - bb.bollinger_mavg()) / (bb.bollinger_wband() + 1e-10)
-
-    # ATR (normalized by close)
-    atr = ta.volatility.AverageTrueRange(h, l, c, window=14)
-    df["atr_14"] = atr.average_true_range() / c
-
-    # OBV slope
-    obv = ta.volume.OnBalanceVolumeIndicator(c, v).on_balance_volume()
-    df["obv_slope"] = obv.diff(5)
-
-    # SMA ratio (close / SMA20 - 1)
-    sma_20 = ta.trend.SMAIndicator(c, window=20).sma_indicator()
-    df["sma_ratio"] = c / sma_20 - 1
-
-    # Rolling volatility
-    df["rvol_5"] = df["ret_1"].rolling(5).std()
-    df["rvol_20"] = df["ret_1"].rolling(20).std()
-
+    """Add technical indicators (shared definition) + 1d-direction target."""
+    out = compute_features(df).sort_values("date").reset_index(drop=True)
+    c = out["Close"]
     # Target: next-day direction (1 = up, 0 = down/flat)
-    df["target"] = (c.shift(-1) > c).astype(int)
-
-    return df
+    out["target"] = (c.shift(-1) > c).astype(int)
+    return out[["date", "Close"] + FEAT_12 + ["target"]]
 
 
 # ============================================================

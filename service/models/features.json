@@ -1,0 +1,17 @@
+{
+  "features": [
+    "bb_pos",
+    "macd",
+    "obv_slope",
+    "sma_ratio",
+    "cci",
+    "ret_10",
+    "williams_r",
+    "rsi_14",
+    "atr_14",
+    "roc_10"
+  ],
+  "horizon": "5d",
+  "feature_version": 1,
+  "threshold": 0.85
+}

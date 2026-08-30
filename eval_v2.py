@@ -1,6 +1,6 @@
 import warnings; warnings.filterwarnings('ignore')
 import numpy as np, pandas as pd, joblib, json
-from sklearn.metrics import accuracy_score, brier_score_loss
+from sklearn.metrics import accuracy_score, brier_score_loss, roc_auc_score, f1_score
 
 MULTI_DIR = 'data/multi'
 MODELS_DIR = 'service/models'
@@ -42,6 +42,25 @@ print(f'  RandomForest:       {ra:.4f}')
 print(f'  LogisticRegression: {la:.4f}')
 print(f'  ENSEMBLE:           {ea:.4f}')
 print(f'  Brier:              {br:.6f}')
+
+# --- Baselines & ranking metrics (accuracy alone is misleading) ---
+pos_rate = y_te.mean()
+maj_acc = max(pos_rate, 1 - pos_rate)
+# Naive momentum: predict UP if ret_10 > 0
+ret10_idx = FEATURES.index('ret_10')
+mom_pred = (X_te[:, ret10_idx] > 0).astype(int)
+mom_acc = accuracy_score(y_te, mom_pred)
+print(f'\nBASELINES:')
+print(f'  Majority-class acc: {maj_acc:.4f}  (positive rate={pos_rate:.3f})')
+print(f'  Momentum (ret_10>0): {mom_acc:.4f}')
+
+print(f'\nAUC / F1 (TEST):')
+print(f'  XGBoost:            AUC={roc_auc_score(y_te, xgb_m.predict_proba(X_te)[:,1]):.4f}')
+print(f'  RandomForest:       AUC={roc_auc_score(y_te, rf_m.predict_proba(X_te)[:,1]):.4f}')
+print(f'  LogisticRegression: AUC={roc_auc_score(y_te, lr_m.predict_proba(X_te)[:,1]):.4f}')
+eauc = roc_auc_score(y_te, ep)
+ef1 = f1_score(y_te, (ep > 0.5).astype(int))
+print(f'  ENSEMBLE:           AUC={eauc:.4f}  F1={ef1:.4f}')
 
 print('\n--- Walk-Forward (20 windows) ---')
 all_d = pd.concat([train, val, test], ignore_index=True).sort_values('date').reset_index(drop=True)
