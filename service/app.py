@@ -167,17 +167,20 @@ _assert_feature_schema()
 # ------------------------------------------------------------
 # Background cache auto-refresh (keeps live signals current)
 # ------------------------------------------------------------
+_MIN_TICKERS = 40  # never replace cache with fewer tickers than this
+
 def _refresh_cache_loop():
-    # Refresh immediately on boot (in the background), then on a fixed interval,
-    # so the service serves current data instead of the committed stale cache.
-    if rebuild_cache is None:
-        return
+    # Wait before first refresh so the service can serve from committed cache.
+    time.sleep(60)
     while True:
         try:
             new_cache = rebuild_cache()
-            global _TICKER_CACHE
-            _TICKER_CACHE = new_cache
-            print(f"[OK] Auto-refreshed ticker cache ({len(new_cache)} tickers)")
+            if new_cache and len(new_cache) >= _MIN_TICKERS:
+                global _TICKER_CACHE
+                _TICKER_CACHE = new_cache
+                print(f"[OK] Auto-refreshed ticker cache ({len(new_cache)} tickers)")
+            else:
+                print(f"[WARN] Cache refresh returned only {len(new_cache or {})} tickers — keeping old cache")
         except Exception as e:
             print(f"[WARN] Cache refresh failed: {e}")
         time.sleep(CACHE_REFRESH_HOURS * 3600)

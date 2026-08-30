@@ -490,22 +490,22 @@
         <div class="stat-card">
             <div class="stat-icon blue">&#9878;</div>
             <div class="stat-content">
-                <div class="stat-val">138</div>
+                <div class="stat-val" id="statTickers">--</div>
                 <div class="stat-label">Nifty 100 Stocks</div>
             </div>
         </div>
         <div class="stat-card">
             <div class="stat-icon green">&#9889;</div>
             <div class="stat-content">
-                <div class="stat-val">Ensemble</div>
-                <div class="stat-label">XGB + RF + LR + Meta</div>
+                <div class="stat-val" id="statModel">--</div>
+                <div class="stat-label" id="statHorizon">Ensemble</div>
             </div>
         </div>
         <div class="stat-card">
             <div class="stat-icon purple">&#9733;</div>
             <div class="stat-content">
-                <div class="stat-val">61%</div>
-                <div class="stat-label">Walk-Forward Accuracy</div>
+                <div class="stat-val" id="statThreshold">--</div>
+                <div class="stat-label">Signal Threshold</div>
             </div>
         </div>
     </div>
@@ -880,6 +880,18 @@ function renderSignal(d) {
     signalCard.classList.add('active');
     signalCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
+
+/* ── Load health stats on page load ── */
+(async function loadHealth() {
+    try {
+        const res = await fetch('/health');
+        const h = await res.json();
+        document.getElementById('statTickers').textContent = h.supported_tickers || '--';
+        document.getElementById('statModel').textContent = h.models_loaded ? h.models_loaded.length + ' Models' : 'Ensemble';
+        document.getElementById('statHorizon').textContent = (h.model_type || 'Ensemble').replace('ensemble v2 ', '');
+        document.getElementById('statThreshold').textContent = h.threshold ? (h.threshold * 100).toFixed(0) + '%' : '--';
+    } catch (e) { /* stats remain -- */ }
+})();
 </script>
 </body>
 </html>
