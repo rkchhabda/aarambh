@@ -20,9 +20,6 @@ RUN pip install -r requirements.txt
 
 # Copy application code
 COPY service/ ./service/
-COPY scripts/ ./scripts/
-COPY data/ ./data/
-COPY phase5_artifacts/ ./phase5_artifacts/
 COPY features/ ./features/
 COPY rebuild_cache_v2.py ./rebuild_cache_v2.py
 
