@@ -1,0 +1,44 @@
+# Exclude from Docker build context
+.git
+.github
+.gitignore
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.coverage
+*.egg-info
+dist
+build
+venv
+.env
+.env.*
+.venv
+*.log
+*.sqlite
+*.db
+
+# Data and artifacts (not needed at runtime)
+data/
+phase5_artifacts/
+scripts/
+
+# IDE and OS
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# Local deployment
+deploy.sh
+docker-compose.yml
+render.yaml

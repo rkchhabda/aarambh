@@ -23,6 +23,8 @@ COPY service/ ./service/
 COPY scripts/ ./scripts/
 COPY data/ ./data/
 COPY phase5_artifacts/ ./phase5_artifacts/
+COPY features/ ./features/
+COPY rebuild_cache_v2.py ./rebuild_cache_v2.py
 
 # Expose ports
 EXPOSE 8000 8501
