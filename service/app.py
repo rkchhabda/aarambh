@@ -16,9 +16,20 @@ import ta
 import joblib
 import requests
 from fastapi import FastAPI, HTTPException, Header
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse, HTMLResponse
 from pydantic import BaseModel
+
+from service.database import init_db
+from service.ratelimit import RateLimitMiddleware
+from service.routes_auth import router as auth_router
+from service.routes_watchlist import router as watchlist_router
+from service.routes_portfolio import router as portfolio_router
+from service.routes_scanner import router as scanner_router
+from service.routes_signals import router as signals_router
+from service.routes_alerts import router as alerts_router
+from service.routes_admin import router as admin_router
 
 # Load portal HTML at import time (file-based, works everywhere)
 def _load_portal_html():
@@ -76,7 +87,33 @@ if os.path.exists(_manifest_path):
     except Exception:
         pass
 
-app = FastAPI(title="Aarambh_Quant Signal API", version="4.0.0")
+app = FastAPI(title="Aarambh_Quant Signals", version="5.0.0",
+              description="Evidence-based quantitative market intelligence for Indian equities")
+
+# ─── Middleware ───────────────────────────────────────────────────────────────
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+app.add_middleware(RateLimitMiddleware)
+
+# ─── Database ────────────────────────────────────────────────────────────────
+@app.on_event("startup")
+def startup_init():
+    init_db()
+    print("[OK] Database initialized")
+
+# ─── Register Routers ────────────────────────────────────────────────────────
+app.include_router(auth_router)
+app.include_router(watchlist_router)
+app.include_router(portfolio_router)
+app.include_router(scanner_router)
+app.include_router(signals_router)
+app.include_router(alerts_router)
+app.include_router(admin_router)
 
 # ------------------------------------------------------------
 # Serve portal directly from Python (no StaticFiles needed)

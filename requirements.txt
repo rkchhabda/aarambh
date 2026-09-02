@@ -12,3 +12,9 @@ yfinance==0.2.51
 python-multipart>=0.0.10
 streamlit==1.62.0
 plotly==7.0.0
+# Phase A: Auth, Database, Security
+sqlalchemy>=2.0,<3
+passlib[bcrypt]>=1.7
+python-jose[cryptography]>=3.3
+pyjwt>=2.8
+bcrypt>=4.0

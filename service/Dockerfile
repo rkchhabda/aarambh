@@ -28,5 +28,3 @@ EXPOSE 8000 8501
 
 # Default command runs API; override in docker-compose for dashboard
 CMD ["uvicorn", "service.app:app", "--host", "0.0.0.0", "--port", "8000"]
-
-RUN pip install --upgrade pip
