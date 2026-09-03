@@ -30,6 +30,7 @@ from service.routes_scanner import router as scanner_router
 from service.routes_signals import router as signals_router
 from service.routes_alerts import router as alerts_router
 from service.routes_admin import router as admin_router
+from service.routes_signal_detail import router as signal_detail_router
 
 # Load portal HTML at import time (file-based, works everywhere)
 def _load_portal_html():
@@ -114,6 +115,7 @@ app.include_router(scanner_router)
 app.include_router(signals_router)
 app.include_router(alerts_router)
 app.include_router(admin_router)
+app.include_router(signal_detail_router)
 
 # ------------------------------------------------------------
 # Serve portal directly from Python (no StaticFiles needed)
