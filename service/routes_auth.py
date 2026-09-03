@@ -30,6 +30,7 @@ class ProfileResponse(BaseModel):
     full_name: str
     tier: str
     is_verified: bool
+    is_admin: bool = False
     referral_code: str
 
 
@@ -62,5 +63,6 @@ def get_profile(user: User = Depends(require_auth)):
         full_name=user.full_name,
         tier=user.tier,
         is_verified=user.is_verified,
+        is_admin=user.is_admin,
         referral_code=user.referral_code,
     )

@@ -568,6 +568,7 @@
         <a href="#" data-page="watchlist" onclick="navigate('watchlist');return false;">Watchlist</a>
         <a href="#" data-page="methodology" onclick="navigate('methodology');return false;">Methodology</a>
         <a href="#" data-page="pricing" onclick="navigate('pricing');return false;">Pricing</a>
+        <a href="#" data-page="admin" id="adminNavLink" style="display:none;" onclick="navigate('admin');return false;">Admin</a>
         <button id="authBtn" onclick="openAuthModal('login')">Login</button>
         <button id="userBtn" style="display:none;" onclick="navigate('watchlist')">
             <span id="userInitial" style="width:28px;height:28px;border-radius:50%;background:var(--accent);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;"></span>
@@ -589,6 +590,7 @@
     <a href="#" onclick="navigate('watchlist');closeMobileMenu();return false;">Watchlist</a>
     <a href="#" onclick="navigate('methodology');closeMobileMenu();return false;">Methodology</a>
     <a href="#" onclick="navigate('pricing');closeMobileMenu();return false;">Pricing</a>
+    <a href="#" id="mobileAdminLink" style="display:none;" onclick="navigate('admin');closeMobileMenu();return false;">Admin</a>
     <button id="mobileAuthBtn" onclick="openAuthModal('login');closeMobileMenu();">Login</button>
     <button id="mobileLogoutBtn" style="display:none;" onclick="logout();closeMobileMenu();">Logout</button>
 </div>
@@ -1206,6 +1208,47 @@
     </div>
 </div>
 
+<!-- ── Admin Page ── -->
+<div class="page" id="page-admin" style="display:none;">
+    <div class="page-header">
+        <h1>Admin Dashboard</h1>
+        <p>Platform metrics and user management</p>
+    </div>
+
+    <div id="adminContent">
+        <div id="adminLoginPrompt" class="empty-state" style="display:none;">
+            <div class="icon">🔐</div>
+            <h3>Admin Access Required</h3>
+            <p>You need admin privileges to access this page.</p>
+        </div>
+
+        <div id="adminDashboard" style="display:none;">
+            <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px;">
+                <div class="stat-card"><div class="stat-val" id="admTotalUsers">--</div><div class="stat-label">Total Users</div></div>
+                <div class="stat-card"><div class="stat-val" id="admProUsers">--</div><div class="stat-label">Pro Users</div></div>
+                <div class="stat-card"><div class="stat-val" id="admPremiumUsers">--</div><div class="stat-label">Premium Users</div></div>
+                <div class="stat-card"><div class="stat-val" id="admTotalSignals">--</div><div class="stat-label">Signals Generated</div></div>
+            </div>
+            <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px;">
+                <div class="stat-card"><div class="stat-val" id="admAlerts">--</div><div class="stat-label">Active Alerts</div></div>
+                <div class="stat-card"><div class="stat-val" id="admWatchlists">--</div><div class="stat-label">Watchlists</div></div>
+                <div class="stat-card"><div class="stat-val" id="admPortfolios">--</div><div class="stat-label">Portfolios</div></div>
+                <div class="stat-card"><div class="stat-val" id="admCacheTickers">--</div><div class="stat-label">Cache Tickers</div></div>
+            </div>
+
+            <div class="card" style="margin-bottom:16px;">
+                <h3 style="margin-bottom:12px;">User Management</h3>
+                <div id="adminUsersTable" style="overflow-x:auto;"></div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom:12px;">Model Status</h3>
+                <div id="adminModelStatus"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
 </main>
 
 <!-- ══════════════════════════════════════════════════════════════
@@ -1359,6 +1402,7 @@
         if (page === 'watchlist') loadWatchlist();
         if (page === 'history') loadSignalHistory();
         if (page === 'portfolio') loadPortfolio();
+        if (page === 'admin') loadAdmin();
     };
 
     // ── Mobile Menu ──
@@ -1368,6 +1412,68 @@
     window.closeMobileMenu = function() {
         $('mobileMenu').classList.remove('open');
     };
+
+    // ── Admin ──
+    async function loadAdmin() {
+        if (!state.token || !state.user || !state.user.is_admin) {
+            $('adminDashboard').style.display = 'none';
+            $('adminLoginPrompt').style.display = 'block';
+            return;
+        }
+        $('adminDashboard').style.display = 'block';
+        $('adminLoginPrompt').style.display = 'none';
+
+        try {
+            const [dash, users, model] = await Promise.all([
+                api('/admin/dashboard'),
+                api('/admin/users'),
+                api('/admin/model-status'),
+            ]);
+
+            $('admTotalUsers').textContent = dash.users.total;
+            $('admProUsers').textContent = dash.users.pro;
+            $('admPremiumUsers').textContent = dash.users.premium;
+            $('admTotalSignals').textContent = dash.signals.total;
+            $('admAlerts').textContent = dash.alerts.active;
+            $('admWatchlists').textContent = dash.watchlists.total;
+            $('admPortfolios').textContent = dash.portfolios.total;
+            $('admCacheTickers').textContent = model.cache.tickers;
+
+            // Users table
+            if (users.users && users.users.length) {
+                let html = '<table style="width:100%;font-size:13px;border-collapse:collapse;">';
+                html += '<tr style="border-bottom:1px solid var(--border);"><th style="text-align:left;padding:8px;">Email</th><th style="text-align:left;padding:8px;">Username</th><th style="text-align:left;padding:8px;">Tier</th><th style="text-align:center;padding:8px;">Active</th><th style="text-align:left;padding:8px;">Joined</th></tr>';
+                users.users.forEach(u => {
+                    const tierColor = u.tier === 'premium' ? 'var(--positive)' : u.tier === 'pro' ? 'var(--accent)' : 'var(--text-muted)';
+                    html += `<tr style="border-bottom:1px solid var(--border);"><td style="padding:8px;">${escapeHtml(u.email)}</td><td style="padding:8px;">${escapeHtml(u.username)}</td><td style="padding:8px;color:${tierColor};font-weight:600;">${u.tier}</td><td style="text-align:center;padding:8px;">${u.is_active ? '✓' : '✕'}</td><td style="padding:8px;">${(u.created_at||'').slice(0,10)}</td></tr>`;
+                });
+                html += '</table>';
+                $('adminUsersTable').innerHTML = html;
+            }
+
+            // Model status
+            let modelHtml = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">';
+            Object.entries(model.models).forEach(([name, info]) => {
+                const status = info.exists ? '✓' : '✕';
+                const color = info.exists ? 'var(--positive)' : 'var(--negative)';
+                modelHtml += `<div style="padding:12px;border:1px solid var(--border);border-radius:8px;"><div style="font-weight:600;color:${color};">${status} ${name}</div><div style="font-size:12px;color:var(--text-muted);">${info.size_kb} KB</div></div>`;
+            });
+            modelHtml += '</div>';
+            modelHtml += `<div style="margin-top:12px;font-size:13px;color:var(--text-secondary);">Cache: ${model.cache.tickers} tickers, ${model.cache.age_hours}h old</div>`;
+            $('adminModelStatus').innerHTML = modelHtml;
+        } catch (err) {
+            $('adminDashboard').innerHTML = '<div style="color:var(--negative);">Error loading admin data: ' + escapeHtml(err.message) + '</div>';
+        }
+    }
+
+    // Show admin link for admin users
+    function updateAdminVisibility() {
+        const show = state.user && state.user.is_admin;
+        const adminLink = $('adminNavLink');
+        const mobileAdminLink = $('mobileAdminLink');
+        if (adminLink) adminLink.style.display = show ? '' : 'none';
+        if (mobileAdminLink) mobileAdminLink.style.display = show ? '' : 'none';
+    }
 
     // ── Subscription ──
     window.upgradePlan = async function(plan) {
@@ -1500,6 +1606,7 @@
             $('userInitial').textContent = (state.user.name || state.user.email || 'U')[0].toUpperCase();
             $('userName').textContent = state.user.name || state.user.email;
         }
+        updateAdminVisibility();
     }
 
     // ── Dashboard ──
