@@ -1184,7 +1184,7 @@
                 <li><span class="check">✓</span> Signal history & tracking</li>
                 <li><span class="check">✓</span> Priority email support</li>
             </ul>
-            <button class="btn btn-blue btn-lg" style="width:100%;" onclick="openAuthModal('register')">Start Pro Trial</button>
+            <button class="btn btn-blue btn-lg" style="width:100%;" id="proUpgradeBtn" onclick="upgradePlan('pro')">Start Pro Trial</button>
         </div>
         <!-- Premium -->
         <div class="pricing-card">
@@ -1201,7 +1201,7 @@
                 <li><span class="check">✓</span> Direct support channel</li>
                 <li><span class="check">✓</span> Early access to new features</li>
             </ul>
-            <button class="btn btn-outline btn-lg" style="width:100%;" onclick="openAuthModal('register')">Go Premium</button>
+            <button class="btn btn-outline btn-lg" style="width:100%;" id="premiumUpgradeBtn" onclick="upgradePlan('premium')">Go Premium</button>
         </div>
     </div>
 </div>
@@ -1367,6 +1367,26 @@
     };
     window.closeMobileMenu = function() {
         $('mobileMenu').classList.remove('open');
+    };
+
+    // ── Subscription ──
+    window.upgradePlan = async function(plan) {
+        if (!state.token) {
+            openAuthModal('register');
+            return;
+        }
+        if (!confirm(`Upgrade to ${plan.toUpperCase()} plan? This is a demo — no payment will be charged.`)) return;
+        try {
+            const data = await api('/subscription/upgrade', {
+                method: 'POST',
+                body: JSON.stringify({ plan })
+            });
+            alert(data.message || `Upgraded to ${plan}!`);
+            await loadUser();
+            updateAuthUI();
+        } catch (err) {
+            alert('Upgrade failed: ' + (err.message || 'Unknown error'));
+        }
     };
 
     // ── Auth ──
