@@ -562,6 +562,9 @@
         <a href="#" data-page="dashboard" class="active" onclick="navigate('dashboard');return false;">Dashboard</a>
         <a href="#" data-page="scanner" onclick="navigate('scanner');return false;">Scanner</a>
         <a href="#" data-page="signals" onclick="navigate('signals');return false;">Signals</a>
+        <a href="#" data-page="backtest" onclick="navigate('backtest');return false;">Backtests</a>
+        <a href="#" data-page="history" onclick="navigate('history');return false;">Signal History</a>
+        <a href="#" data-page="portfolio" onclick="navigate('portfolio');return false;">Portfolio</a>
         <a href="#" data-page="watchlist" onclick="navigate('watchlist');return false;">Watchlist</a>
         <a href="#" data-page="methodology" onclick="navigate('methodology');return false;">Methodology</a>
         <a href="#" data-page="pricing" onclick="navigate('pricing');return false;">Pricing</a>
@@ -580,6 +583,9 @@
     <a href="#" onclick="navigate('dashboard');closeMobileMenu();return false;">Dashboard</a>
     <a href="#" onclick="navigate('scanner');closeMobileMenu();return false;">Scanner</a>
     <a href="#" onclick="navigate('signals');closeMobileMenu();return false;">Signals</a>
+    <a href="#" onclick="navigate('backtest');closeMobileMenu();return false;">Backtests</a>
+    <a href="#" onclick="navigate('history');closeMobileMenu();return false;">Signal History</a>
+    <a href="#" onclick="navigate('portfolio');closeMobileMenu();return false;">Portfolio</a>
     <a href="#" onclick="navigate('watchlist');closeMobileMenu();return false;">Watchlist</a>
     <a href="#" onclick="navigate('methodology');closeMobileMenu();return false;">Methodology</a>
     <a href="#" onclick="navigate('pricing');closeMobileMenu();return false;">Pricing</a>
@@ -900,6 +906,157 @@
     </div>
 </div>
 
+<!-- ── Portfolio Page ── -->
+<div class="page" id="page-portfolio">
+    <div class="page-header">
+        <h1>Portfolio</h1>
+        <p>Track holdings, P&L, and portfolio health</p>
+    </div>
+
+    <div id="portfolioContent">
+        <div id="portfolioLoginPrompt" class="empty-state" style="display:none;">
+            <div class="icon">🔒</div>
+            <h3>Login to use Portfolio</h3>
+            <p>Sign in to track your holdings and P&L.</p>
+            <button class="btn btn-blue" style="margin-top:16px;" onclick="openAuthModal('login')">Login / Register</button>
+        </div>
+
+        <div id="portfolioDashboard" style="display:none;">
+            <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px;">
+                <div class="stat-card"><div class="stat-val" id="pfTotalValue">--</div><div class="stat-label">Portfolio Value</div></div>
+                <div class="stat-card"><div class="stat-val" id="pfTotalPnL">--</div><div class="stat-label">Total P&L</div></div>
+                <div class="stat-card"><div class="stat-val" id="pfScore">--</div><div class="stat-label">Health Score</div></div>
+                <div class="stat-card"><div class="stat-val" id="pfHealth">--</div><div class="stat-label">Health</div></div>
+            </div>
+
+            <div class="card" style="margin-bottom:16px;">
+                <h3 style="margin-bottom:12px;">Add Holding</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:12px;align-items:end;">
+                    <div>
+                        <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px;">Ticker</label>
+                        <input type="text" id="pfTicker" placeholder="RELIANCE.NS" style="width:100%;">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px;">Quantity</label>
+                        <input type="number" id="pfQty" value="10" min="1" style="width:100%;">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px;">Buy Price (₹)</label>
+                        <input type="number" id="pfPrice" step="0.01" style="width:100%;">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px;">Buy Date</label>
+                        <input type="date" id="pfDate" style="width:100%;">
+                    </div>
+                    <button class="btn btn-blue" onclick="addHolding()">Add</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 style="margin-bottom:12px;">Holdings</h3>
+                <div id="pfHoldingsTable" style="overflow-x:auto;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Backtest Page ── -->
+<div class="page" id="page-backtest">
+    <div class="page-header">
+        <h1>Backtesting</h1>
+        <p>Test signal strategies on historical data</p>
+    </div>
+
+    <div class="card" style="max-width:900px;">
+        <h3 style="margin-bottom:16px;">Configure Backtest</h3>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+            <div>
+                <label style="display:block;font-size:13px;color:var(--text-secondary);margin-bottom:4px;">Ticker</label>
+                <select id="btTicker" class="filter-select" style="width:100%;">
+                    <option value="AAPL">AAPL (Apple)</option>
+                    <option value="MSFT">MSFT (Microsoft)</option>
+                    <option value="GOOGL">GOOGL (Alphabet)</option>
+                    <option value="AMZN">AMZN (Amazon)</option>
+                    <option value="TSLA">TSLA (Tesla)</option>
+                </select>
+            </div>
+            <div>
+                <label style="display:block;font-size:13px;color:var(--text-secondary);margin-bottom:4px;">Signal Threshold</label>
+                <input type="number" id="btThreshold" value="0.65" min="0.5" max="0.95" step="0.05" style="width:100%;">
+            </div>
+            <div>
+                <label style="display:block;font-size:13px;color:var(--text-secondary);margin-bottom:4px;">Holding Period (days)</label>
+                <input type="number" id="btHolding" value="5" min="1" max="30" style="width:100%;">
+            </div>
+            <div>
+                <label style="display:block;font-size:13px;color:var(--text-secondary);margin-bottom:4px;">Transaction Cost (bps)</label>
+                <input type="number" id="btCost" value="20" min="0" max="100" style="width:100%;">
+            </div>
+            <div>
+                <label style="display:block;font-size:13px;color:var(--text-secondary);margin-bottom:4px;">Start Date</label>
+                <input type="date" id="btStart" style="width:100%;">
+            </div>
+            <div>
+                <label style="display:block;font-size:13px;color:var(--text-secondary);margin-bottom:4px;">End Date</label>
+                <input type="date" id="btEnd" style="width:100%;">
+            </div>
+        </div>
+        <button class="btn btn-blue" style="margin-top:16px;" onclick="runBacktest()">Run Backtest</button>
+    </div>
+
+    <div id="btResults" style="display:none;margin-top:24px;">
+        <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);">
+            <div class="stat-card"><div class="stat-val" id="btTotalReturn">--</div><div class="stat-label">Total Return</div></div>
+            <div class="stat-card"><div class="stat-val" id="btSharpe">--</div><div class="stat-label">Sharpe Ratio</div></div>
+            <div class="stat-card"><div class="stat-val" id="btMaxDD">--</div><div class="stat-label">Max Drawdown</div></div>
+            <div class="stat-card"><div class="stat-val" id="btWinRate">--</div><div class="stat-label">Win Rate</div></div>
+        </div>
+        <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-top:12px;">
+            <div class="stat-card"><div class="stat-val" id="btTrades">--</div><div class="stat-label">Total Trades</div></div>
+            <div class="stat-card"><div class="stat-val" id="btCAGR">--</div><div class="stat-label">CAGR</div></div>
+            <div class="stat-card"><div class="stat-val" id="btPF">--</div><div class="stat-label">Profit Factor</div></div>
+            <div class="stat-card"><div class="stat-val" id="btAvgWin">--</div><div class="stat-label">Avg Win</div></div>
+        </div>
+        <div class="card" style="margin-top:16px;">
+            <h3 style="margin-bottom:8px;">Recent Trades</h3>
+            <div id="btTradesTable" style="overflow-x:auto;"></div>
+        </div>
+        <div class="card" style="margin-top:16px;">
+            <h3 style="margin-bottom:8px;">Equity Curve</h3>
+            <div id="btEquityChart" style="height:250px;position:relative;"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Signal History Page ── -->
+<div class="page" id="page-history">
+    <div class="page-header">
+        <h1>Signal History</h1>
+        <p>Track record of all generated signals</p>
+    </div>
+
+    <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px;">
+        <div class="stat-card"><div class="stat-val" id="histTotal">--</div><div class="stat-label">Total Signals</div></div>
+        <div class="stat-card"><div class="stat-val" id="histBuy">--</div><div class="stat-label">BUY Signals</div></div>
+        <div class="stat-card"><div class="stat-val" id="histConf">--</div><div class="stat-label">Avg Confidence</div></div>
+        <div class="stat-card"><div class="stat-val" id="histRet">--</div><div class="stat-label">Avg 5D Return</div></div>
+    </div>
+
+    <div class="card">
+        <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+            <select id="histTicker" class="filter-select" onchange="loadSignalHistory()">
+                <option value="">All Tickers</option>
+            </select>
+            <select id="histSignal" class="filter-select" onchange="loadSignalHistory()">
+                <option value="">All Signals</option>
+                <option value="BUY">BUY</option>
+                <option value="HOLD">HOLD</option>
+            </select>
+        </div>
+        <div id="histTable" style="overflow-x:auto;"></div>
+    </div>
+</div>
+
 <!-- ── Methodology Page ── -->
 <div class="page" id="page-methodology">
     <div class="page-header">
@@ -1200,6 +1357,8 @@
         if (page === 'dashboard') loadDashboard();
         if (page === 'scanner') loadScanner();
         if (page === 'watchlist') loadWatchlist();
+        if (page === 'history') loadSignalHistory();
+        if (page === 'portfolio') loadPortfolio();
     };
 
     // ── Mobile Menu ──
@@ -1271,7 +1430,7 @@
             const data = await api('/auth/register', {
                 method: 'POST',
                 body: JSON.stringify({
-                    name: $('regName').value,
+                    username: $('regEmail').value.split('@')[0],
                     email: $('regEmail').value,
                     password: $('regPassword').value
                 })
@@ -1662,6 +1821,191 @@
         $('modelPredictions').innerHTML = '<div style="color:var(--text-muted);font-size:13px;">Model predictions require Pro plan</div>';
     }
 
+    // ── Backtest ──
+    async function runBacktest() {
+        const ticker = $('btTicker').value;
+        const threshold = parseFloat($('btThreshold').value);
+        const holding = parseInt($('btHolding').value);
+        const cost = parseInt($('btCost').value);
+        const start = $('btStart').value || null;
+        const end = $('btEnd').value || null;
+
+        $('btResults').style.display = 'none';
+
+        try {
+            const res = await fetch('/backtest/run', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ticker, threshold, holding_period: holding, cost_bps: cost, start_date: start, end_date: end })
+            });
+            const d = await res.json();
+            if (!res.ok) throw new Error(d.detail || 'Backtest failed');
+
+            $('btResults').style.display = 'block';
+            $('btTotalReturn').textContent = d.total_return_pct.toFixed(1) + '%';
+            $('btTotalReturn').style.color = d.total_return_pct >= 0 ? 'var(--positive)' : 'var(--negative)';
+            $('btSharpe').textContent = d.sharpe_ratio.toFixed(2);
+            $('btMaxDD').textContent = d.max_drawdown_pct.toFixed(1) + '%';
+            $('btMaxDD').style.color = 'var(--negative)';
+            $('btWinRate').textContent = d.win_rate_pct.toFixed(1) + '%';
+            $('btTrades').textContent = d.total_trades;
+            $('btCAGR').textContent = d.cagr_pct.toFixed(1) + '%';
+            $('btPF').textContent = d.profit_factor.toFixed(2);
+            $('btAvgWin').textContent = d.avg_win_pct.toFixed(2) + '%';
+
+            // Trades table
+            if (d.trades && d.trades.length) {
+                let html = '<table style="width:100%;font-size:13px;border-collapse:collapse;">';
+                html += '<tr style="border-bottom:1px solid var(--border);"><th style="text-align:left;padding:8px;">Entry</th><th style="text-align:left;padding:8px;">Exit</th><th style="text-align:right;padding:8px;">Entry Price</th><th style="text-align:right;padding:8px;">Exit Price</th><th style="text-align:right;padding:8px;">Return</th><th style="text-align:right;padding:8px;">Days</th></tr>';
+                d.trades.forEach(t => {
+                    const retColor = t.return_pct >= 0 ? 'var(--positive)' : 'var(--negative)';
+                    html += `<tr style="border-bottom:1px solid var(--border);"><td style="padding:8px;">${(t.entry_date||'').slice(0,10)}</td><td style="padding:8px;">${(t.exit_date||'').slice(0,10)}</td><td style="text-align:right;padding:8px;">$${t.entry_price}</td><td style="text-align:right;padding:8px;">$${t.exit_price}</td><td style="text-align:right;padding:8px;color:${retColor}">${t.return_pct}%</td><td style="text-align:right;padding:8px;">${t.holding_days}</td></tr>`;
+                });
+                html += '</table>';
+                $('btTradesTable').innerHTML = html;
+            }
+
+            // Equity curve (simple bar chart)
+            if (d.equity_curve && d.equity_curve.length) {
+                const max = Math.max(...d.equity_curve);
+                const min = Math.min(...d.equity_curve);
+                const range = max - min || 1;
+                let chartHtml = '<div style="display:flex;align-items:end;gap:1px;height:200px;">';
+                const step = Math.max(1, Math.floor(d.equity_curve.length / 100));
+                for (let i = 0; i < d.equity_curve.length; i += step) {
+                    const v = d.equity_curve[i];
+                    const h = ((v - min) / range) * 180 + 10;
+                    const color = v >= 1 ? 'var(--positive)' : 'var(--negative)';
+                    chartHtml += `<div style="flex:1;min-width:2px;background:${color};height:${h}px;opacity:0.7;"></div>`;
+                }
+                chartHtml += '</div>';
+                chartHtml += `<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-top:4px;"><span>Start</span><span>End</span></div>`;
+                $('btEquityChart').innerHTML = chartHtml;
+            }
+        } catch (err) {
+            $('btResults').style.display = 'block';
+            $('btTotalReturn').textContent = 'Error';
+            $('btSharpe').textContent = err.message;
+        }
+    }
+
+    // ── Signal History ──
+    async function loadSignalHistory() {
+        const ticker = $('histTicker').value;
+        const signal = $('histSignal').value;
+        let url = '/signals/history?limit=100';
+        if (ticker) url += '&ticker=' + encodeURIComponent(ticker);
+        if (signal) url += '&signal=' + encodeURIComponent(signal);
+
+        try {
+            const [histRes, statsRes] = await Promise.all([
+                fetch(url),
+                fetch('/signals/stats')
+            ]);
+            const hist = await histRes.json();
+            const stats = await statsRes.json();
+
+            $('histTotal').textContent = stats.total_signals;
+            $('histBuy').textContent = stats.buy_signals;
+            $('histConf').textContent = (stats.avg_confidence * 100).toFixed(1) + '%';
+            $('histRet').textContent = stats.avg_5d_return ? (stats.avg_5d_return * 100).toFixed(2) + '%' : '—';
+
+            if (hist.signals && hist.signals.length) {
+                let html = '<table style="width:100%;font-size:13px;border-collapse:collapse;">';
+                html += '<tr style="border-bottom:1px solid var(--border);"><th style="text-align:left;padding:8px;">Date</th><th style="text-align:left;padding:8px;">Ticker</th><th style="text-align:left;padding:8px;">Signal</th><th style="text-align:right;padding:8px;">Confidence</th><th style="text-align:right;padding:8px;">Price</th><th style="text-align:left;padding:8px;">Regime</th><th style="text-align:right;padding:8px;">5D Return</th></tr>';
+                hist.signals.forEach(s => {
+                    const sigClass = s.signal === 'BUY' ? 'positive' : 'muted';
+                    const retStr = s.ret_5d != null ? (s.ret_5d * 100).toFixed(2) + '%' : '—';
+                    const retColor = s.ret_5d != null ? (s.ret_5d >= 0 ? 'var(--positive)' : 'var(--negative)') : 'var(--text-muted)';
+                    html += `<tr style="border-bottom:1px solid var(--border);"><td style="padding:8px;">${(s.timestamp||'').slice(0,10)}</td><td style="padding:8px;">${s.ticker}</td><td style="padding:8px;"><span class="signal-badge ${sigClass}">${s.signal}</span></td><td style="text-align:right;padding:8px;">${(s.confidence*100).toFixed(1)}%</td><td style="text-align:right;padding:8px;">₹${s.price}</td><td style="padding:8px;">${s.regime}</td><td style="text-align:right;padding:8px;color:${retColor}">${retStr}</td></tr>`;
+                });
+                html += '</table>';
+                $('histTable').innerHTML = html;
+            } else {
+                $('histTable').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">No signals recorded yet. Signals are logged automatically when you search for a stock.</div>';
+            }
+        } catch (err) {
+            $('histTable').innerHTML = '<div style="color:var(--negative);">Error loading signal history</div>';
+        }
+    }
+
+    // ── Portfolio ──
+    async function loadPortfolio() {
+        if (!state.token || !state.user) {
+            $('portfolioDashboard').style.display = 'none';
+            $('portfolioLoginPrompt').style.display = 'block';
+            return;
+        }
+        $('portfolioDashboard').style.display = 'block';
+        $('portfolioLoginPrompt').style.display = 'none';
+
+        // Set default date
+        if (!$('pfDate').value) {
+            const today = new Date().toISOString().split('T')[0];
+            $('pfDate').value = today;
+        }
+
+        try {
+            const data = await api('/portfolio');
+            $('pfTotalValue').textContent = '₹' + Number(data.total_value).toLocaleString('en-IN');
+            $('pfTotalPnL').textContent = (data.total_pnl >= 0 ? '+' : '') + '₹' + Number(data.total_pnl).toLocaleString('en-IN');
+            $('pfTotalPnL').style.color = data.total_pnl >= 0 ? 'var(--positive)' : 'var(--negative)';
+            $('pfScore').textContent = data.portfolio_score + '/100';
+            $('pfHealth').textContent = data.portfolio_health;
+
+            if (data.holdings && data.holdings.length) {
+                let html = '<table style="width:100%;font-size:13px;border-collapse:collapse;">';
+                html += '<tr style="border-bottom:1px solid var(--border);"><th style="text-align:left;padding:8px;">Ticker</th><th style="text-align:right;padding:8px;">Qty</th><th style="text-align:right;padding:8px;">Buy ₹</th><th style="text-align:right;padding:8px;">Current ₹</th><th style="text-align:right;padding:8px;">P&L</th><th style="text-align:right;padding:8px;">P&L %</th><th style="text-align:right;padding:8px;">Score</th><th style="text-align:center;padding:8px;"></th></tr>';
+                data.holdings.forEach(h => {
+                    const pnlColor = h.pnl >= 0 ? 'var(--positive)' : 'var(--negative)';
+                    const scoreColor = h.quant_score.score >= 70 ? 'var(--positive)' : h.quant_score.score >= 55 ? 'var(--accent)' : h.quant_score.score >= 40 ? 'var(--text-muted)' : 'var(--negative)';
+                    html += `<tr style="border-bottom:1px solid var(--border);">
+                        <td style="padding:8px;font-weight:600;cursor:pointer;" onclick="viewSignal('${escapeHtml(h.ticker)}')">${escapeHtml(h.ticker)}</td>
+                        <td style="text-align:right;padding:8px;">${h.quantity}</td>
+                        <td style="text-align:right;padding:8px;">₹${h.purchase_price}</td>
+                        <td style="text-align:right;padding:8px;">₹${h.current_price}</td>
+                        <td style="text-align:right;padding:8px;color:${pnlColor}">${h.pnl >= 0 ? '+' : ''}₹${h.pnl}</td>
+                        <td style="text-align:right;padding:8px;color:${pnlColor}">${h.pnl_pct >= 0 ? '+' : ''}${h.pnl_pct}%</td>
+                        <td style="text-align:right;padding:8px;color:${scoreColor}">${h.quant_score.score}</td>
+                        <td style="text-align:center;padding:8px;"><button class="btn btn-sm" style="color:var(--negative);background:none;border:none;cursor:pointer;" onclick="removeHolding('${h.id}')">✕</button></td>
+                    </tr>`;
+                });
+                html += '</table>';
+                $('pfHoldingsTable').innerHTML = html;
+            } else {
+                $('pfHoldingsTable').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">No holdings yet. Add your first holding above.</div>';
+            }
+        } catch (err) {
+            $('pfHoldingsTable').innerHTML = '<div style="color:var(--negative);">Error loading portfolio</div>';
+        }
+    }
+
+    window.addHolding = async function() {
+        const ticker = $('pfTicker').value.trim().toUpperCase();
+        const qty = parseInt($('pfQty').value);
+        const price = parseFloat($('pfPrice').value);
+        const date = $('pfDate').value;
+        if (!ticker || !qty || !price || !date) { alert('Fill all fields'); return; }
+        try {
+            await api('/portfolio/add', {
+                method: 'POST',
+                body: JSON.stringify({ ticker, quantity: qty, purchase_price: price, purchase_date: date })
+            });
+            $('pfTicker').value = '';
+            $('pfPrice').value = '';
+            loadPortfolio();
+        } catch (err) {
+            alert('Failed: ' + (err.message || 'Unknown'));
+        }
+    };
+
+    window.removeHolding = async function(id) {
+        try {
+            await api('/portfolio/' + id, { method: 'DELETE' });
+        } catch {}
+        loadPortfolio();
+    };
+
     // ── Watchlist ──
     async function loadWatchlist() {
         if (!state.token || !state.user) {
@@ -1674,7 +2018,16 @@
 
         try {
             const data = await api('/watchlist');
-            state.watchlist = Array.isArray(data) ? data : (data.items || data.tickers || []);
+            const watchlists = Array.isArray(data) ? data : [];
+            if (watchlists.length === 0) {
+                // Auto-create default watchlist
+                const wl = await api('/watchlist', { method: 'POST', body: JSON.stringify({ name: 'My Watchlist' }) });
+                state.currentWatchlistId = wl.id;
+                state.watchlist = [];
+            } else {
+                state.currentWatchlistId = watchlists[0].id;
+                state.watchlist = watchlists[0].items || [];
+            }
             renderWatchlist();
         } catch {
             state.watchlist = [];
@@ -1684,7 +2037,7 @@
 
     function renderWatchlist() {
         if (!state.watchlist.length) {
-            $('watchlistChips').innerHTML = '';
+            $('watchlistChips').innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:8px 0;">No tickers in watchlist. Search above to add.</div>';
             $('watchlistTableCard').style.display = 'none';
             return;
         }
@@ -1693,23 +2046,18 @@
             const ticker = item.ticker || item.symbol || item;
             return `
                 <div class="watchlist-chip">
-                    <strong>${escapeHtml(typeof ticker === 'string' ? ticker : ticker.ticker || ticker.symbol)}</strong>
+                    <strong>${escapeHtml(ticker)}</strong>
                     <button class="remove-btn" onclick="removeFromWatchlist(${i})" title="Remove">✕</button>
                 </div>
             `;
         }).join('');
 
-        // Load signals for watchlist items
-        const tickers = state.watchlist.map(item => {
-            return typeof item === 'string' ? item : (item.ticker || item.symbol);
-        }).filter(Boolean);
-
+        const tickers = state.watchlist.map(item => item.ticker || item.symbol || item).filter(Boolean);
         if (!tickers.length) return;
 
         $('watchlistTableCard').style.display = 'block';
         $('watchlistTableBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:30px;">Loading signals...</td></tr>';
 
-        // Fetch basic signals for each ticker
         Promise.allSettled(tickers.map(t => api('/v1/signal', { method: 'POST', body: JSON.stringify({ ticker: t }) })))
             .then(results => {
                 const items = results
@@ -1739,31 +2087,32 @@
         if (!state.token) { openAuthModal('login'); return; }
         const ticker = $('watchlistSearch').value.trim().toUpperCase();
         if (!ticker) return;
-        try {
-            // Try POST /watchlist/{id}/add with ticker as id
-            await api('/watchlist/' + encodeURIComponent(ticker) + '/add', { method: 'POST' });
-        } catch {
-            try {
-                await api('/watchlist', { method: 'POST', body: JSON.stringify({ ticker: ticker }) });
-            } catch (err) {
-                alert('Failed to add to watchlist: ' + (err.message || 'Unknown error'));
-                return;
-            }
+        if (!state.currentWatchlistId) {
+            alert('Watchlist not ready. Please try again.');
+            return;
         }
-        $('watchlistSearch').value = '';
-        loadWatchlist();
+        try {
+            await api('/watchlist/' + state.currentWatchlistId + '/add', {
+                method: 'POST',
+                body: JSON.stringify({ ticker: ticker })
+            });
+            $('watchlistSearch').value = '';
+            loadWatchlist();
+        } catch (err) {
+            alert('Failed to add to watchlist: ' + (err.message || 'Unknown error'));
+        }
     };
 
     window.removeFromWatchlist = async function(index) {
         const item = state.watchlist[index];
-        const ticker = typeof item === 'string' ? item : (item.ticker || item.symbol);
+        const ticker = item.ticker || item.symbol || item;
+        if (!state.currentWatchlistId) return;
         try {
-            await api('/watchlist/' + encodeURIComponent(ticker) + '/remove', { method: 'DELETE' });
+            await api('/watchlist/' + state.currentWatchlistId + '/remove/' + encodeURIComponent(ticker), { method: 'DELETE' });
         } catch {
-            //乐观 remove
+            // optimistic remove
         }
-        state.watchlist.splice(index, 1);
-        renderWatchlist();
+        loadWatchlist();
     };
 
     // ── Init ──

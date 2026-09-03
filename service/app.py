@@ -31,6 +31,7 @@ from service.routes_signals import router as signals_router
 from service.routes_alerts import router as alerts_router
 from service.routes_admin import router as admin_router
 from service.routes_signal_detail import router as signal_detail_router
+from service.routes_backtest import router as backtest_router
 
 # Load portal HTML at import time (file-based, works everywhere)
 def _load_portal_html():
@@ -116,6 +117,7 @@ app.include_router(signals_router)
 app.include_router(alerts_router)
 app.include_router(admin_router)
 app.include_router(signal_detail_router)
+app.include_router(backtest_router)
 
 # ------------------------------------------------------------
 # Serve portal directly from Python (no StaticFiles needed)
@@ -338,6 +340,28 @@ def signal(req: SignalRequest, x_api_key: str = Header(default="")):
 
     # Apply regime filter (long-only: BUY only if above SMA and prob > threshold)
     signal_value = "BUY" if (final_prob > _THRESHOLD and above_sma) else "HOLD"
+
+    # Record signal to ledger (background, non-blocking)
+    try:
+        from service.database import SessionLocal
+        from service.models_db import SignalRecord
+        db = SessionLocal()
+        rec = SignalRecord(
+            ticker=ticker,
+            signal=signal_value,
+            confidence=round(float(final_prob), 4),
+            regime="BULL" if above_sma else "BEAR",
+            price=round(close, 2),
+            sma_200=round(sma200, 2),
+            model_version="v2",
+            threshold=_THRESHOLD,
+            features_snapshot=features,
+        )
+        db.add(rec)
+        db.commit()
+        db.close()
+    except Exception as _log_err:
+        print(f"[WARN] Signal log failed: {_log_err}")
 
     return {
         "ticker": ticker,
