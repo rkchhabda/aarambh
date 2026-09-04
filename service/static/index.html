@@ -602,9 +602,29 @@
 
 <!-- ── Dashboard Page ── -->
 <div class="page active" id="page-dashboard">
-    <div class="page-header">
-        <h1>Market Dashboard</h1>
-        <p>Nifty 100 quantitative signals overview &bull; Updated in real-time</p>
+    <div class="page-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; margin-bottom:24px;">
+        <div>
+            <h1>Market Dashboard</h1>
+            <p>Nifty 100 &amp; BSE 100 quantitative signals overview &bull; Live market telemetry</p>
+        </div>
+        <div id="market-indices-bar" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+            <div style="background:var(--bg-secondary); border:1px solid var(--border); padding:8px 14px; border-radius:var(--radius-sm); font-size:13px; display:flex; align-items:center; gap:8px;">
+                <span style="color:var(--text-muted); font-size:12px;">🕒 Market Time:</span>
+                <span id="index-timestamp" style="font-weight:600; font-family:'JetBrains Mono', monospace; color:var(--text-primary);">Loading...</span>
+            </div>
+            <div style="background:var(--bg-secondary); border:1px solid var(--border); padding:8px 14px; border-radius:var(--radius-sm); font-size:13px; display:flex; align-items:center; gap:8px;">
+                <span style="font-weight:700; color:var(--accent-light);">NIFTY 50</span>
+                <span id="nifty50-price" style="font-family:'JetBrains Mono', monospace; font-weight:700; color:var(--text-primary);">—</span>
+                <span id="nifty50-change" style="font-size:12px; padding:2px 6px; border-radius:4px; font-weight:600;">—</span>
+                <span id="nifty50-time" style="font-size:11px; color:var(--text-muted);"></span>
+            </div>
+            <div style="background:var(--bg-secondary); border:1px solid var(--border); padding:8px 14px; border-radius:var(--radius-sm); font-size:13px; display:flex; align-items:center; gap:8px;">
+                <span style="font-weight:700; color:var(--yellow);">BSE SENSEX / 100</span>
+                <span id="bse100-price" style="font-family:'JetBrains Mono', monospace; font-weight:700; color:var(--text-primary);">—</span>
+                <span id="bse100-change" style="font-size:12px; padding:2px 6px; border-radius:4px; font-weight:600;">—</span>
+                <span id="bse100-time" style="font-size:11px; color:var(--text-muted);"></span>
+            </div>
+        </div>
     </div>
 
     <div class="grid-5" id="dashboardStats">
@@ -1610,7 +1630,43 @@
     }
 
     // ── Dashboard ──
+    async function updateMarketIndices() {
+        try {
+            const data = await api('/scanner/indices');
+            if (data) {
+                if (data.timestamp && $('index-timestamp')) {
+                    $('index-timestamp').textContent = data.timestamp;
+                }
+                if (data.nifty50) {
+                    const n = data.nifty50;
+                    if ($('nifty50-price')) $('nifty50-price').textContent = n.price ? n.price.toLocaleString('en-IN') : '—';
+                    if ($('nifty50-change')) {
+                        const isPos = n.change >= 0;
+                        $('nifty50-change').textContent = (isPos ? '+' : '') + n.change + ' (' + (isPos ? '+' : '') + n.change_pct + '%)';
+                        $('nifty50-change').style.background = isPos ? 'var(--green-bg)' : 'var(--red-bg)';
+                        $('nifty50-change').style.color = isPos ? 'var(--green)' : 'var(--red)';
+                    }
+                    if ($('nifty50-time') && n.last_trade_date) $('nifty50-time').textContent = '(' + n.last_trade_date + ')';
+                }
+                if (data.bse100) {
+                    const b = data.bse100;
+                    if ($('bse100-price')) $('bse100-price').textContent = b.price ? b.price.toLocaleString('en-IN') : '—';
+                    if ($('bse100-change')) {
+                        const isPos = b.change >= 0;
+                        $('bse100-change').textContent = (isPos ? '+' : '') + b.change + ' (' + (isPos ? '+' : '') + b.change_pct + '%)';
+                        $('bse100-change').style.background = isPos ? 'var(--green-bg)' : 'var(--red-bg)';
+                        $('bse100-change').style.color = isPos ? 'var(--green)' : 'var(--red)';
+                    }
+                    if ($('bse100-time') && b.last_trade_date) $('bse100-time').textContent = '(' + b.last_trade_date + ')';
+                }
+            }
+        } catch (e) {
+            console.warn('Indices fetch failed:', e);
+        }
+    }
+
     async function loadDashboard() {
+        updateMarketIndices();
         try {
             const health = await api('/health');
             if (health) {
