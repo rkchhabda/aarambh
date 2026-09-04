@@ -251,21 +251,19 @@ def _load_cache():
 _load_cache()
 
 def fetch_cached_features(ticker: str, force_live: bool = False) -> dict:
-    """Get cached features and market data for a ticker. Fallback to live yfinance if missing or requested."""
+    """Get cached features and market data for a ticker. Fallback to resilient multi-source data provider."""
     if not _TICKER_CACHE:
         _load_cache()
     
     if not force_live and ticker in _TICKER_CACHE:
         return _TICKER_CACHE[ticker]
     
-    # Live data fallback using yfinance
+    # Resilient live data fallback using multi-source provider
     try:
-        import yfinance as yf
+        from features.data_provider import fetch_ticker_ohlcv
         from features.indicators import compute_inference_features
-        from rebuild_cache_v2 import _to_frame
-        raw = yf.download(ticker, period="1y", interval="1d", progress=False)
-        if raw is not None and len(raw) >= 200:
-            df = _to_frame(raw)
+        df = fetch_ticker_ohlcv(ticker, period="1y")
+        if df is not None and len(df) >= 200:
             features, close, sma200 = compute_inference_features(df, FEATURES)
             cached_data = {
                 "features": features,

@@ -131,55 +131,19 @@ _INDEX_CACHE_TIME = 0.0
 
 
 def fetch_market_indices():
-    """Fetch live/cached Nifty 50 and BSE 100 / Sensex index prices and timestamps."""
+    """Fetch live/cached Nifty 50 and BSE 100 / Sensex index prices and timestamps via resilient data provider."""
     global _INDEX_CACHE, _INDEX_CACHE_TIME
     now = time.time()
     if _INDEX_CACHE and (now - _INDEX_CACHE_TIME < 300):  # 5 min cache
         return _INDEX_CACHE
 
     try:
-        import yfinance as yf
-        data = yf.download(["^NSEI", "^BSESN"], period="5d", interval="1d", progress=False)
-        if data is not None and "Close" in data and len(data["Close"]) >= 2:
-            closes = data["Close"]
-            
-            # Nifty 50
-            n50_s = closes["^NSEI"].dropna()
-            n50_last = float(n50_s.iloc[-1])
-            n50_prev = float(n50_s.iloc[-2])
-            n50_chg = n50_last - n50_prev
-            n50_pct = (n50_chg / n50_prev) * 100
-            
-            # BSE Sensex / 100
-            bse_s = closes["^BSESN"].dropna()
-            bse_last = float(bse_s.iloc[-1])
-            bse_prev = float(bse_s.iloc[-2])
-            bse_chg = bse_last - bse_prev
-            bse_pct = (bse_chg / bse_prev) * 100
-
-            last_date = n50_s.index[-1].strftime("%d %b %Y")
-
-            _INDEX_CACHE = {
-                "timestamp": datetime.now(timezone.utc).strftime("%d %b %Y, %H:%M:%S UTC"),
-                "nifty50": {
-                    "name": "NIFTY 50",
-                    "price": round(n50_last, 2),
-                    "change": round(n50_chg, 2),
-                    "change_pct": round(n50_pct, 2),
-                    "last_trade_date": last_date,
-                },
-                "bse100": {
-                    "name": "BSE SENSEX / 100",
-                    "price": round(bse_last, 2),
-                    "change": round(bse_chg, 2),
-                    "change_pct": round(bse_pct, 2),
-                    "last_trade_date": last_date,
-                }
-            }
-            _INDEX_CACHE_TIME = now
-            return _INDEX_CACHE
+        from features.data_provider import fetch_index_quotes
+        _INDEX_CACHE = fetch_index_quotes()
+        _INDEX_CACHE_TIME = now
+        return _INDEX_CACHE
     except Exception as e:
-        print(f"[WARN] Failed to fetch index data: {e}")
+        print(f"[WARN] Index fetch failed: {e}")
 
     fallback_time = datetime.now(timezone.utc).strftime("%d %b %Y, %H:%M:%S UTC")
     return {
