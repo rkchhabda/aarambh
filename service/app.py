@@ -250,21 +250,45 @@ def _load_cache():
 
 _load_cache()
 
-def fetch_cached_features(ticker: str) -> dict:
-    """Get cached features and market data for a ticker."""
+def fetch_cached_features(ticker: str, force_live: bool = False) -> dict:
+    """Get cached features and market data for a ticker. Fallback to live yfinance if missing or requested."""
     if not _TICKER_CACHE:
         _load_cache()
     
-    if ticker not in _TICKER_CACHE:
-        raise ValueError(f"No cached data for {ticker}")
+    if not force_live and ticker in _TICKER_CACHE:
+        return _TICKER_CACHE[ticker]
     
-    return _TICKER_CACHE[ticker]
+    # Live data fallback using yfinance
+    try:
+        import yfinance as yf
+        from features.indicators import compute_inference_features
+        from rebuild_cache_v2 import _to_frame
+        raw = yf.download(ticker, period="1y", interval="1d", progress=False)
+        if raw is not None and len(raw) >= 200:
+            df = _to_frame(raw)
+            features, close, sma200 = compute_inference_features(df, FEATURES)
+            cached_data = {
+                "features": features,
+                "close": close,
+                "sma_200": sma200,
+                "above_sma": bool(close > sma200)
+            }
+            _TICKER_CACHE[ticker] = cached_data
+            return cached_data
+    except Exception as e:
+        print(f"[WARN] Live market data fetch failed for {ticker}: {e}")
+    
+    if ticker in _TICKER_CACHE:
+        return _TICKER_CACHE[ticker]
+        
+    raise ValueError(f"No market data available for {ticker}")
 
 class SignalRequest(BaseModel):
     ticker: str
+    force_live: bool = False
 
 # ------------------------------------------------------------
-# HEALTH ENDPOINT
+# HEALTH & CACHE ENDPOINTS
 # ------------------------------------------------------------
 @app.get("/health")
 def health():
@@ -274,10 +298,29 @@ def health():
         "models_loaded": list(ensemble_models.keys()) if ensemble_models else [],
         "meta_loaded": meta_model is not None,
         "supported_tickers": len(TICKERS),
+        "cached_tickers": len(_TICKER_CACHE),
         "features": len(FEATURES),
         "horizon": "5d",
         "threshold": _THRESHOLD
     }
+
+@app.post("/admin/refresh-cache")
+def refresh_cache_endpoint():
+    """Trigger an immediate live market data refresh across all tickers."""
+    if rebuild_cache is None:
+        raise HTTPException(status_code=500, detail="Cache refresh engine unavailable")
+    try:
+        new_cache = rebuild_cache()
+        global _TICKER_CACHE
+        if new_cache and len(new_cache) >= _MIN_TICKERS:
+            _TICKER_CACHE = new_cache
+        return {
+            "status": "ok",
+            "updated_tickers": len(new_cache or {}),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Refresh failed: {e}")
 
 # ------------------------------------------------------------
 # SIGNAL ENDPOINT (no API key required, defaults to pro tier)
