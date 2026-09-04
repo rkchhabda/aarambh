@@ -13,11 +13,22 @@ BASE = os.path.dirname(os.path.abspath(__file__))
 MODELS_DIR = os.path.join(BASE, "service", "models")
 CACHE_PATH = os.path.join(MODELS_DIR, "ticker_cache.json")
 
-# Features used by the deployed ensemble (must match best_params.json / app.FEATURES).
-INFERENCE_FEATURES = [
-    "bb_pos", "macd", "obv_slope", "sma_ratio", "cci", "ret_10",
-    "williams_r", "rsi_14", "atr_14", "roc_10",
-]
+# Features used by the deployed ensemble (must match features.json / best_params.json).
+MANIFEST_PATH = os.path.join(MODELS_DIR, "features.json")
+if os.path.exists(MANIFEST_PATH):
+    try:
+        with open(MANIFEST_PATH) as f:
+            INFERENCE_FEATURES = json.load(f).get("features", [
+                "bb_pos", "macd", "obv_slope", "sma_ratio", "cci", "ret_10",
+                "williams_r", "rsi_14", "atr_14", "roc_10"
+            ])
+    except Exception:
+        INFERENCE_FEATURES = ["bb_pos", "macd", "obv_slope", "sma_ratio", "cci", "ret_10", "williams_r", "rsi_14", "atr_14", "roc_10"]
+else:
+    INFERENCE_FEATURES = [
+        "bb_pos", "macd", "obv_slope", "sma_ratio", "cci", "ret_10",
+        "williams_r", "rsi_14", "atr_14", "roc_10",
+    ]
 
 
 def _to_frame(df):

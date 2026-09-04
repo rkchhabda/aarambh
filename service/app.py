@@ -75,20 +75,20 @@ from features.universe import TICKERS
 SEQ_LEN = 32
 
 # Feature list must match what you used for training the ensemble (v2: 10 features, 5d horizon)
-FEATURES = ["bb_pos", "macd", "obv_slope", "sma_ratio", "cci", "ret_10",
-            "williams_r", "rsi_14", "atr_14", "roc_10"]
+DEFAULT_FEATURES = ["bb_pos", "macd", "obv_slope", "sma_ratio", "cci", "ret_10",
+                    "williams_r", "rsi_14", "atr_14", "roc_10"]
 
-# Decision threshold, tuned on validation (stored in features.json by retrain_v2.py).
-# High confidence is required for the signal to carry a positive return edge.
 _THRESHOLD = 0.5
+FEATURES = DEFAULT_FEATURES
 _manifest_path = os.path.join(MODELS_DIR, "features.json")
 if os.path.exists(_manifest_path):
     try:
         with open(_manifest_path) as f:
             _manifest = json.load(f)
+        FEATURES = _manifest.get("features", DEFAULT_FEATURES)
         _THRESHOLD = float(_manifest.get("threshold", 0.5))
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[WARN] Failed to load features.json manifest: {e}")
 
 app = FastAPI(title="Aarambh_Quant Signals", version="5.0.0",
               description="Evidence-based quantitative market intelligence for Indian equities")

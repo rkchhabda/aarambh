@@ -1,22 +1,22 @@
 # Quant Signal API + Dashboard - Production Container
 FROM python:3.12-slim
-RUN pip install --upgrade pip
 
 ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
-# System deps for yfinance, ta, torch
+# System deps for yfinance, ta, torch, and healthchecks
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     libgomp1 \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
 # Install Python deps first (cache layer)
 COPY requirements.txt .
-RUN pip install -r requirements.txt
+RUN pip install --upgrade pip && pip install -r requirements.txt
 
 # Copy application code
 COPY service/ ./service/
