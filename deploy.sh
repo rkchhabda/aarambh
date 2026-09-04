@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Deploy Quant Signal Platform (API + Dashboard)
-# Usage: ./deploy.sh [build|up|down|logs]
+# Usage: ./deploy.sh [build|up|down|logs|restart|push]
 
 set -euo pipefail
 
@@ -28,10 +28,13 @@ case "$ACTION" in
     echo "🌐 Services running:"
     echo "   API:       http://localhost:8000"
     echo "   Dashboard: http://localhost:8501"
-    echo ""
-    echo "📝 Test API: curl -H 'X-API-Key: qs_hvw4wTe3mRaRruyVXxmT1fcgWRiZKXG-1aMbeOO9' \\"
-    echo "             -H 'Content-Type: application/json' \\"
-    echo "             -d '{\"ticker\":\"AAPL\"}' http://localhost:8000/v1/signal"
+    ;;
+  push)
+    echo "📤 Committing and pushing to origin main (triggers Render auto-deploy)..."
+    git add .
+    git commit -m "deploy: automated push for Render auto-deploy" || true
+    git push origin main
+    echo "✅ Pushed to main. Render is automatically building and deploying!"
     ;;
   down)
     echo "🛑 Stopping services..."
@@ -45,7 +48,7 @@ case "$ACTION" in
     docker compose -f "$COMPOSE_FILE" restart
     ;;
   *)
-    echo "Usage: $0 {build|up|down|logs|restart}"
+    echo "Usage: $0 {build|up|down|logs|restart|push}"
     exit 1
     ;;
 esac
