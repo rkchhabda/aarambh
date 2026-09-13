@@ -11,6 +11,10 @@ Run:  python backtest.py
 """
 import warnings; warnings.filterwarnings('ignore')
 import os, json, joblib, numpy as np, pandas as pd
+if not hasattr(np, 'long'): np.long = int
+if not hasattr(np, 'ulong'): np.ulong = int
+if not hasattr(np, 'longlong'): np.longlong = int
+if not hasattr(np, 'ulonglong'): np.ulonglong = int
 from xgboost import XGBClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression

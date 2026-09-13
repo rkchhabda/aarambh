@@ -141,7 +141,12 @@ meta_model = None
 scaler = None
 _LOADED = False
 
-def _ensure_loaded():
+@app.get("/v1/tickers")
+def get_tickers():
+    """Return the list of Nifty‑100 tickers."""
+    return {"tickers": TICKERS}
+
+
     global ensemble_models, meta_model, scaler, _LOADED
     if _LOADED:
         return
@@ -231,6 +236,30 @@ def _refresh_cache_loop():
 if rebuild_cache is not None:
     threading.Thread(target=_refresh_cache_loop, daemon=True).start()
     print(f"[OK] Cache auto-refresh scheduled every {CACHE_REFRESH_HOURS}h (first run on boot)")
+
+# ------------------------------------------------------------
+# Background Paper Trader (simulates live execution)
+# ------------------------------------------------------------
+def _paper_trader_loop():
+    # Wait a few minutes before first run to let cache build and server settle
+    time.sleep(180)
+    try:
+        from scripts.paper_trader import main as run_paper_trader
+    except ImportError as e:
+        print(f"[WARN] Paper trader script not found: {e}")
+        return
+        
+    while True:
+        try:
+            print(f"[OK] Executing daily paper trade sequence...")
+            run_paper_trader()
+        except Exception as e:
+            print(f"[WARN] Paper trader iteration failed: {e}")
+        # Run exactly once every 24 hours
+        time.sleep(24 * 3600)
+
+threading.Thread(target=_paper_trader_loop, daemon=True).start()
+print("[OK] Paper trader execution scheduled (every 24h)")
 
 # ------------------------------------------------------------
 # Data fetching - use cached features (no live API calls)

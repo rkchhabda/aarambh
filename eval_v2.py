@@ -1,5 +1,7 @@
 import warnings; warnings.filterwarnings('ignore')
 import numpy as np, pandas as pd, joblib, json
+if not hasattr(np, 'long'):
+    np.long = int  # Monkeypatch for newer numpy versions
 from sklearn.metrics import accuracy_score, brier_score_loss, roc_auc_score, f1_score
 
 MULTI_DIR = 'data/multi'

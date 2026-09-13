@@ -28,7 +28,12 @@ case "$ACTION" in
     echo "🌐 Services running:"
     echo "   API:       http://localhost:8000"
     echo "   Dashboard: http://localhost:8501"
+    # Auto‑push changes to trigger Render auto‑deploy
+    git add .
+    git commit -m "deploy: automated push for Render auto‑deploy" || true
+    git push origin main
     ;;
+
   push)
     echo "📤 Committing and pushing to origin main (triggers Render auto-deploy)..."
     git add .

@@ -13,5 +13,5 @@
   ],
   "horizon": "5d",
   "feature_version": 1,
-  "threshold": 0.85
+  "threshold": 0.55
 }
