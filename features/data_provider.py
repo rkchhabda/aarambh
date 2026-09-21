@@ -70,7 +70,7 @@ def _fetch_yahoo_direct_rest(ticker: str, range_str: str = "1y") -> pd.DataFrame
                 quote = result[0].get("indicators", {}).get("quote", [{}])[0]
                 if timestamps and quote.get("close"):
                     df = pd.DataFrame({
-                        "date": pd.to_datetime(timestamps, unit="s"),
+                        "date": [datetime.fromtimestamp(ts, timezone.utc).strftime("%Y-%m-%d") for ts in timestamps],
                         "Open": quote.get("open", []),
                         "High": quote.get("high", []),
                         "Low": quote.get("low", []),
@@ -86,14 +86,14 @@ def _fetch_yahoo_direct_rest(ticker: str, range_str: str = "1y") -> pd.DataFrame
 def fetch_ticker_ohlcv(ticker: str, period: str = "1y") -> pd.DataFrame | None:
     """Fetch ticker OHLCV data using automatic failover across multiple data providers."""
     # Tier 1: yfinance library
-    try:
-        import yfinance as yf
-        raw = yf.download(ticker, period=period, interval="1d", progress=False, timeout=8)
-        norm = _normalize_df(raw)
-        if norm is not None and len(norm) >= 50:
-            return norm
-    except Exception as e:
-        print(f"[WARN] Tier 1 yfinance failed for {ticker}: {e}")
+    # try:
+    #     import yfinance as yf
+    #     raw = yf.download(ticker, period=period, interval="1d", progress=False, timeout=8)
+    #     norm = _normalize_df(raw)
+    #     if norm is not None and len(norm) >= 50:
+    #         return norm
+    # except Exception as e:
+    #     print(f"[WARN] Tier 1 yfinance failed for {ticker}: {e}")
 
     # Tier 2: Direct Yahoo REST API
     norm = _fetch_yahoo_direct_rest(ticker, range_str=period)
