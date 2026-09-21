@@ -1,30 +1,17 @@
 services:
   - type: web
     name: gaurvideep-api
-    env: docker
+    runtime: docker
     dockerfilePath: ./service/Dockerfile
     dockerContext: .
     plan: starter
     region: oregon
     envVars:
-      - key: API_KEY
-        value: qs_hvw4wTe3mRaRruyVXxmT1fcgWRiZKXG-1aMbeOO9
+      - key: PORT
+        value: "10000"
       - key: CACHE_REFRESH_HOURS
         value: "24"
-    healthCheckPath: /health
-    autoDeploy: true
-
-  - type: web
-    name: gaurvideep-dashboard
-    env: docker
-    dockerfilePath: ./service/Dockerfile
-    dockerContext: .
-    plan: starter
-    region: oregon
-    envVars:
-      - key: API_URL
-        value: http://gaurvideep-api:8000
       - key: API_KEY
-        value: qs_hvw4wTe3mRaRruyVXxmT1fcgWRiZKXG-1aMbeOO9
-    startCommand: streamlit run service/dashboard.py --server.port=10000 --server.address=0.0.0.0 --server.headless=true
+        sync: false
+    healthCheckPath: /health
     autoDeploy: true

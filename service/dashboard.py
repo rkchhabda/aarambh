@@ -84,15 +84,28 @@ def fetch_live_signals():
 
 @st.cache_data(ttl=3600)
 def load_historical_equity():
-    """Recompute equity curve from Phase 5 backtest if available."""
+    """Recompute equity curve from Phase 5 backtest if available.
+    Now fetches net series from the admin backtest endpoint.
+    """
+    # Try API first
     try:
-        from scripts.phase5.backtest_final import load_all, strategy_positions, bt, stats
+        import requests
+        resp = requests.get(f"{API_URL}/admin/backtest-data", timeout=10)
+        if resp.status_code == 200:
+            payload = resp.json()
+            net = payload.get("net_series")
+            if net:
+                return pd.Series(net)
+    except Exception as e:
+        print(f"[WARN] Failed to fetch backtest data via API: {e}")
+    # Fallback: compute locally if script is available
+    try:
+        from scripts.phase5.backtest_final import load_all, strategy_positions, bt
         data, _ = load_all()
         nets = []
         for t, df in data.items():
             pos = strategy_positions(df, "regime_long")
-            net = bt(pos, df["fwd_ret"].values, 5.0)
-            nets.append(net)
+            nets.append(bt(pos, df["fwd_ret"].values, 5.0))
         port_net = pd.DataFrame(nets).T.mean(axis=1).values
         return pd.Series(port_net)
     except Exception:

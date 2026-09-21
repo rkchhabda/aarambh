@@ -33,6 +33,7 @@ from service.routes_admin import router as admin_router
 from service.routes_signal_detail import router as signal_detail_router
 from service.routes_backtest import router as backtest_router
 from service.routes_subscription import router as subscription_router
+from service.routes_admin_backtest import router as admin_backtest_router
 
 # Load portal HTML at import time (file-based, works everywhere)
 def _load_portal_html():
@@ -90,8 +91,13 @@ if os.path.exists(_manifest_path):
     except Exception as e:
         print(f"[WARN] Failed to load features.json manifest: {e}")
 
-app = FastAPI(title="Aarambh_Quant Signals", version="5.0.0",
-              description="Evidence-based quantitative market intelligence for Indian equities")
+app = FastAPI(
+    title="Aarambh_Quant Signals",
+    version="5.0.0",
+    description="Evidence-based quantitative market intelligence for Indian equities",
+)
+
+app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static")), name="static")
 
 # ─── Middleware ───────────────────────────────────────────────────────────────
 app.add_middleware(
@@ -119,7 +125,7 @@ app.include_router(alerts_router)
 app.include_router(admin_router)
 app.include_router(signal_detail_router)
 app.include_router(backtest_router)
-app.include_router(subscription_router)
+app.include_router(admin_backtest_router)
 
 # ------------------------------------------------------------
 # Serve portal directly from Python (no StaticFiles needed)
@@ -147,6 +153,7 @@ def get_tickers():
     return {"tickers": TICKERS}
 
 
+def _ensure_loaded():
     global ensemble_models, meta_model, scaler, _LOADED
     if _LOADED:
         return

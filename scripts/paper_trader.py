@@ -65,8 +65,10 @@ def sell_expired_holdings(db, bot_id: str):
         if p_date.tzinfo is None:
             p_date = p_date.replace(tzinfo=timezone.utc)
             
+        # Fixed holding period (in days) before exiting a position
+        EXIT_HOLD_DAYS = 5
         days_held = (now - p_date).days
-        if days_held >= 5:
+        if days_held >= EXIT_HOLD_DAYS:
             current_price = _get_current_price(h.ticker)
             if current_price == 0.0:
                 logger.warning(f"Could not fetch current price for {h.ticker}. Skipping sell.")

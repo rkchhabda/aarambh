@@ -22,7 +22,6 @@ venv
 # Data and artifacts (not needed at runtime)
 data/
 phase5_artifacts/
-scripts/
 
 # IDE and OS
 .vscode
