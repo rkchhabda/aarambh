@@ -1,0 +1,66 @@
+name: Daily Market Cache & Indices Refresh
+
+on:
+  schedule:
+    # 13:00 UTC = 18:30 IST (Monday through Friday, after NSE market close)
+    - cron: '0 13 * * 1-5'
+  workflow_dispatch: # Allows manual trigger from GitHub UI / CLI
+
+permissions:
+  contents: write
+
+jobs:
+  refresh-cache:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-render.txt
+
+      - name: Run Cache & Indices Rebuild
+        run: |
+          python rebuild_cache_v2.py
+
+      - name: Validate Generated Cache Files
+        run: |
+          python -c '
+          import json, os, sys
+          cache_file = "service/models/ticker_cache.json"
+          indices_file = "service/models/indices_cache.json"
+          if not os.path.exists(cache_file):
+              sys.exit("ERROR: ticker_cache.json was not created.")
+          with open(cache_file) as f:
+              data = json.load(f)
+          count = len(data)
+          print(f"[VALIDATION] Found {count} tickers in cache.")
+          if count < 100:
+              sys.exit(f"ERROR: Only {count} tickers found. Expected >= 100. Aborting commit.")
+          if not os.path.exists(indices_file):
+              sys.exit("ERROR: indices_cache.json was not created.")
+          with open(indices_file) as f:
+              idx = json.load(f)
+          if not idx.get("nifty50") or not idx.get("bse100"):
+              sys.exit("ERROR: indices_cache.json missing required index objects.")
+          print("[VALIDATION] Cache validation passed successfully.")
+          '
+
+      - name: Commit and Push Updated Cache
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(data): automated daily EOD ticker & indices cache update [skip ci]"
+          file_pattern: "service/models/ticker_cache.json service/models/indices_cache.json"
+          commit_user_name: "github-actions[bot]"
+          commit_user_email: "github-actions[bot]@users.noreply.github.com"
+          commit_author: "github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
