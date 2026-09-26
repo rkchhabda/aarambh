@@ -1439,7 +1439,14 @@
 
         if (page === 'dashboard') loadDashboard();
         if (page === 'scanner') loadScanner();
-        if (page === 'signals' && !$('signalSearch').value.trim()) { $('signalSearch').value = 'RELIANCE.NS'; searchSignal(); }
+        if (page === 'signals') {
+            // Immediately hide empty state — never show blank tab
+            $('signalEmpty').style.display = 'none';
+            if (!$('signalSearch').value.trim()) {
+                $('signalSearch').value = 'RELIANCE.NS';
+                searchSignal();
+            }
+        }
         if (page === 'watchlist') loadWatchlist();
         if (page === 'history') loadSignalHistory();
         if (page === 'portfolio') loadPortfolio();
@@ -1893,11 +1900,11 @@
         const ticker = $('signalSearch').value.trim().toUpperCase();
         if (!ticker) return;
         $('signalEmpty').style.display = 'none';
-        $('signalResults').style.display = 'none';
 
-        // Show loading state
+        // Show results panel immediately with loading placeholders
         $('signalTickerTitle').textContent = ticker;
-        $('gaugeValue').textContent = '...';
+        $('gaugeValue').textContent = '…';
+        $('signalResults').style.display = 'block';
 
         try {
             const data = await api('/v1/signal/detailed', {
