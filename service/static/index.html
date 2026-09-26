@@ -1349,6 +1349,61 @@
             </ul>
         </div>
     </div>
+
+    <!-- Collapsible Glossary Section -->
+    <details class="card" style="margin-bottom:16px;cursor:pointer;">
+        <summary style="font-weight:600;font-size:14px;color:var(--accent-light);outline:none;user-select:none;padding:4px 0;">
+            📖 Glossary — Plain-English Definitions
+        </summary>
+        <div style="cursor:default;margin-top:16px;" class="method-section">
+            <h3 style="font-size:15px;margin-bottom:8px;">Regime &amp; Signal Mechanics</h3>
+            <ul style="margin-bottom:16px;">
+                <li><strong>200-Day SMA (Simple Moving Average)</strong> &mdash; The average closing price over the last 200 trading days; used here to identify a stock's long-term trend direction.</li>
+                <li><strong>RISK-ON</strong> &mdash; The stock is currently trading above its 200-day SMA. A mechanical trend state, not a buy recommendation.</li>
+                <li><strong>RISK-OFF</strong> &mdash; The stock is currently trading below its 200-day SMA. A mechanical defensive state, not a sell recommendation.</li>
+                <li><strong>SMA Distance (%)</strong> &mdash; How far the current price is above or below the 200-day SMA, shown as a percentage.</li>
+                <li><strong>Hysteresis Band</strong> &mdash; A &plusmn;1.00% buffer around the SMA line that stops the signal from flipping back and forth on small daily price noise.</li>
+            </ul>
+
+            <h3 style="font-size:15px;margin-bottom:8px;margin-top:20px;">Backtest &amp; Performance</h3>
+            <ul style="margin-bottom:16px;">
+                <li><strong>Backtest</strong> &mdash; A simulation of how a strategy would have performed using historical price data.</li>
+                <li><strong>Out-of-Sample</strong> &mdash; Tested on data that was NOT used to build or tune the strategy &mdash; a more honest test of real-world performance.</li>
+                <li><strong>Buy &amp; Hold (B&amp;H) Benchmark</strong> &mdash; Simply buying and holding the stocks the whole time; the baseline used to judge whether the strategy adds any value.</li>
+                <li><strong>Maximum Drawdown (MaxDD)</strong> &mdash; The largest peak-to-trough decline in value during the period &mdash; a measure of the worst pain an investor would have felt.</li>
+                <li><strong>Drawdown Reduction Ratio</strong> &mdash; How many times smaller the strategy's worst loss was compared to Buy &amp; Hold (e.g., "1.6x" means the loss was roughly 40% smaller).</li>
+                <li><strong>Cumulative Return</strong> &mdash; Total percentage gain or loss over the whole period tested.</li>
+                <li><strong>Annualized Return</strong> &mdash; The cumulative return converted to an average per-year rate, for easier comparison across different time spans.</li>
+                <li><strong>Sharpe Ratio</strong> &mdash; Return earned per unit of total price swings (volatility) taken. Treats upside and downside swings equally.</li>
+                <li><strong>Sortino Ratio</strong> &mdash; Like the Sharpe Ratio, but only penalizes downside (bad) swings, not upside ones.</li>
+                <li><strong>Calmar Ratio</strong> &mdash; Annualized return divided by maximum drawdown &mdash; how much return you earned relative to the worst loss you had to sit through.</li>
+                <li><strong>Ulcer Index</strong> &mdash; Measures both how deep AND how long a portfolio stayed below its previous peak; lower means less prolonged stress.</li>
+                <li><strong>Avg Market Exposure</strong> &mdash; The average share of time/capital the strategy was actually invested, versus sitting in cash.</li>
+                <li><strong>Total Trades / Signals Fired</strong> &mdash; How many times the strategy's position actually changed during the test period.</li>
+                <li><strong>Basis Points (bps)</strong> &mdash; A unit for small percentages; 100 bps = 1%. Used here for trading costs (15 bps = 0.15% per trade).</li>
+                <li><strong>Rolling Window</strong> &mdash; Re-testing the strategy across many overlapping shorter time slices, instead of one long period, to check results aren't a fluke.</li>
+                <li><strong>Single-Event Caveat</strong> &mdash; A note that a result was shown in only one historical event (e.g., one crisis) and hasn't yet been proven to repeat in a different kind of event.</li>
+            </ul>
+
+            <h3 style="font-size:15px;margin-bottom:6px;margin-top:20px;">Signal Detail Page</h3>
+            <p style="font-size:12px;color:var(--text-muted);font-style:italic;margin-bottom:10px;">
+                Terms below describe fields on the Signals page. As noted there, the underlying model has not demonstrated a validated predictive edge &mdash; these definitions explain what each number IS, not whether it should be trusted.
+            </p>
+            <ul style="margin-bottom:6px;">
+                <li><strong>Quant Score</strong> &mdash; A 0-100 number combining model output with rule-based indicator scores. Not a proven predictor of future price moves.</li>
+                <li><strong>Confidence</strong> &mdash; The probability the underlying model assigns to its own prediction. Not validated to be reliable &mdash; see the disclaimer on this page.</li>
+                <li><strong>ATR % (Average True Range)</strong> &mdash; How much a stock typically moves day-to-day, as a percentage of price &mdash; a measure of volatility, not direction.</li>
+                <li><strong>Stop-Loss Estimate</strong> &mdash; A rough, volatility-based reference point for where a protective sell order might sit. Not personalized advice.</li>
+                <li><strong>RSI (Relative Strength Index)</strong> &mdash; A 0-100 momentum reading; high values suggest a stock may be "overbought," low values "oversold."</li>
+                <li><strong>MACD</strong> &mdash; A trend indicator based on the gap between two moving averages of price.</li>
+                <li><strong>Bollinger Band Position</strong> &mdash; Shows where the price sits within its recent trading range.</li>
+                <li><strong>CCI (Commodity Channel Index)</strong> &mdash; Measures how far price has moved from its recent statistical average.</li>
+                <li><strong>Williams %R</strong> &mdash; A momentum indicator similar to RSI, flagging overbought/oversold levels.</li>
+                <li><strong>ROC (Rate of Change)</strong> &mdash; The percentage change in price over a set number of days &mdash; raw momentum.</li>
+                <li><strong>OBV Slope (On-Balance Volume)</strong> &mdash; Tracks whether trading volume suggests buying or selling pressure building in a stock.</li>
+            </ul>
+        </div>
+    </details>
 </div>
 
 <!-- ── Pricing Page ── -->
