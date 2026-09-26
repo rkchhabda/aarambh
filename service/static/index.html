@@ -1439,6 +1439,7 @@
 
         if (page === 'dashboard') loadDashboard();
         if (page === 'scanner') loadScanner();
+        if (page === 'signals' && !$('signalSearch').value.trim()) { $('signalSearch').value = 'RELIANCE.NS'; searchSignal(); }
         if (page === 'watchlist') loadWatchlist();
         if (page === 'history') loadSignalHistory();
         if (page === 'portfolio') loadPortfolio();

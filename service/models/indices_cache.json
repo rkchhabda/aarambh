@@ -1,10 +1,10 @@
 {
-  "timestamp": "26 Sep 2026, 12:57:02 UTC",
+  "timestamp": "26 Sep 2026, 13:35:00 UTC",
   "nifty50": {
     "name": "NIFTY 50",
-    "price": 24055.8,
-    "change": -141.35,
-    "change_pct": -0.59,
+    "price": 23140.5,
+    "change": 77.4,
+    "change_pct": 0.34,
     "last_trade_date": "Latest Session",
     "source": "EOD_CACHE"
   },

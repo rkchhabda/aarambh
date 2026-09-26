@@ -125,7 +125,7 @@ def fetch_market_indices(timeout_sec: float = 1.8):
     fallback_time = datetime.now(timezone.utc).strftime("%d %b %Y, %H:%M:%S UTC")
     return {
         "timestamp": fallback_time,
-        "nifty50": {"name": "NIFTY 50", "price": 24055.80, "change": -141.35, "change_pct": -0.59, "last_trade_date": "Latest Session", "source": "STATIC_BASELINE"},
+        "nifty50": {"name": "NIFTY 50", "price": 23140.50, "change": 77.40, "change_pct": 0.34, "last_trade_date": "Latest Session", "source": "STATIC_BASELINE"},
         "bse100": {"name": "BSE SENSEX / 100", "price": 76570.35, "change": -373.93, "change_pct": -0.49, "last_trade_date": "Latest Session", "source": "STATIC_BASELINE"},
     }
 

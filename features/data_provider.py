@@ -154,15 +154,16 @@ def _fetch_yahoo_direct_rest(ticker: str, range_str: str = "1y") -> pd.DataFrame
 
 def fetch_ticker_ohlcv(ticker: str, period: str = "1y") -> pd.DataFrame | None:
     """Fetch ticker OHLCV data using automatic failover across multiple data providers."""
+    min_bars = 2 if period in ("5d", "1d") else 50
     # Tier 0: Direct NSE India API (for Indian equities)
     if not ticker.startswith("^"):
         norm = _fetch_nse_historical(ticker, days=365)
-        if norm is not None and len(norm) >= 50:
+        if norm is not None and len(norm) >= min_bars:
             return norm
 
     # Tier 1: Direct Yahoo REST API
     norm = _fetch_yahoo_direct_rest(ticker, range_str=period)
-    if norm is not None and len(norm) >= 50:
+    if norm is not None and len(norm) >= min_bars:
         print(f"[OK] Tier 1 Direct REST succeeded for {ticker}")
         return norm
 
@@ -254,7 +255,7 @@ def fetch_index_quotes() -> dict:
 
         if not fetched:
             defaults = {
-                "nifty50": {"price": 24055.80, "change": -141.35, "change_pct": -0.59},
+                "nifty50": {"price": 23140.50, "change": 77.40, "change_pct": 0.34},
                 "bse100": {"price": 76570.35, "change": -373.93, "change_pct": -0.49},
             }
             d = defaults.get(key, {"price": 0.0, "change": 0.0, "change_pct": 0.0})

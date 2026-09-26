@@ -54,9 +54,9 @@ def rebuild_indices_cache(output_path=None):
         "timestamp": now_str,
         "nifty50": {
             "name": "NIFTY 50",
-            "price": 24055.80,
-            "change": -141.35,
-            "change_pct": -0.59,
+            "price": 23140.50,
+            "change": 77.40,
+            "change_pct": 0.34,
             "last_trade_date": "Latest Session",
             "source": "EOD_CACHE"
         },
