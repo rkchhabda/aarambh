@@ -985,70 +985,144 @@
 <div class="page" id="page-backtest">
     <div class="page-header">
         <h1>Empirical Backtest Track Record</h1>
-        <p>Verified out-of-sample performance across full 4-year cycle (2022–2026) on the Nifty 100 Indian Equities Universe</p>
+        <p>Verified out-of-sample performance on the Nifty 100 universe using the live ±1.00% hysteresis filter (15 bps retail costs)</p>
     </div>
 
-    <!-- Verified Full-Cycle Summary Card -->
-    <div class="card" style="max-width:1100px;">
+    <!-- Core Positioning Alert / Banner -->
+    <div class="card" style="max-width:1100px;background:rgba(59,130,246,0.06);border-left:4px solid var(--accent);margin-bottom:20px;">
+        <p style="font-size:14px;color:var(--text-primary);line-height:1.6;margin:0;">
+            <strong>Mandatory Product Disclosure:</strong> This strategy is not designed to beat the market in calm conditions — its value is concentrated in protecting capital during severe, infrequent market shocks, as shown by the 2020 COVID crash test. In normal trending markets, passive Buy &amp; Hold delivers higher total returns and superior Sharpe/Sortino ratios; only the Calmar ratio favors the filter during calmer periods.
+        </p>
+    </div>
+
+    <!-- Section 1: Recent 4-Year Cycle (2022-2026) -->
+    <div class="card" style="max-width:1100px;margin-bottom:24px;">
         <div class="card-header">
-            <h2>4-Year Full-Cycle Verification (1,006 Trading Sessions &bull; 15 bps Costs)</h2>
-            <span class="badge" style="background:var(--green-bg);color:var(--green);">VERIFIED OUT-OF-SAMPLE</span>
+            <div>
+                <h2>Horizon 1: Recent 4-Year Cycle (2022–2026 &bull; Calmer Market Regimes)</h2>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">1,006 trading sessions &bull; Post-correction recovery, multi-cap bull rally, and late-cycle chop</div>
+            </div>
+            <span class="badge" style="background:rgba(234,179,8,0.12);color:var(--yellow);font-weight:600;">CALMAR FAVORS FILTER &bull; SHARPE/SORTINO FAVOR B&amp;H</span>
         </div>
-        <p style="font-size:14px;color:var(--text-secondary);margin-bottom:20px;line-height:1.6;">
-            A systematic 200-day trend filter reduces Nifty 100 portfolio drawdown by roughly <strong>1.1x–2.1x</strong> depending on market regime (average <strong>~1.64x</strong> over a 4-year full cycle, verified out-of-sample, 15bps retail costs), with the strongest effect during corrections and sideways markets. This comes at a real cost: cumulative return was <strong>+55.7%</strong> vs. <strong>+101.1%</strong> for buy-and-hold — the filter gives up upside in bull runs and incurs whipsaw drag during sharp recoveries.
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;line-height:1.6;">
+            Across this 4-year cycle without a systemic crisis, the 200-SMA filter successfully limited peak portfolio drawdown to <strong>-13.11%</strong> (vs. <strong>-21.15%</strong> for Buy &amp; Hold, a 1.61x reduction). However, holding cash ~34% of days imposed an opportunity cost: total return was <strong>+57.67%</strong> vs. <strong>+101.06%</strong> for Buy &amp; Hold. Because cash drag exceeded volatility savings, <strong>Sharpe and Sortino ratios favored passive Buy &amp; Hold; only the Calmar ratio favored the filter.</strong>
         </p>
 
         <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px;">
             <div class="stat-card">
                 <div class="label">Max Drawdown (Filter)</div>
-                <div class="value" style="color:var(--green);">-12.90%</div>
-                <div class="sub">vs -21.15% Buy &amp; Hold</div>
-            </div>
-            <div class="stat-card">
-                <div class="label">Drawdown Reduction</div>
-                <div class="value" style="color:var(--accent-light);">1.64x</div>
-                <div class="sub">Full-Cycle Multi-Year Ratio</div>
+                <div class="value" style="color:var(--green);">-13.11%</div>
+                <div class="sub">vs -21.15% Buy &amp; Hold (1.61x lower)</div>
             </div>
             <div class="stat-card">
                 <div class="label">Net Cumulative Return</div>
-                <div class="value" style="color:var(--text-primary);">+55.67%</div>
-                <div class="sub">Net of 15bps round-trip</div>
+                <div class="value" style="color:var(--text-primary);">+57.67%</div>
+                <div class="sub">vs +101.06% Buy &amp; Hold (15bps costs)</div>
             </div>
             <div class="stat-card">
                 <div class="label">Sharpe Ratio</div>
-                <div class="value" style="color:var(--text-primary);">1.224</div>
-                <div class="sub">vs 1.267 Buy &amp; Hold</div>
+                <div class="value" style="color:var(--text-muted);">1.252</div>
+                <div class="sub">Favors B&amp;H (1.267)</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Calmar Ratio</div>
+                <div class="value" style="color:var(--green);">0.905</div>
+                <div class="sub">Favors Filter (vs 0.879 B&amp;H)</div>
             </div>
         </div>
 
-        <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-top:12px;">
+        <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);">
             <div class="stat-card">
-                <div class="label">Target Universe</div>
-                <div class="value" style="font-size:20px;">Nifty 100</div>
-                <div class="sub">138 Historical Equities</div>
+                <div class="label">Sortino Ratio</div>
+                <div class="value" style="color:var(--text-muted);font-size:18px;">1.068</div>
+                <div class="sub">Favors B&amp;H (1.119)</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Ulcer Distress Index</div>
+                <div class="value" style="color:var(--text-muted);font-size:18px;">7.163</div>
+                <div class="sub">vs 6.214 Buy &amp; Hold</div>
             </div>
             <div class="stat-card">
                 <div class="label">Avg Market Exposure</div>
-                <div class="value" style="font-size:20px;">65.1%</div>
-                <div class="sub">34.9% in Defensive Cash</div>
+                <div class="value" style="font-size:18px;">66.1%</div>
+                <div class="sub">33.9% in Defensive Cash</div>
             </div>
             <div class="stat-card">
-                <div class="label">Underwater Time</div>
-                <div class="value" style="font-size:20px;">86.6%</div>
-                <div class="sub">vs 84.6% Buy &amp; Hold</div>
-            </div>
-            <div class="stat-card">
-                <div class="label">Total Signals Fired</div>
-                <div class="value" style="font-size:20px;">4,464</div>
-                <div class="sub">Zero lookahead / point-in-time</div>
+                <div class="label">Signals Fired (Hysteresis)</div>
+                <div class="value" style="font-size:18px;">2,420</div>
+                <div class="sub">45.8% fewer flips than unbuffered</div>
             </div>
         </div>
     </div>
 
-    <!-- Multi-Window Stress Test Breakdown -->
-    <div class="card" style="max-width:1100px;margin-top:20px;">
+    <!-- Section 2: Full 9-Year Cycle & COVID Stress Test (2017-2026) -->
+    <div class="card" style="max-width:1100px;margin-bottom:24px;">
         <div class="card-header">
-            <h2>Multi-Window Stress-Test Breakdown (All Regimes)</h2>
+            <div>
+                <h2>Horizon 2: Full 9-Year Cycle (2017–2026 &bull; Includes 2020 COVID Shock)</h2>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">2,276 trading sessions &bull; Pre-COVID consolidation, 2020 crash &amp; V-rebound, bull rally, and late-cycle chop</div>
+            </div>
+            <span class="badge" style="background:var(--green-bg);color:var(--green);font-weight:700;">FILTER IMPROVES ALL RISK METRICS</span>
+        </div>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:16px;line-height:1.6;">
+            Across a full multi-cycle horizon that includes systemic crisis, <strong>the filter improves Sharpe, Sortino, Calmar, and Ulcer Index simultaneously.</strong> This full-cycle outperformance is driven primarily by the 2020 COVID shock: the filter avoided ~72% of the crash drawdown (-10.84% vs. -38.04%) while still capturing ~77% of the subsequent recovery upside (+25.93% vs. +33.88% full-year return).
+        </p>
+
+        <div style="background:rgba(234,179,8,0.06);border:1px solid rgba(234,179,8,0.25);border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:16px;font-size:13px;color:var(--text-secondary);line-height:1.5;">
+            <strong style="color:var(--yellow);">Critical Single-Event Caveat:</strong> This 9-year multi-metric outperformance is demonstrated by <strong>ONE historical crisis event</strong> (the 2020 COVID liquidity shock), not a pattern verified across multiple distinct crisis types. It does not guarantee identical efficacy in different downturn topologies (such as a slow, multi-year grinding bear market rather than a sharp V-shaped shock).
+        </div>
+
+        <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px;">
+            <div class="stat-card">
+                <div class="label">9-Year Max Drawdown</div>
+                <div class="value" style="color:var(--green);">-13.84%</div>
+                <div class="sub">vs -37.82% Buy &amp; Hold (2.73x lower)</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Full-Cycle Sharpe</div>
+                <div class="value" style="color:var(--green);">1.150</div>
+                <div class="sub">vs 1.048 Buy &amp; Hold (+9.7%)</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Full-Cycle Sortino</div>
+                <div class="value" style="color:var(--green);">0.999</div>
+                <div class="sub">vs 0.920 Buy &amp; Hold (+8.6%)</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Full-Cycle Calmar</div>
+                <div class="value" style="color:var(--green);">0.810</div>
+                <div class="sub">vs 0.485 Buy &amp; Hold (+67.0%)</div>
+            </div>
+        </div>
+
+        <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);">
+            <div class="stat-card">
+                <div class="label">Full-Cycle Ulcer Index</div>
+                <div class="value" style="color:var(--green);font-size:18px;">6.945</div>
+                <div class="sub">vs 7.308 Buy &amp; Hold (Lower stress)</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Cumulative Net Return</div>
+                <div class="value" style="color:var(--text-primary);font-size:18px;">+163.45%</div>
+                <div class="sub">vs +355.35% Buy &amp; Hold (15bps costs)</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Annualized Return</div>
+                <div class="value" style="color:var(--text-primary);font-size:18px;">11.20%</div>
+                <div class="sub">vs 18.33% Buy &amp; Hold</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Engine Specification</div>
+                <div class="value" style="font-size:18px;">±1.00% Hysteresis</div>
+                <div class="sub">Matches live scanner code</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 3: COVID Window Deep-Dive Table -->
+    <div class="card" style="max-width:1100px;margin-bottom:24px;">
+        <div class="card-header">
+            <h2>COVID-19 Stress Test Audit: Crash vs. Full-Year Rebound</h2>
         </div>
         <div class="table-container">
             <table>
@@ -1061,57 +1135,103 @@
                         <th>DD Reduction</th>
                         <th>Return (B&amp;H)</th>
                         <th>Return (Filter 15bps)</th>
+                        <th>Sharpe (B&amp;H vs Filter)</th>
+                        <th>Calmar (B&amp;H vs Filter)</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr>
-                        <td><strong>Window 1: Consolidation / Range</strong></td>
-                        <td style="font-size:12px;color:var(--text-muted);">2022-08 &rarr; 2023-08</td>
-                        <td style="color:var(--red);">-10.17%</td>
-                        <td style="color:var(--green);font-weight:600;">-7.11%</td>
-                        <td><span class="badge" style="background:var(--green-bg);color:var(--green);">1.43x</span></td>
-                        <td>+25.52%</td>
-                        <td>+13.59%</td>
+                        <td><strong>COVID Crash Window</strong></td>
+                        <td style="font-size:12px;color:var(--text-muted);">2020-01 &rarr; 2020-04</td>
+                        <td style="color:var(--red);font-weight:700;">-38.04%</td>
+                        <td style="color:var(--green);font-weight:700;">-10.84%</td>
+                        <td><span class="badge" style="background:var(--green-bg);color:var(--green);font-weight:700;">3.51x</span></td>
+                        <td style="color:var(--red);">-21.25%</td>
+                        <td style="color:var(--green);font-weight:600;">-5.01%</td>
+                        <td>-1.471 vs -1.607</td>
+                        <td>-1.691 vs -1.430</td>
                     </tr>
                     <tr>
-                        <td><strong>Window 2: Strong Bull Run</strong></td>
-                        <td style="font-size:12px;color:var(--text-muted);">2023-08 &rarr; 2024-08</td>
-                        <td style="color:var(--red);">-4.55%</td>
-                        <td style="color:var(--green);font-weight:600;">-4.10%</td>
-                        <td><span class="badge" style="background:rgba(59,130,246,0.12);color:var(--accent-light);">1.11x</span></td>
-                        <td style="color:var(--green);font-weight:600;">+44.73%</td>
-                        <td>+29.74%</td>
+                        <td><strong>COVID Full Year (Crash + Rebound)</strong></td>
+                        <td style="font-size:12px;color:var(--text-muted);">2020-01 &rarr; 2020-12</td>
+                        <td style="color:var(--red);font-weight:700;">-37.82%</td>
+                        <td style="color:var(--green);font-weight:700;">-10.77%</td>
+                        <td><span class="badge" style="background:var(--green-bg);color:var(--green);font-weight:700;">3.51x</span></td>
+                        <td>+33.88%</td>
+                        <td>+25.93%</td>
+                        <td style="color:var(--green);font-weight:700;">1.155 vs 2.197 (+90%)</td>
+                        <td style="color:var(--green);font-weight:700;">0.890 vs 2.206 (+148%)</td>
                     </tr>
                     <tr>
-                        <td><strong>Window 3: Correction &amp; Volatility</strong></td>
-                        <td style="font-size:12px;color:var(--text-muted);">2024-08 &rarr; 2025-08</td>
-                        <td style="color:var(--red);">-15.17%</td>
-                        <td style="color:var(--green);font-weight:600;">-7.39%</td>
-                        <td><span class="badge" style="background:var(--green-bg);color:var(--green);font-weight:700;">2.05x</span></td>
-                        <td>+2.90%</td>
-                        <td>-2.73%</td>
+                        <td><strong>Pre-COVID Bull / Consolidation</strong></td>
+                        <td style="font-size:12px;color:var(--text-muted);">2017-07 &rarr; 2019-12</td>
+                        <td style="color:var(--red);">-15.73%</td>
+                        <td style="color:var(--green);font-weight:600;">-9.43%</td>
+                        <td><span class="badge" style="background:var(--green-bg);color:var(--green);">1.67x</span></td>
+                        <td>+25.51%</td>
+                        <td>+7.11%</td>
+                        <td>0.712 vs 0.431</td>
+                        <td>0.674 vs 0.333</td>
                     </tr>
                     <tr>
-                        <td><strong>Window 4: Sideways / Chop</strong></td>
-                        <td style="font-size:12px;color:var(--text-muted);">2025-08 &rarr; 2026-08</td>
-                        <td style="color:var(--red);">-8.55%</td>
-                        <td style="color:var(--green);font-weight:600;">-6.58%</td>
-                        <td><span class="badge" style="background:var(--green-bg);color:var(--green);">1.30x</span></td>
-                        <td>+5.49%</td>
-                        <td>+1.41%</td>
+                        <td><strong>Post-COVID Bull &amp; Late Cycle</strong></td>
+                        <td style="font-size:12px;color:var(--text-muted);">2021-01 &rarr; 2026-08</td>
+                        <td style="color:var(--red);">-21.15%</td>
+                        <td style="color:var(--green);font-weight:600;">-13.84%</td>
+                        <td><span class="badge" style="background:var(--green-bg);color:var(--green);">1.53x</span></td>
+                        <td>+171.40%</td>
+                        <td>+94.95%</td>
+                        <td>1.205 vs 1.187</td>
+                        <td>0.896 vs 0.895</td>
                     </tr>
                     <tr style="background:rgba(255,255,255,0.03);border-top:2px solid var(--border);">
-                        <td><strong>Full 4-Year Full Cycle</strong></td>
-                        <td style="font-size:12px;color:var(--text-primary);font-weight:600;">2022-08 &rarr; 2026-08</td>
-                        <td style="color:var(--red);font-weight:700;">-21.15%</td>
-                        <td style="color:var(--green);font-weight:700;">-12.90%</td>
-                        <td><span class="badge" style="background:var(--green-bg);color:var(--green);font-weight:700;">1.64x</span></td>
-                        <td style="font-weight:700;">+101.05%</td>
-                        <td style="font-weight:700;color:var(--accent-light);">+55.67%</td>
+                        <td><strong>Full 9-Year Cycle (2017–2026)</strong></td>
+                        <td style="font-size:12px;color:var(--text-primary);font-weight:600;">2017-07 &rarr; 2026-09</td>
+                        <td style="color:var(--red);font-weight:700;">-37.82%</td>
+                        <td style="color:var(--green);font-weight:700;">-13.84%</td>
+                        <td><span class="badge" style="background:var(--green-bg);color:var(--green);font-weight:700;">2.73x</span></td>
+                        <td style="font-weight:700;">+355.35%</td>
+                        <td style="font-weight:700;color:var(--accent-light);">+163.45%</td>
+                        <td style="color:var(--green);font-weight:700;">1.048 vs 1.150 (+9.7%)</td>
+                        <td style="color:var(--green);font-weight:700;">0.485 vs 0.810 (+67.0%)</td>
                     </tr>
                 </tbody>
             </table>
         </div>
+    </div>
+
+    <!-- Section 4: Rolling Window Rigor & Audit Disclosure -->
+    <div class="card" style="max-width:1100px;margin-bottom:20px;">
+        <div class="card-header">
+            <h2>Rolling Window Rigor &amp; Statistical Independence</h2>
+        </div>
+        <p style="font-size:14px;color:var(--text-secondary);line-height:1.6;margin-bottom:12px;">
+            To prevent window selection bias, the strategy was stress-tested across <strong>103 rolling 6-month windows</strong> (126 trading days, 21-day step) across the 9-year dataset. Because overlapping windows can capture the same underlying event, clustering analysis confirms these 103 windows span <strong>73 distinct drawdown episodes</strong>.
+        </p>
+        <div style="background:var(--bg-primary);padding:14px 18px;border-radius:var(--radius-sm);border:1px solid var(--border);font-size:13px;color:var(--text-primary);">
+            <strong>Rolling Audit Results:</strong> The filter reduced drawdown in <strong>103 of 103 windows (100.0%) across all 73 distinct drawdown episodes</strong>. The median drawdown reduction was <strong>1.62x</strong> (mean <strong>1.81x</strong>, 25th percentile <strong>1.28x</strong>, 75th percentile <strong>2.17x</strong>, range 1.03x to 6.32x).
+        </div>
+        <p style="font-size:12px;color:var(--text-muted);margin-top:12px;margin-bottom:0;">
+            <em>Source artifacts: <code>data/multi/historical_10y_raw.csv</code> and <code>scripts/verification/covid_stress_test_results.json</code>. Evaluated with 15 bps round-trip retail execution costs and live ±1.00% hysteresis filter logic matching <code>service/routes_scanner.py</code>.</em>
+        </p>
+    </div>
+
+    <!-- Section 5: Educational & Regulatory Disclaimer -->
+    <div style="
+        max-width: 1100px;
+        margin: 20px 0 30px 0;
+        padding: 14px 18px;
+        background: rgba(234,179,8,0.08);
+        border: 1px solid rgba(234,179,8,0.30);
+        border-radius: var(--radius-sm);
+        font-size: 13px;
+        color: var(--text-secondary);
+        line-height: 1.6;
+    ">
+        <strong style="color:var(--yellow);">⚖️ Research &amp; Educational Use Only</strong> — Not investment advice or portfolio management.
+        Quantitative models and mechanical regime filters are systematic research outputs, not guaranteed predictors of future price performance.
+        Historical backtest simulations, even when evaluated out-of-sample over multi-year cycles net of transaction costs, do not guarantee future returns or loss boundaries.
+        Always consult a SEBI-registered financial advisor before undertaking capital commitments.
     </div>
 </div>
 

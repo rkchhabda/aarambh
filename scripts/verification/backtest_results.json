@@ -1,0 +1,180 @@
+{
+  "metadata": {
+    "timestamp": "2026-09-26T09:09:59.515918",
+    "target_universe": "Nifty 100 Indian Equities",
+    "tickers_count": 138,
+    "test_start_date": "2025-12-09",
+    "test_end_date": "2026-08-27",
+    "trading_days": 181,
+    "features": [
+      "bb_pos",
+      "macd",
+      "obv_slope",
+      "sma_ratio",
+      "cci",
+      "ret_10",
+      "williams_r",
+      "rsi_14",
+      "atr_14",
+      "roc_10"
+    ],
+    "manifest_threshold": 0.55
+  },
+  "scenarios": {
+    "Buy & Hold Benchmark (Equal-Weight Universe)": {
+      "total_ret_pct": 3.61,
+      "ann_ret_pct": 6.21,
+      "sharpe": 0.389,
+      "max_dd_pct": -13.55,
+      "win_rate_pct": 52.49,
+      "trade_count": 138,
+      "avg_exposure_pct": 100.0
+    },
+    "Track A (With Regime Filter (SMA200), Thr=0.50, Cost=5bps)": {
+      "total_ret_pct": 0.32,
+      "ann_ret_pct": 0.51,
+      "sharpe": 0.137,
+      "max_dd_pct": -2.82,
+      "win_rate_pct": 54.7,
+      "trade_count": 1220,
+      "avg_exposure_pct": 21.72
+    },
+    "Track A (With Regime Filter (SMA200), Thr=0.50, Cost=15bps)": {
+      "total_ret_pct": -0.56,
+      "ann_ret_pct": -0.72,
+      "sharpe": -0.192,
+      "max_dd_pct": -2.9,
+      "win_rate_pct": 53.59,
+      "trade_count": 1220,
+      "avg_exposure_pct": 21.72
+    },
+    "Track A (With Regime Filter (SMA200), Thr=0.55, Cost=5bps)": {
+      "total_ret_pct": -0.27,
+      "ann_ret_pct": -0.31,
+      "sharpe": -0.087,
+      "max_dd_pct": -2.84,
+      "win_rate_pct": 53.04,
+      "trade_count": 1103,
+      "avg_exposure_pct": 20.19
+    },
+    "Track A (With Regime Filter (SMA200), Thr=0.55, Cost=15bps)": {
+      "total_ret_pct": -1.06,
+      "ann_ret_pct": -1.42,
+      "sharpe": -0.399,
+      "max_dd_pct": -3.2,
+      "win_rate_pct": 51.93,
+      "trade_count": 1103,
+      "avg_exposure_pct": 20.19
+    },
+    "Track A (No Regime Filter, Thr=0.50, Cost=5bps)": {
+      "total_ret_pct": 2.16,
+      "ann_ret_pct": 3.29,
+      "sharpe": 0.42,
+      "max_dd_pct": -6.13,
+      "win_rate_pct": 49.17,
+      "trade_count": 1994,
+      "avg_exposure_pct": 44.56
+    },
+    "Track A (No Regime Filter, Thr=0.50, Cost=15bps)": {
+      "total_ret_pct": 0.7,
+      "ann_ret_pct": 1.28,
+      "sharpe": 0.163,
+      "max_dd_pct": -6.24,
+      "win_rate_pct": 48.62,
+      "trade_count": 1994,
+      "avg_exposure_pct": 44.56
+    },
+    "Track A (No Regime Filter, Thr=0.55, Cost=5bps)": {
+      "total_ret_pct": 1.26,
+      "ann_ret_pct": 2.01,
+      "sharpe": 0.277,
+      "max_dd_pct": -5.69,
+      "win_rate_pct": 48.62,
+      "trade_count": 1883,
+      "avg_exposure_pct": 40.57
+    },
+    "Track A (No Regime Filter, Thr=0.55, Cost=15bps)": {
+      "total_ret_pct": -0.11,
+      "ann_ret_pct": 0.11,
+      "sharpe": 0.015,
+      "max_dd_pct": -5.81,
+      "win_rate_pct": 48.62,
+      "trade_count": 1883,
+      "avg_exposure_pct": 40.57
+    }
+  },
+  "subperiods": {
+    "Sub-Period 1 (Q1) [2025-12-09 -> 2026-02-11] Track A (Thr=0.55, 15bps)": {
+      "total_ret_pct": 1.16,
+      "ann_ret_pct": 6.53,
+      "sharpe": 1.732,
+      "max_dd_pct": -1.54,
+      "win_rate_pct": 48.89,
+      "trade_count": 403,
+      "avg_exposure_pct": 24.69
+    },
+    "Sub-Period 1 (Q1) [2025-12-09 -> 2026-02-11] Buy & Hold Benchmark": {
+      "total_ret_pct": 2.78,
+      "ann_ret_pct": 16.21,
+      "sharpe": 1.255,
+      "max_dd_pct": -5.99,
+      "win_rate_pct": 53.33,
+      "trade_count": 138,
+      "avg_exposure_pct": 100.0
+    },
+    "Sub-Period 2 (Q2) [2026-02-12 -> 2026-04-22] Track A (Thr=0.55, 15bps)": {
+      "total_ret_pct": -1.02,
+      "ann_ret_pct": -5.6,
+      "sharpe": -1.182,
+      "max_dd_pct": -2.88,
+      "win_rate_pct": 60.0,
+      "trade_count": 249,
+      "avg_exposure_pct": 19.26
+    },
+    "Sub-Period 2 (Q2) [2026-02-12 -> 2026-04-22] Buy & Hold Benchmark": {
+      "total_ret_pct": -2.28,
+      "ann_ret_pct": -9.99,
+      "sharpe": -0.412,
+      "max_dd_pct": -13.0,
+      "win_rate_pct": 55.56,
+      "trade_count": 138,
+      "avg_exposure_pct": 100.0
+    },
+    "Sub-Period 3 (Q3) [2026-04-23 -> 2026-06-24] Track A (Thr=0.55, 15bps)": {
+      "total_ret_pct": -0.91,
+      "ann_ret_pct": -5.08,
+      "sharpe": -1.552,
+      "max_dd_pct": -1.36,
+      "win_rate_pct": 53.33,
+      "trade_count": 268,
+      "avg_exposure_pct": 19.71
+    },
+    "Sub-Period 3 (Q3) [2026-04-23 -> 2026-06-24] Buy & Hold Benchmark": {
+      "total_ret_pct": 1.12,
+      "ann_ret_pct": 7.16,
+      "sharpe": 0.533,
+      "max_dd_pct": -4.55,
+      "win_rate_pct": 53.33,
+      "trade_count": 138,
+      "avg_exposure_pct": 100.0
+    },
+    "Sub-Period 4 (Q4) [2026-06-25 -> 2026-08-27] Track A (Thr=0.55, 15bps)": {
+      "total_ret_pct": -0.37,
+      "ann_ret_pct": -2.0,
+      "sharpe": -1.094,
+      "max_dd_pct": -0.83,
+      "win_rate_pct": 45.65,
+      "trade_count": 261,
+      "avg_exposure_pct": 17.19
+    },
+    "Sub-Period 4 (Q4) [2026-06-25 -> 2026-08-27] Buy & Hold Benchmark": {
+      "total_ret_pct": 2.01,
+      "ann_ret_pct": 11.34,
+      "sharpe": 1.231,
+      "max_dd_pct": -2.21,
+      "win_rate_pct": 47.83,
+      "trade_count": 138,
+      "avg_exposure_pct": 100.0
+    }
+  }
+}
