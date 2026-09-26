@@ -4,6 +4,7 @@ __pycache__/
 *.pyc
 *.pyo
 data/multi/
+data/nse_cache/
 *.db
 *.sqlite
 .env
@@ -13,3 +14,9 @@ venv/
 *.log
 service/uvicorn.log
 service/uvicorn.err.log
+*.txt
+debug_*.py
+check_*.py
+test_exec.py
+
+

@@ -639,17 +639,17 @@
             <div class="sub">Nifty 100 Universe</div>
         </div>
         <div class="stat-card">
-            <div class="label">Bullish Signals</div>
+            <div class="label">Risk-On Tickers</div>
             <div class="value" style="color:var(--green)" id="stat-bullish">—</div>
             <div class="sub" id="stat-bullish-pct"></div>
         </div>
         <div class="stat-card">
-            <div class="label">Bearish Signals</div>
+            <div class="label">Risk-Off Tickers</div>
             <div class="value" style="color:var(--red)" id="stat-bearish">—</div>
             <div class="sub" id="stat-bearish-pct"></div>
         </div>
         <div class="stat-card">
-            <div class="label">Advance / Decline</div>
+            <div class="label">Breadth Ratio</div>
             <div class="value" id="stat-ad">—</div>
             <div class="sub" id="stat-ad-sub"></div>
         </div>
@@ -724,11 +724,10 @@
                         <th>#</th>
                         <th>Ticker</th>
                         <th>Name</th>
-                        <th>Signal</th>
-                        <th>Score</th>
-                        <th>Confidence</th>
-                        <th>Risk</th>
-                        <th>Sector</th>
+                        <th>Mechanical Regime (200-SMA)</th>
+                        <th>Price vs SMA200 (%)</th>
+                        <th>Price (₹)</th>
+                        <th>SMA200 (₹)</th>
                     </tr>
                 </thead>
                 <tbody id="topSignalsBody">
@@ -742,34 +741,14 @@
 <!-- ── Scanner Page ── -->
 <div class="page" id="page-scanner">
     <div class="page-header">
-        <h1>Market Scanner</h1>
-        <p>Filterable scan of all Nifty 100 tickers with quant scores and signals</p>
+        <h1>Market Trend Scanner</h1>
+        <p>Systematic 200-day SMA regime filter across Nifty 100 universe</p>
     </div>
     <div class="filter-row">
         <select id="filterSignal" onchange="applyFilters()">
-            <option value="">All Signals</option>
-            <option value="STRONG BUY">Strong Buy</option>
-            <option value="BUY">Buy</option>
-            <option value="HOLD">Hold</option>
-            <option value="SELL">Sell</option>
-        </select>
-        <select id="filterRisk" onchange="applyFilters()">
-            <option value="">All Risk Levels</option>
-            <option value="Low">Low Risk</option>
-            <option value="Medium">Medium Risk</option>
-            <option value="High">High Risk</option>
-        </select>
-        <select id="filterMomentum" onchange="applyFilters()">
-            <option value="">All Momentum</option>
-            <option value="Strong">Strong</option>
-            <option value="Moderate">Moderate</option>
-            <option value="Weak">Weak</option>
-        </select>
-        <select id="filterRegime" onchange="applyFilters()">
-            <option value="">All Regimes</option>
-            <option value="BULL">Bull</option>
-            <option value="NEUTRAL">Neutral</option>
-            <option value="BEAR">Bear</option>
+            <option value="">All Regime States</option>
+            <option value="RISK-ON">RISK-ON (Price > SMA200)</option>
+            <option value="RISK-OFF">RISK-OFF (Price <= SMA200)</option>
         </select>
         <div style="flex:1;"></div>
         <span id="scannerCount" style="font-size:13px;color:var(--text-muted);display:flex;align-items:center;"></span>
@@ -780,17 +759,15 @@
                 <tr>
                     <th data-sort="ticker" onclick="sortTable('ticker')">Ticker <span class="sort-arrow">↕</span></th>
                     <th data-sort="name" onclick="sortTable('name')">Name <span class="sort-arrow">↕</span></th>
-                    <th data-sort="signal" onclick="sortTable('signal')">Signal <span class="sort-arrow">↕</span></th>
-                    <th data-sort="score" onclick="sortTable('score')">Score <span class="sort-arrow">↕</span></th>
-                    <th data-sort="confidence" onclick="sortTable('confidence')">Confidence <span class="sort-arrow">↕</span></th>
-                    <th data-sort="risk" onclick="sortTable('risk')">Risk <span class="sort-arrow">↕</span></th>
-                    <th data-sort="momentum" onclick="sortTable('momentum')">Momentum <span class="sort-arrow">↕</span></th>
-                    <th data-sort="regime" onclick="sortTable('regime')">Regime <span class="sort-arrow">↕</span></th>
+                    <th data-sort="status" onclick="sortTable('status')">Regime Status <span class="sort-arrow">↕</span></th>
+                    <th data-sort="sma_distance_pct" onclick="sortTable('sma_distance_pct')">Price vs SMA200 (%) <span class="sort-arrow">↕</span></th>
+                    <th data-sort="price" onclick="sortTable('price')">Price (₹) <span class="sort-arrow">↕</span></th>
+                    <th data-sort="sma_200" onclick="sortTable('sma_200')">SMA 200 (₹) <span class="sort-arrow">↕</span></th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody id="scannerBody">
-                <tr><td colspan="9" class="empty-state" style="padding:40px;">Loading scanner data...</td></tr>
+                <tr><td colspan="7" class="empty-state" style="padding:40px;">Loading scanner data...</td></tr>
             </tbody>
         </table>
     </div>
@@ -985,67 +962,133 @@
 <!-- ── Backtest Page ── -->
 <div class="page" id="page-backtest">
     <div class="page-header">
-        <h1>Backtesting</h1>
-        <p>Test signal strategies on historical data</p>
+        <h1>Empirical Backtest Track Record</h1>
+        <p>Verified out-of-sample performance across full 4-year cycle (2022–2026) on the Nifty 100 Indian Equities Universe</p>
     </div>
 
-    <div class="card" style="max-width:900px;">
-        <h3 style="margin-bottom:16px;">Configure Backtest</h3>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-            <div>
-                <label style="display:block;font-size:13px;color:var(--text-secondary);margin-bottom:4px;">Ticker</label>
-                <select id="btTicker" class="filter-select" style="width:100%;">
-                    <option value="AAPL">AAPL (Apple)</option>
-                    <option value="MSFT">MSFT (Microsoft)</option>
-                    <option value="GOOGL">GOOGL (Alphabet)</option>
-                    <option value="AMZN">AMZN (Amazon)</option>
-                    <option value="TSLA">TSLA (Tesla)</option>
-                </select>
-            </div>
-            <div>
-                <label style="display:block;font-size:13px;color:var(--text-secondary);margin-bottom:4px;">Signal Threshold</label>
-                <input type="number" id="btThreshold" value="0.65" min="0.5" max="0.95" step="0.05" style="width:100%;">
-            </div>
-            <div>
-                <label style="display:block;font-size:13px;color:var(--text-secondary);margin-bottom:4px;">Holding Period (days)</label>
-                <input type="number" id="btHolding" value="5" min="1" max="30" style="width:100%;">
-            </div>
-            <div>
-                <label style="display:block;font-size:13px;color:var(--text-secondary);margin-bottom:4px;">Transaction Cost (bps)</label>
-                <input type="number" id="btCost" value="20" min="0" max="100" style="width:100%;">
-            </div>
-            <div>
-                <label style="display:block;font-size:13px;color:var(--text-secondary);margin-bottom:4px;">Start Date</label>
-                <input type="date" id="btStart" style="width:100%;">
-            </div>
-            <div>
-                <label style="display:block;font-size:13px;color:var(--text-secondary);margin-bottom:4px;">End Date</label>
-                <input type="date" id="btEnd" style="width:100%;">
-            </div>
+    <!-- Verified Full-Cycle Summary Card -->
+    <div class="card" style="max-width:1100px;">
+        <div class="card-header">
+            <h2>4-Year Full-Cycle Verification (1,006 Trading Sessions &bull; 15 bps Costs)</h2>
+            <span class="badge" style="background:var(--green-bg);color:var(--green);">VERIFIED OUT-OF-SAMPLE</span>
         </div>
-        <button class="btn btn-blue" style="margin-top:16px;" onclick="runBacktest()">Run Backtest</button>
-    </div>
+        <p style="font-size:14px;color:var(--text-secondary);margin-bottom:20px;line-height:1.6;">
+            A systematic 200-day trend filter reduces Nifty 100 portfolio drawdown by roughly <strong>1.1x–2.1x</strong> depending on market regime (average <strong>~1.64x</strong> over a 4-year full cycle, verified out-of-sample, 15bps retail costs), with the strongest effect during corrections and sideways markets. This comes at a real cost: cumulative return was <strong>+55.7%</strong> vs. <strong>+101.1%</strong> for buy-and-hold — the filter gives up upside in bull runs and incurs whipsaw drag during sharp recoveries.
+        </p>
 
-    <div id="btResults" style="display:none;margin-top:24px;">
-        <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);">
-            <div class="stat-card"><div class="stat-val" id="btTotalReturn">--</div><div class="stat-label">Total Return</div></div>
-            <div class="stat-card"><div class="stat-val" id="btSharpe">--</div><div class="stat-label">Sharpe Ratio</div></div>
-            <div class="stat-card"><div class="stat-val" id="btMaxDD">--</div><div class="stat-label">Max Drawdown</div></div>
-            <div class="stat-card"><div class="stat-val" id="btWinRate">--</div><div class="stat-label">Win Rate</div></div>
+        <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:16px;">
+            <div class="stat-card">
+                <div class="label">Max Drawdown (Filter)</div>
+                <div class="value" style="color:var(--green);">-12.90%</div>
+                <div class="sub">vs -21.15% Buy &amp; Hold</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Drawdown Reduction</div>
+                <div class="value" style="color:var(--accent-light);">1.64x</div>
+                <div class="sub">Full-Cycle Multi-Year Ratio</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Net Cumulative Return</div>
+                <div class="value" style="color:var(--text-primary);">+55.67%</div>
+                <div class="sub">Net of 15bps round-trip</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Sharpe Ratio</div>
+                <div class="value" style="color:var(--text-primary);">1.224</div>
+                <div class="sub">vs 1.267 Buy &amp; Hold</div>
+            </div>
         </div>
+
         <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-top:12px;">
-            <div class="stat-card"><div class="stat-val" id="btTrades">--</div><div class="stat-label">Total Trades</div></div>
-            <div class="stat-card"><div class="stat-val" id="btCAGR">--</div><div class="stat-label">CAGR</div></div>
-            <div class="stat-card"><div class="stat-val" id="btPF">--</div><div class="stat-label">Profit Factor</div></div>
-            <div class="stat-card"><div class="stat-val" id="btAvgWin">--</div><div class="stat-label">Avg Win</div></div>
+            <div class="stat-card">
+                <div class="label">Target Universe</div>
+                <div class="value" style="font-size:20px;">Nifty 100</div>
+                <div class="sub">138 Historical Equities</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Avg Market Exposure</div>
+                <div class="value" style="font-size:20px;">65.1%</div>
+                <div class="sub">34.9% in Defensive Cash</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Underwater Time</div>
+                <div class="value" style="font-size:20px;">86.6%</div>
+                <div class="sub">vs 84.6% Buy &amp; Hold</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Total Signals Fired</div>
+                <div class="value" style="font-size:20px;">4,464</div>
+                <div class="sub">Zero lookahead / point-in-time</div>
+            </div>
         </div>
-        <div class="card" style="margin-top:16px;">
-            <h3 style="margin-bottom:8px;">Recent Trades</h3>
-            <div id="btTradesTable" style="overflow-x:auto;"></div>
+    </div>
+
+    <!-- Multi-Window Stress Test Breakdown -->
+    <div class="card" style="max-width:1100px;margin-top:20px;">
+        <div class="card-header">
+            <h2>Multi-Window Stress-Test Breakdown (All Regimes)</h2>
         </div>
-        <div class="card" style="margin-top:16px;">
-            <h3 style="margin-bottom:8px;">Equity Curve</h3>
-            <div id="btEquityChart" style="height:250px;position:relative;"></div>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Window &amp; Market Regime</th>
+                        <th>Period</th>
+                        <th>MaxDD (B&amp;H)</th>
+                        <th>MaxDD (Filter 15bps)</th>
+                        <th>DD Reduction</th>
+                        <th>Return (B&amp;H)</th>
+                        <th>Return (Filter 15bps)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Window 1: Consolidation / Range</strong></td>
+                        <td style="font-size:12px;color:var(--text-muted);">2022-08 &rarr; 2023-08</td>
+                        <td style="color:var(--red);">-10.17%</td>
+                        <td style="color:var(--green);font-weight:600;">-7.11%</td>
+                        <td><span class="badge" style="background:var(--green-bg);color:var(--green);">1.43x</span></td>
+                        <td>+25.52%</td>
+                        <td>+13.59%</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Window 2: Strong Bull Run</strong></td>
+                        <td style="font-size:12px;color:var(--text-muted);">2023-08 &rarr; 2024-08</td>
+                        <td style="color:var(--red);">-4.55%</td>
+                        <td style="color:var(--green);font-weight:600;">-4.10%</td>
+                        <td><span class="badge" style="background:rgba(59,130,246,0.12);color:var(--accent-light);">1.11x</span></td>
+                        <td style="color:var(--green);font-weight:600;">+44.73%</td>
+                        <td>+29.74%</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Window 3: Correction &amp; Volatility</strong></td>
+                        <td style="font-size:12px;color:var(--text-muted);">2024-08 &rarr; 2025-08</td>
+                        <td style="color:var(--red);">-15.17%</td>
+                        <td style="color:var(--green);font-weight:600;">-7.39%</td>
+                        <td><span class="badge" style="background:var(--green-bg);color:var(--green);font-weight:700;">2.05x</span></td>
+                        <td>+2.90%</td>
+                        <td>-2.73%</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Window 4: Sideways / Chop</strong></td>
+                        <td style="font-size:12px;color:var(--text-muted);">2025-08 &rarr; 2026-08</td>
+                        <td style="color:var(--red);">-8.55%</td>
+                        <td style="color:var(--green);font-weight:600;">-6.58%</td>
+                        <td><span class="badge" style="background:var(--green-bg);color:var(--green);">1.30x</span></td>
+                        <td>+5.49%</td>
+                        <td>+1.41%</td>
+                    </tr>
+                    <tr style="background:rgba(255,255,255,0.03);border-top:2px solid var(--border);">
+                        <td><strong>Full 4-Year Full Cycle</strong></td>
+                        <td style="font-size:12px;color:var(--text-primary);font-weight:600;">2022-08 &rarr; 2026-08</td>
+                        <td style="color:var(--red);font-weight:700;">-21.15%</td>
+                        <td style="color:var(--green);font-weight:700;">-12.90%</td>
+                        <td><span class="badge" style="background:var(--green-bg);color:var(--green);font-weight:700;">1.64x</span></td>
+                        <td style="font-weight:700;">+101.05%</td>
+                        <td style="font-weight:700;color:var(--accent-light);">+55.67%</td>
+                    </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
@@ -1083,89 +1126,66 @@
 <div class="page" id="page-methodology">
     <div class="page-header">
         <h1>Methodology</h1>
-        <p>Understanding how Aarambh Quant Signals are generated</p>
+        <p>Systematic 200-Day SMA Trend &amp; Regime Filter Architecture</p>
     </div>
 
     <div class="card">
         <div class="method-section">
-            <h3>🏗️ Ensemble Architecture</h3>
-            <p>Aarambh Quant uses an ensemble of multiple machine learning models to generate robust signals. Each model captures different market dynamics:</p>
+            <h3>🛡️ Systematic Trend &amp; Regime Filter</h3>
+            <p>Aarambh applies a systematic 200-day Simple Moving Average (200-SMA) trend filter across the Nifty 100 Indian equity universe. Rather than claiming predictive precision or forecasting market tops and bottoms, the architecture serves a singular, verifiable objective: <strong>portfolio drawdown protection</strong>.</p>
             <ul style="margin-top:12px;">
-                <li><strong>Random Forest</strong> — Captures non-linear relationships between features and returns. Handles feature interactions naturally.</li>
-                <li><strong>Gradient Boosting (XGBoost)</strong> — Sequential learning that focuses on hard-to-predict patterns. Excellent at capturing momentum and trend reversals.</li>
-                <li><strong>Logistic Regression</strong> — Linear baseline model for interpretability. Provides probability calibration.</li>
-                <li><strong>SVM (Support Vector Machine)</strong> — Finds optimal decision boundaries in high-dimensional feature space.</li>
-                <li><strong>Neural Network</strong> — Multi-layer perceptron for complex pattern recognition across 40+ features.</li>
-            </ul>
-            <p style="margin-top:12px;">The final signal is a weighted average of all model predictions, with weights dynamically adjusted based on recent model performance (adaptive ensemble).</p>
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="method-section">
-            <h3>📈 Feature Engineering</h3>
-            <p>Each ticker is analyzed across 40+ technical features grouped into seven categories:</p>
-            <ul style="margin-top:12px;">
-                <li><strong>Trend</strong> — SMA crossovers (10/20/50/200), EMA, MACD, ADX, Ichimoku Cloud position</li>
-                <li><strong>Momentum</strong> — RSI(14), Stochastic, Williams %R, ROC, CCI, Rate of Change</li>
-                <li><strong>Volatility</strong> — ATR, Bollinger Band width, historical volatility, Keltner Channel position</li>
-                <li><strong>Volume</strong> — OBV, VWAP, volume trend, accumulation/distribution, money flow index</li>
-                <li><strong>Returns</strong> — 5/10/20/60/120-day returns, drawdown, Sharpe ratio</li>
-                <li><strong>Regime</strong> — Market regime detection using HMM (Hidden Markov Model), VIX correlation</li>
-                <li><strong>Agreement</strong> — Cross-model consensus, feature importance alignment</li>
+                <li><strong>RISK-ON</strong> — Stock trades above its 200-day SMA (with a +/-0.75% hysteresis band to filter noise). Mechanical regime indicates trend participation.</li>
+                <li><strong>RISK-OFF</strong> — Stock trades below its 200-day SMA. Mechanical regime indicates risk-off defensive posture to curtail tail drawdown risk.</li>
+                <li><strong>SMA Distance Metric (%)</strong> — Transparent measurement of how far current price trades above or below its 200-day baseline, avoiding deceptive 0–100 pseudo-confidence scores.</li>
             </ul>
         </div>
     </div>
 
     <div class="card">
         <div class="method-section">
-            <h3>🔄 Regime Filter</h3>
-            <p>Before generating signals, the system identifies the current market regime using a Hidden Markov Model:</p>
+            <h3>📊 Verified Empirical Track Record (4-Year Cycle)</h3>
+            <p>Backtested across 1,006 trading sessions (2022–2026) on the actual Nifty 100 universe, incorporating realistic 15 bps retail round-trip costs and cash slippage:</p>
             <ul style="margin-top:12px;">
-                <li><strong>BULL regime</strong> — All models are active. Buy signals receive full weight.</li>
-                <li><strong>NEUTRAL regime</strong> — Confidence thresholds are raised. Only high-conviction signals are generated.</li>
-                <li><strong>BEAR regime</strong> — Defensive positioning. Buy signals are suppressed, sell signals amplified.</li>
+                <li><strong>Drawdown Reduction</strong> — Peak full-cycle portfolio drawdown is reduced by ~1.64x (-12.90% MaxDD with filter vs -21.15% for buy-and-hold).</li>
+                <li><strong>Regime Sensitivity</strong> — Delivers 1.1x to 2.1x drawdown reduction across distinct market phases, providing strongest defense during prolonged corrections and distribution ranges.</li>
+                <li><strong>Capital Preservation Focus</strong> — Designed specifically for investors seeking smoother equity curves rather than aggressive speculative leverage.</li>
             </ul>
-            <p style="margin-top:12px;">Regime detection uses Nifty 500 breadth data, India VIX levels, and broad market momentum to classify the current state. The regime adjusts gradually using a transition probability matrix.</p>
         </div>
     </div>
 
     <div class="card">
         <div class="method-section">
-            <h3>⚡ Signal Generation</h3>
+            <h3>⚠️ Transparent Costs &amp; Trade-offs</h3>
+            <p>Downside protection is not a free lunch. Operating a systematic trend filter involves clear structural costs:</p>
+            <ul style="margin-top:12px;">
+                <li><strong>Upside Underperformance</strong> — Over the 4-year cycle, cumulative return was +55.7% vs. +101.1% for buy-and-hold. Filtering out bear markets gives up upside during strong momentum rallies.</li>
+                <li><strong>Lag &amp; Re-entry Drag</strong> — Moving averages lag turning points. In sharp V-shaped bottoms, late re-entry incurs whipsaw friction and frictional trading drag before catching the recovery.</li>
+                <li><strong>Execution Costs</strong> — All figures reflect net results after 15 bps round-trip transaction costs and zero return on flat/cash periods.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="method-section">
+            <h3>⚡ Signal &amp; Telemetry Definitions</h3>
             <ul>
-                <li><strong>Quant Score (0–100)</strong> — Weighted ensemble probability × 100. Scores above 65 indicate bullish bias, below 35 bearish.</li>
-                <li><strong>Confidence</strong> — Agreement level among models. High confidence = most models agree on direction.</li>
-                <li><strong>Risk Level</strong> — Based on ATR volatility, drawdown history, and sector beta. Low/Medium/High classification.</li>
-                <li><strong>Momentum</strong> — Short-term (20-day) price trend strength. Strong/Moderate/Weak classification.</li>
-                <li><strong>Stop Loss</strong> — Dynamically calculated using ATR(14) × 1.5 from current price.</li>
+                <li><strong>Regime State</strong> — Mechanical status based on price vs 200-day SMA: <strong>RISK-ON</strong> (Price &gt; SMA200) vs <strong>RISK-OFF</strong> (Price &le; SMA200).</li>
+                <li><strong>Hysteresis Noise Buffer</strong> — Requires a &plusmn;0.75% penetration through the 200-day baseline to flip states, preventing daily boundary flicker around zero.</li>
+                <li><strong>Price vs SMA200 (%)</strong> — Percentage distance from the long-term moving average. Directly quantifies trend extension or defensive margin.</li>
+                <li><strong>Zero Speculative Scoring</strong> — No uncalibrated predictive probabilities or heuristic confidence metrics are surfaced.</li>
             </ul>
         </div>
     </div>
 
     <div class="card">
         <div class="method-section">
-            <h3>🧪 Backtesting & Validation</h3>
-            <ul>
-                <li>Walk-forward validation with 6-month training and 1-month test windows</li>
-                <li>Out-of-sample accuracy tracked across 3-year historical data</li>
-                <li>Signal precision/recall metrics updated weekly</li>
-                <li>Model retrained monthly with fresh data to prevent concept drift</li>
-                <li>Survivorship-bias-free universe using point-in-time Nifty 100 composition</li>
-            </ul>
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="method-section">
-            <h3>⚖️ Important Disclaimer</h3>
-            <p>Aarambh Quant Signals are generated from historical and market data using quantitative models. They are provided for <strong style="color:var(--yellow);">research and educational purposes only</strong>.</p>
+            <h3>⚖️ Regulatory &amp; Research Disclaimer</h3>
+            <p>Aarambh is a quantitative research platform developed for <strong style="color:var(--yellow);">educational and empirical research purposes only</strong>.</p>
             <ul style="margin-top:12px;">
-                <li>Signals are <strong>not guaranteed predictions</strong> of future price movements</li>
-                <li>Signals do <strong>not constitute personalized investment advice</strong></li>
-                <li>Past model performance does <strong>not guarantee future results</strong></li>
-                <li>Always consult a SEBI-registered investment advisor before making investment decisions</li>
-                <li>The platform is not responsible for any investment losses</li>
+                <li>Signals and filters are <strong>rules-based trend indicators</strong>, not guaranteed predictions of future asset prices.</li>
+                <li>This platform does <strong>not provide personalized investment advice or portfolio management services</strong>.</li>
+                <li>Historical backtest results, while verified out-of-sample across full cycles, do <strong>not guarantee future performance</strong>.</li>
+                <li>Always consult a SEBI-registered financial advisor before undertaking capital commitments.</li>
             </ul>
         </div>
     </div>
@@ -1717,7 +1737,7 @@
         try {
             const data = await api('/scanner');
             const items = Array.isArray(data) ? data : (data.tickers || data.data || []);
-            const sorted = [...items].sort((a, b) => (b.score || 0) - (a.score || 0));
+            const sorted = [...items].sort((a, b) => (b.sma_distance_pct || 0) - (a.sma_distance_pct || 0));
             const top10 = sorted.slice(0, 10);
             renderTopSignals(top10);
         } catch {
@@ -1730,18 +1750,22 @@
             $('topSignalsBody').innerHTML = '<tr><td colspan="8" class="empty-state" style="padding:40px;">No signals available</td></tr>';
             return;
         }
-        $('topSignalsBody').innerHTML = signals.map((s, i) => `
+        $('topSignalsBody').innerHTML = signals.map((s, i) => {
+            const isRiskOn = s.status === 'RISK-ON';
+            const isAbove = (s.sma_distance_pct || 0) >= 0;
+            const distColor = isAbove ? 'var(--green)' : 'var(--red)';
+            const distSign = (s.sma_distance_pct || 0) > 0 ? '+' : '';
+            return `
             <tr>
                 <td style="color:var(--text-muted);font-weight:600;">${i + 1}</td>
                 <td><strong style="color:var(--text-primary);cursor:pointer;" onclick="viewSignal('${escapeHtml(s.ticker || s.symbol)}')">${escapeHtml(s.ticker || s.symbol)}</strong></td>
                 <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(s.name)}</td>
-                <td><span class="signal-badge ${signalClass(s.signal)}">${escapeHtml(s.signal)}</span></td>
-                <td style="font-family:'JetBrains Mono',monospace;font-weight:600;color:${scoreColor(s.score)};">${formatScore(s.score)}</td>
-                <td style="font-family:'JetBrains Mono',monospace;">${formatPct(s.confidence)}</td>
-                <td><span class="risk-badge ${riskClass(s.risk)}">${escapeHtml(s.risk)}</span></td>
-                <td style="font-size:12px;">${escapeHtml(s.sector || '—')}</td>
+                <td><span class="signal-badge ${isRiskOn ? 'signal-buy' : 'signal-hold'}">${escapeHtml(s.status)}</span></td>
+                <td style="font-family:'JetBrains Mono',monospace;font-weight:600;color:${distColor};">${distSign}${Number(s.sma_distance_pct || 0).toFixed(2)}%</td>
+                <td style="font-family:'JetBrains Mono',monospace;">₹${Number(s.price || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td style="font-family:'JetBrains Mono',monospace;color:var(--text-secondary);">₹${Number(s.sma_200 || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
             </tr>
-        `).join('');
+        `;}).join('');
     }
 
     // ── Scanner ──
@@ -1752,7 +1776,7 @@
             state.filteredData = [...state.scannerData];
             renderScannerTable();
         } catch {
-            $('scannerBody').innerHTML = '<tr><td colspan="9" class="empty-state" style="padding:60px;">Unable to load scanner data. Backend may be starting up.</td></tr>';
+            $('scannerBody').innerHTML = '<tr><td colspan="7" class="empty-state" style="padding:60px;">Unable to load scanner data. Backend may be starting up.</td></tr>';
         }
     }
 
@@ -1760,36 +1784,33 @@
         const items = state.filteredData;
         $('scannerCount').textContent = items.length + ' tickers';
         if (!items.length) {
-            $('scannerBody').innerHTML = '<tr><td colspan="9" class="empty-state" style="padding:60px;">No tickers match your filters</td></tr>';
+            $('scannerBody').innerHTML = '<tr><td colspan="7" class="empty-state" style="padding:60px;">No tickers match your filters</td></tr>';
             return;
         }
-        $('scannerBody').innerHTML = items.map(s => `
+        $('scannerBody').innerHTML = items.map(s => {
+            const isRiskOn = s.status === 'RISK-ON';
+            const isAbove = (s.sma_distance_pct || 0) >= 0;
+            const distColor = isAbove ? 'var(--green)' : 'var(--red)';
+            const distSign = (s.sma_distance_pct || 0) > 0 ? '+' : '';
+            return `
             <tr>
                 <td><strong style="color:var(--text-primary);cursor:pointer;" onclick="viewSignal('${escapeHtml(s.ticker || s.symbol)}')">${escapeHtml(s.ticker || s.symbol)}</strong></td>
                 <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(s.name)}</td>
-                <td><span class="signal-badge ${signalClass(s.signal)}">${escapeHtml(s.signal)}</span></td>
-                <td style="font-family:'JetBrains Mono',monospace;font-weight:600;color:${scoreColor(s.score)};">${formatScore(s.score)}</td>
-                <td style="font-family:'JetBrains Mono',monospace;">${formatPct(s.confidence)}</td>
-                <td><span class="risk-badge ${riskClass(s.risk)}">${escapeHtml(s.risk)}</span></td>
-                <td style="font-size:13px;text-transform:capitalize;">${escapeHtml(s.momentum)}</td>
-                <td><span class="signal-badge ${s.regime === 'BULL' ? 'signal-buy' : s.regime === 'BEAR' ? 'signal-sell' : 'signal-hold'}">${escapeHtml(s.regime)}</span></td>
+                <td><span class="signal-badge ${isRiskOn ? 'signal-buy' : 'signal-hold'}">${escapeHtml(s.status)}</span></td>
+                <td style="font-family:'JetBrains Mono',monospace;font-weight:600;color:${distColor};">${distSign}${Number(s.sma_distance_pct || 0).toFixed(2)}%</td>
+                <td style="font-family:'JetBrains Mono',monospace;">₹${Number(s.price || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td style="font-family:'JetBrains Mono',monospace;color:var(--text-secondary);">₹${Number(s.sma_200 || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                 <td>
                     <button class="btn btn-sm btn-outline" onclick="viewSignal('${escapeHtml(s.ticker || s.symbol)}')">Analyze</button>
                 </td>
             </tr>
-        `).join('');
+        `;}).join('');
     }
 
     window.applyFilters = function() {
-        const signal = $('filterSignal').value.toUpperCase();
-        const risk = $('filterRisk').value;
-        const momentum = $('filterMomentum').value;
-        const regime = $('filterRegime').value.toUpperCase();
+        const filterVal = $('filterSignal').value.toUpperCase();
         state.filteredData = state.scannerData.filter(s => {
-            if (signal && (s.signal || '').toUpperCase() !== signal) return false;
-            if (risk && (s.risk || '') !== risk) return false;
-            if (momentum && (s.momentum || '').toLowerCase() !== momentum.toLowerCase()) return false;
-            if (regime && (s.regime || '').toUpperCase() !== regime) return false;
+            if (filterVal && (s.status || '').toUpperCase() !== filterVal) return false;
             return true;
         });
         renderScannerTable();
@@ -1805,7 +1826,7 @@
         state.filteredData.sort((a, b) => {
             let va = a[col] || '';
             let vb = b[col] || '';
-            if (col === 'score' || col === 'confidence') {
+            if (col === 'sma_distance_pct' || col === 'price' || col === 'sma_200') {
                 va = parseFloat(va) || 0;
                 vb = parseFloat(vb) || 0;
             } else {

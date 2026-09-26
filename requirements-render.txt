@@ -19,3 +19,6 @@ passlib[bcrypt]>=1.7
 python-jose[cryptography]>=3.3
 pyjwt>=2.8
 bcrypt>=4.0
+# Live NSE market data
+nse>=4.0.0
+
