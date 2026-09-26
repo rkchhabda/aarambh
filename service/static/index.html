@@ -1936,11 +1936,14 @@
 
     function renderSignalDetail(d) {
         const ticker = d.ticker || d.symbol || '—';
-        const score = Math.round(d.quant_score || d.score || 0);
+        // quant_score is an object {score, label, ...} — extract .score
+        const qsObj = d.quant_score || {};
+        const score = Math.round((typeof qsObj === 'object' ? qsObj.score : qsObj) || d.score || 0);
         const price = d.price || d.ltp || '—';
         const signal = d.signal || 'HOLD';
-        const confidence = d.confidence || 0;
-        const risk = d.risk || 'Medium';
+        // confidence is raw 0-1 probability — multiply by 100 for display
+        const confidence = (d.confidence != null) ? d.confidence * 100 : 0;
+        const risk = (d.risk && typeof d.risk === 'object') ? (d.risk.risk_level || 'Medium') : (d.risk || 'Medium');
         const momentum = d.momentum || 'Moderate';
         const regime = d.regime || 'NEUTRAL';
 
@@ -2011,7 +2014,9 @@
         if (typeof riskData === 'object' && riskData !== null) {
             $('riskLevel').innerHTML = `<span class="risk-badge ${riskClass(riskData.level || riskData.risk_level || risk)}">${escapeHtml(riskData.level || riskData.risk_level || risk)}</span>`;
             $('riskATR').textContent = riskData.atr_pct != null ? riskData.atr_pct.toFixed(2) + '%' : '—';
-            $('riskStopLoss').textContent = riskData.stop_loss ? '₹' + riskData.stop_loss.toFixed(2) : '—';
+            // Backend field is stop_loss_estimate_pct (a percentage), not stop_loss (a price)
+            const slPct = riskData.stop_loss_estimate_pct != null ? riskData.stop_loss_estimate_pct : riskData.stop_loss;
+            $('riskStopLoss').textContent = slPct != null ? slPct.toFixed(2) + '%' : '—';
         } else {
             $('riskLevel').innerHTML = `<span class="risk-badge ${riskClass(risk)}">${escapeHtml(risk)}</span>`;
             $('riskATR').textContent = '—';
