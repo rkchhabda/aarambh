@@ -125,29 +125,72 @@ def rebuild_cache(cache_path=CACHE_PATH, min_valid_tickers=100):
     Returns the cache dict. Raises ValueError if fewer than min_valid_tickers are populated."""
     print(f"[{_now()}] Rebuilding cache with shared features for {len(TICKERS)} tickers...")
     
-    from features.data_provider import fetch_ticker_ohlcv
+    import time
+    from features.data_provider import fetch_ticker_ohlcv, NSE_DOWNLOAD_FOLDER
+    
+    t0_batch = time.time()
+    tier_stats = {"Tier 0: NSE Direct": 0, "Tier 1: Yahoo REST": 0, "Tier 2: Stooq": 0, "Failed": 0}
+
+    # Initialize persistent NSE client across the entire batch
+    nse_client = None
+    try:
+        from nse import NSE
+        nse_client = NSE(download_folder=NSE_DOWNLOAD_FOLDER, server=True)
+        # Prime session cookies and connection
+        try:
+            nse_client.quote("RELIANCE")
+        except Exception:
+            pass
+        print(f"[{_now()}] Initialized persistent Tier 0 NSE session.")
+    except Exception as e:
+        print(f"[{_now()}] [WARN] Could not initialize persistent NSE client: {e}")
 
     cache = {}
     ok = 0
-    for ticker in TICKERS:
-        try:
-            # Use 5 years of data as before
-            df = fetch_ticker_ohlcv(ticker, period="5y")
-            if df is None or len(df) < 210:
-                print(f"  SKIP {ticker}: Not enough data")
-                continue
-            features, close, sma200 = compute_inference_features(df, INFERENCE_FEATURES)
-            cache[ticker] = {
-                "features": features,
-                "close": close,
-                "sma_200": sma200,
-                "above_sma": bool(close > sma200)
-            }
-            ok += 1
-        except Exception as e:
-            print(f"  FAIL {ticker}: {e}")
+    try:
+        for idx, ticker in enumerate(TICKERS, 1):
+            try:
+                # Use 5 years of data as before
+                df = fetch_ticker_ohlcv(ticker, period="5y", nse_client=nse_client)
+                if df is None or len(df) < 210:
+                    print(f"  [{idx}/{len(TICKERS)}] SKIP {ticker}: Not enough data")
+                    tier_stats["Failed"] += 1
+                    continue
 
-    print(f"[{_now()}] Done: {ok}/{len(TICKERS)}")
+                source = df.attrs.get("source", "Unknown")
+                tier_stats[source] = tier_stats.get(source, 0) + 1
+
+                features, close, sma200 = compute_inference_features(df, INFERENCE_FEATURES)
+                cache[ticker] = {
+                    "features": features,
+                    "close": close,
+                    "sma_200": sma200,
+                    "above_sma": bool(close > sma200)
+                }
+                ok += 1
+            except Exception as e:
+                print(f"  [{idx}/{len(TICKERS)}] FAIL {ticker}: {e}")
+                tier_stats["Failed"] += 1
+            finally:
+                # Respect NSE 3 req/sec rate limit with 0.35s inter-request delay
+                time.sleep(0.35)
+    finally:
+        if nse_client is not None:
+            try:
+                nse_client.exit()
+            except Exception:
+                pass
+
+    total_time = time.time() - t0_batch
+    print(f"\n[{_now()}] === Batch Rebuild Summary ===")
+    print(f"Total Tickers Processed: {len(TICKERS)}")
+    print(f"Successfully Populated:  {ok}/{len(TICKERS)}")
+    print(f"Total Wall-Clock Time:   {total_time:.2f}s ({total_time / 60:.2f} min)")
+    print(f"Tier-by-Tier Breakdown:")
+    for tier, count in tier_stats.items():
+        pct = (count / len(TICKERS)) * 100.0
+        print(f"  {tier}: {count}/{len(TICKERS)} ({pct:.1f}%)")
+    print(f"=================================\n")
     
     # Validation assertion: fail loudly if suspiciously few tickers were retrieved
     if ok < min_valid_tickers:

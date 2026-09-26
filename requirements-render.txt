@@ -20,5 +20,7 @@ python-jose[cryptography]>=3.3
 pyjwt>=2.8
 bcrypt>=4.0
 # Live NSE market data
-nse>=4.0.0
+nse[server]>=4.0.0
+httpx[http2]>=0.28.0
+
 

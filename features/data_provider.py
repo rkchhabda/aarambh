@@ -90,15 +90,16 @@ def fetch_nse_live_quote(symbol: str) -> dict | None:
     return None
 
 
-def _fetch_nse_historical(ticker: str, days: int = 365) -> pd.DataFrame | None:
+def _fetch_nse_historical(ticker: str, days: int = 365, nse_client=None) -> pd.DataFrame | None:
     """Fetch historical OHLCV data directly from NSE via fetch_equity_historical_data."""
     clean_sym = ticker.replace(".NS", "").replace("^", "").strip().upper()
     try:
         from nse import NSE
         end_d = date.today()
         start_d = end_d - timedelta(days=days)
-        with NSE(download_folder=NSE_DOWNLOAD_FOLDER, server=True) as nse:
-            records = nse.fetch_equity_historical_data(clean_sym, start_d, end_d)
+
+        def _do_fetch(client):
+            records = client.fetch_equity_historical_data(clean_sym, start_d, end_d)
             if records and isinstance(records, list) and len(records) >= 30:
                 rows = []
                 for r in records:
@@ -119,8 +120,16 @@ def _fetch_nse_historical(ticker: str, days: int = 365) -> pd.DataFrame | None:
                 df = df.sort_values("date").reset_index(drop=True)
                 norm = _normalize_df(df)
                 if norm is not None and len(norm) >= 30:
+                    norm.attrs["source"] = "Tier 0: NSE Direct"
                     print(f"[OK] Tier 0 NSE Direct Succeeded for {ticker} ({len(norm)} bars)")
                     return norm
+            return None
+
+        if nse_client is not None:
+            return _do_fetch(nse_client)
+        else:
+            with NSE(download_folder=NSE_DOWNLOAD_FOLDER, server=True) as client:
+                return _do_fetch(client)
     except Exception as e:
         print(f"[WARN] Tier 0 NSE historical fetch failed for {ticker}: {e}")
     return None
@@ -152,18 +161,19 @@ def _fetch_yahoo_direct_rest(ticker: str, range_str: str = "1y") -> pd.DataFrame
     return None
 
 
-def fetch_ticker_ohlcv(ticker: str, period: str = "1y") -> pd.DataFrame | None:
+def fetch_ticker_ohlcv(ticker: str, period: str = "1y", nse_client=None) -> pd.DataFrame | None:
     """Fetch ticker OHLCV data using automatic failover across multiple data providers."""
     min_bars = 2 if period in ("5d", "1d") else 50
     # Tier 0: Direct NSE India API (for Indian equities)
     if not ticker.startswith("^"):
-        norm = _fetch_nse_historical(ticker, days=365)
+        norm = _fetch_nse_historical(ticker, days=365, nse_client=nse_client)
         if norm is not None and len(norm) >= min_bars:
             return norm
 
     # Tier 1: Direct Yahoo REST API
     norm = _fetch_yahoo_direct_rest(ticker, range_str=period)
     if norm is not None and len(norm) >= min_bars:
+        norm.attrs["source"] = "Tier 1: Yahoo REST"
         print(f"[OK] Tier 1 Direct REST succeeded for {ticker}")
         return norm
 
@@ -177,6 +187,7 @@ def fetch_ticker_ohlcv(ticker: str, period: str = "1y") -> pd.DataFrame | None:
             df = pd.read_csv(StringIO(resp.text))
             norm = _normalize_df(df)
             if norm is not None and len(norm) >= 30:
+                norm.attrs["source"] = "Tier 2: Stooq"
                 print(f"[OK] Tier 2 Stooq succeeded for {ticker}")
                 return norm
     except Exception as e:
