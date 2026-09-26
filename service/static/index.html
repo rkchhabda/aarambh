@@ -850,21 +850,27 @@
             <div>
                 <!-- Component Breakdown -->
                 <div class="card">
-                    <div class="card-header"><h2>Score Breakdown</h2></div>
+                    <div class="card-header">
+                        <h2>Score Breakdown</h2>
+                        <span style="font-size:11px;color:var(--text-muted);font-weight:400;">Heuristic indicator scores — independent of model confidence</span>
+                    </div>
                     <div id="componentBars"></div>
                 </div>
 
                 <!-- Factor Analysis -->
                 <div class="card">
-                    <div class="card-header"><h2>Factor Analysis</h2></div>
+                    <div class="card-header">
+                        <h2>Factor Analysis</h2>
+                        <span style="font-size:11px;color:var(--text-muted);font-weight:400;">Hand-coded thresholds — not derived from model weights</span>
+                    </div>
                     <div class="table-container" style="border:none;">
                         <table class="factor-table">
                             <thead>
                                 <tr>
                                     <th>Factor</th>
                                     <th>Value</th>
-                                    <th>Score</th>
-                                    <th>Weight</th>
+                                    <th>Score /100</th>
+                                    <th>Group</th>
                                 </tr>
                             </thead>
                             <tbody id="factorTableBody"></tbody>
@@ -1981,8 +1987,8 @@
             <span style="font-size:13px;color:var(--text-secondary);">Regime: <strong style="color:var(--text-primary);">${escapeHtml(regime)}</strong></span>
         `;
 
-        // Components
-        const components = d.component_breakdown || d.components || {};
+        // Components — correct path is quant_score.components, NOT top-level d.components
+        const components = (d.quant_score && d.quant_score.components) || {};
         const componentNames = ['Trend', 'Momentum', 'Volatility', 'Volume', 'Returns', 'Regime', 'Agreement'];
         const componentColors = {
             'Trend': '#3b82f6', 'Momentum': '#8b5cf6', 'Volatility': '#ef4444',
@@ -1990,7 +1996,7 @@
         };
         let compHtml = '';
         componentNames.forEach(name => {
-            const val = components[name] || components[name.toLowerCase()] || 0;
+            const val = components[name] != null ? components[name] : (components[name.toLowerCase()] != null ? components[name.toLowerCase()] : 0);
             const pct = Math.min(100, Math.max(0, val));
             compHtml += `
                 <div class="progress-bar-container">
@@ -2004,25 +2010,25 @@
         });
         $('componentBars').innerHTML = compHtml || '<div style="color:var(--text-muted);font-size:13px;">Component data not available</div>';
 
-        // Factor Analysis
-        const factors = d.factor_analysis || d.factors || {};
+        // Factor Analysis — structure is {Group: [{name, value, score, description}, ...]}
+        // Must flatten all groups; each entry's value is an ARRAY, not a single object.
+        const factorAnalysis = d.factor_analysis || {};
         let factorHtml = '';
-        const factorEntries = Object.entries(factors);
-        if (factorEntries.length) {
-            factorEntries.forEach(([name, obj]) => {
-                const val = typeof obj === 'object' ? (obj.value != null ? obj.value : obj.raw || '—') : obj;
-                const sc = typeof obj === 'object' ? (obj.score != null ? obj.score : '—') : '—';
-                const wt = typeof obj === 'object' ? (obj.weight != null ? obj.weight : '—') : '—';
+        Object.entries(factorAnalysis).forEach(([group, factorArr]) => {
+            if (!Array.isArray(factorArr)) return;
+            factorArr.forEach(f => {
+                const val = f.value != null ? f.value : '—';
+                const sc  = f.score != null ? f.score : '—';
                 factorHtml += `
                     <tr>
-                        <td style="font-weight:500;color:var(--text-primary);">${escapeHtml(name)}</td>
+                        <td style="font-weight:500;color:var(--text-primary);">${escapeHtml(f.name || '—')}</td>
                         <td style="font-family:'JetBrains Mono',monospace;">${typeof val === 'number' ? val.toFixed(4) : escapeHtml(String(val))}</td>
-                        <td style="font-family:'JetBrains Mono',monospace;font-weight:600;color:${scoreColor(typeof sc === 'number' ? sc : 50)};">${typeof sc === 'number' ? sc.toFixed(2) : sc}</td>
-                        <td style="font-family:'JetBrains Mono',monospace;">${typeof wt === 'number' ? wt.toFixed(3) : wt}</td>
+                        <td style="font-family:'JetBrains Mono',monospace;font-weight:600;color:${scoreColor(typeof sc === 'number' ? sc : 50)};">${typeof sc === 'number' ? Math.round(sc) : sc}</td>
+                        <td style="color:var(--text-muted);font-size:12px;">${escapeHtml(group)}</td>
                     </tr>
                 `;
             });
-        }
+        });
         $('factorTableBody').innerHTML = factorHtml || '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">Factor data not available</td></tr>';
 
         // Risk Metrics
