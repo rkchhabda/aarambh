@@ -137,7 +137,14 @@ def root():
 @app.get("/app/", response_class=HTMLResponse)
 @app.get("/app", response_class=HTMLResponse)
 def serve_portal():
-    return HTMLResponse(content=PORTAL_HTML)
+    return HTMLResponse(
+        content=_load_portal_html(),
+        headers={
+            "Cache-Control": "no-cache, no-store, must-revalidate, max-age=0",
+            "Pragma": "no-cache",
+            "Expires": "0",
+        }
+    )
 
 # ------------------------------------------------------------
 # Load Ensemble Models

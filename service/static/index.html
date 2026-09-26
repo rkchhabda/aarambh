@@ -1291,7 +1291,7 @@
             <h3>🛡️ Systematic Trend &amp; Regime Filter</h3>
             <p>Aarambh applies a systematic 200-day Simple Moving Average (200-SMA) trend filter across the Nifty 100 Indian equity universe. Rather than claiming predictive precision or forecasting market tops and bottoms, the architecture serves a singular, verifiable objective: <strong>portfolio drawdown protection</strong>.</p>
             <ul style="margin-top:12px;">
-                <li><strong>RISK-ON</strong> — Stock trades above its 200-day SMA (with a +/-0.75% hysteresis band to filter noise). Mechanical regime indicates trend participation.</li>
+                <li><strong>RISK-ON</strong> — Stock trades above its 200-day SMA (with a ±1.00% hysteresis band to filter noise). Mechanical regime indicates trend participation.</li>
                 <li><strong>RISK-OFF</strong> — Stock trades below its 200-day SMA. Mechanical regime indicates risk-off defensive posture to curtail tail drawdown risk.</li>
                 <li><strong>SMA Distance Metric (%)</strong> — Transparent measurement of how far current price trades above or below its 200-day baseline, avoiding deceptive 0–100 pseudo-confidence scores.</li>
             </ul>
@@ -1303,7 +1303,7 @@
             <h3>📊 Verified Empirical Track Record (4-Year Cycle)</h3>
             <p>Backtested across 1,006 trading sessions (2022–2026) on the actual Nifty 100 universe, incorporating realistic 15 bps retail round-trip costs and cash slippage:</p>
             <ul style="margin-top:12px;">
-                <li><strong>Drawdown Reduction</strong> — Peak full-cycle portfolio drawdown is reduced by ~1.64x (-12.90% MaxDD with filter vs -21.15% for buy-and-hold).</li>
+                <li><strong>Drawdown Reduction</strong> — Peak full-cycle portfolio drawdown is reduced by ~1.61x (-13.11% MaxDD with filter vs -21.15% for buy-and-hold).</li>
                 <li><strong>Regime Sensitivity</strong> — Delivers 1.1x to 2.1x drawdown reduction across distinct market phases, providing strongest defense during prolonged corrections and distribution ranges.</li>
                 <li><strong>Capital Preservation Focus</strong> — Designed specifically for investors seeking smoother equity curves rather than aggressive speculative leverage.</li>
             </ul>
@@ -1315,7 +1315,7 @@
             <h3>⚠️ Transparent Costs &amp; Trade-offs</h3>
             <p>Downside protection is not a free lunch. Operating a systematic trend filter involves clear structural costs:</p>
             <ul style="margin-top:12px;">
-                <li><strong>Upside Underperformance</strong> — Over the 4-year cycle, cumulative return was +55.7% vs. +101.1% for buy-and-hold. Filtering out bear markets gives up upside during strong momentum rallies.</li>
+                <li><strong>Upside Underperformance</strong> — Over the 4-year cycle, cumulative return was +57.67% vs. +101.06% for buy-and-hold. Filtering out bear markets gives up upside during strong momentum rallies.</li>
                 <li><strong>Lag &amp; Re-entry Drag</strong> — Moving averages lag turning points. In sharp V-shaped bottoms, late re-entry incurs whipsaw friction and frictional trading drag before catching the recovery.</li>
                 <li><strong>Execution Costs</strong> — All figures reflect net results after 15 bps round-trip transaction costs and zero return on flat/cash periods.</li>
             </ul>
@@ -1327,7 +1327,7 @@
             <h3>⚡ Signal &amp; Telemetry Definitions</h3>
             <ul>
                 <li><strong>Regime State</strong> — Mechanical status based on price vs 200-day SMA: <strong>RISK-ON</strong> (Price &gt; SMA200) vs <strong>RISK-OFF</strong> (Price &le; SMA200).</li>
-                <li><strong>Hysteresis Noise Buffer</strong> — Requires a &plusmn;0.75% penetration through the 200-day baseline to flip states, preventing daily boundary flicker around zero.</li>
+                <li><strong>Hysteresis Noise Buffer</strong> — Requires a &plusmn;1.00% penetration through the 200-day baseline to flip states, preventing daily boundary flicker around zero.</li>
                 <li><strong>Price vs SMA200 (%)</strong> — Percentage distance from the long-term moving average. Directly quantifies trend extension or defensive margin.</li>
                 <li><strong>Zero Speculative Scoring</strong> — No uncalibrated predictive probabilities or heuristic confidence metrics are surfaced.</li>
             </ul>
