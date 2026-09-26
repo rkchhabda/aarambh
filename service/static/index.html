@@ -1733,10 +1733,47 @@
             // Use defaults
         }
 
-        // Load top signals
+        // Load top signals and populate dashboard telemetry from scanner
         try {
             const data = await api('/scanner');
             const items = Array.isArray(data) ? data : (data.tickers || data.data || []);
+            
+            // Populate Risk-On / Risk-Off / Breadth metrics from scanner payload
+            if (data && data.total != null) {
+                const total = data.total || items.length;
+                const riskOn = data.risk_on_count != null ? data.risk_on_count : items.filter(s => s.status === 'RISK-ON').length;
+                const riskOff = data.risk_off_count != null ? data.risk_off_count : items.filter(s => s.status === 'RISK-OFF').length;
+                const breadth = data.breadth_ratio != null ? data.breadth_ratio : (riskOn / Math.max(riskOff, 1)).toFixed(2);
+                
+                $('stat-tickers').textContent = total;
+                $('stat-bullish').textContent = riskOn;
+                $('stat-bearish').textContent = riskOff;
+                $('stat-bullish-pct').textContent = total ? Math.round((riskOn / total) * 100) + '% of universe' : '—';
+                $('stat-bearish-pct').textContent = total ? Math.round((riskOff / total) * 100) + '% of universe' : '—';
+                $('stat-ad').textContent = breadth;
+                $('stat-ad-sub').textContent = `${riskOn} Risk-On / ${riskOff} Risk-Off`;
+                
+                const overallRegime = riskOn > riskOff ? 'BULL (RISK-ON)' : (riskOff > riskOn ? 'DEFENSIVE (RISK-OFF)' : 'NEUTRAL');
+                $('stat-regime').textContent = overallRegime;
+                $('stat-regime-sub').textContent = '200-SMA Systematic Regime';
+
+                // Update regime progress bar
+                const bullPct = total ? Math.round((riskOn / total) * 100) : 50;
+                const bearPct = total ? 100 - bullPct : 50;
+                if ($('regimeBarBull')) {
+                    $('regimeBarBull').style.width = bullPct + '%';
+                    $('regimeBarBull').textContent = 'RISK-ON ' + riskOn;
+                }
+                if ($('regimeBarNeutral')) {
+                    $('regimeBarNeutral').style.width = '0%';
+                    $('regimeBarNeutral').textContent = '';
+                }
+                if ($('regimeBarBear')) {
+                    $('regimeBarBear').style.width = bearPct + '%';
+                    $('regimeBarBear').textContent = 'RISK-OFF ' + riskOff;
+                }
+            }
+
             const sorted = [...items].sort((a, b) => (b.sma_distance_pct || 0) - (a.sma_distance_pct || 0));
             const top10 = sorted.slice(0, 10);
             renderTopSignals(top10);
