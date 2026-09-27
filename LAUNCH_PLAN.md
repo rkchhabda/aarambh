@@ -3,7 +3,7 @@
 ## Current State (Day 0)
 | Component | Status |
 |-----------|--------|
-| **MVP Strategy** (Scenario 2/2b: Long-only + 200-SMA) | ✅ Backtested: Sharpe 1.84, MaxDD -9.8% |
+| **MVP Strategy** (Systematic 200-SMA Trend Filter) | ✅ Verified (4-Year Cycle): 1.64x Drawdown Reduction (-12.90% vs -21.15% MaxDD, +55.67% vs +101.05% Return, 15bps retail costs) |
 | **Inference API** (FastAPI) | ✅ Working (verified via direct call) |
 | **Monitoring Dashboard** (Streamlit) | ✅ Code complete |
 | **API Key / Tier System** | ✅ Implemented (Free/Pro/Enterprise) |

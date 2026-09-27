@@ -207,6 +207,8 @@ def scan_tickers(
             # Fallback to empirical 15-40% band std-dev from 10-year verified study
             typical_5d = 4.6
 
+        primary_status = "RISK-ON" if is_risk_on else "RISK-OFF"
+
         entry = {
             "ticker": ticker,
             "name": TICKER_NAMES.get(ticker, ticker.replace(".NS", "")),

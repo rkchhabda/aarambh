@@ -8,6 +8,7 @@ import pandas as pd
 import ta
 import torch
 import torch.nn as nn
+from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier
 
@@ -19,7 +20,6 @@ SEED = 42
 
 def build_features(df):
     df = df.copy()
-    df["timestamps"] = pd.to_datetime(df["timestamps"])
     df = df.sort_values("timestamps").reset_index(drop=True)
     df["ret_1"] = df["close"].pct_change()
     df["ret_5"] = df["close"].pct_change(5)
@@ -78,6 +78,12 @@ def train_models_for_ticker(ticker, data_dir="data/multi"):
     y_all = df["target_up_1d"].values.astype(np.float32)
     pos = {s: np.where(df["split"] == s)[0] for s in ["train", "val", "test"]}
 
+    # Class balance pos_weight
+    tr_y = y_all[pos["train"]]
+    pos_count = tr_y.sum()
+    neg_count = len(tr_y) - pos_count
+    pw = neg_count / max(pos_count, 1)
+
     # ---- XGBoost ----
     xgb = XGBClassifier(n_estimators=400, max_depth=3, learning_rate=0.05,
                         subsample=0.8, colsample_bytree=0.8, reg_lambda=1.0,
@@ -86,14 +92,14 @@ def train_models_for_ticker(ticker, data_dir="data/multi"):
     tr = pos["train"]
     xgb.fit(X_all[tr], y_all[tr])
 
-    # ---- LSTM ----
+    # ---- LSTM (v3: AUC-based early stopping, pos_weight, grad clipping) ----
     X_tr, y_tr = make_sequences(X_all, y_all, pos["train"])
     model = LSTMClassifier(len(FEATURES))
     opt = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-4)
-    loss_fn = nn.BCEWithLogitsLoss()
+    loss_fn = nn.BCEWithLogitsLoss(pos_weight=torch.tensor(pw))
     X_t, y_t = torch.from_numpy(X_tr), torch.from_numpy(y_tr)
-    best_acc, best_state, patience = 0.0, None, 0
-    for epoch in range(30):
+    best_auc, best_state, patience = 0.0, None, 0
+    for epoch in range(50):
         model.train()
         perm = torch.randperm(len(X_t))
         for i in range(0, len(perm), 64):
@@ -101,20 +107,22 @@ def train_models_for_ticker(ticker, data_dir="data/multi"):
             opt.zero_grad()
             loss = loss_fn(model(X_t[idx]), y_t[idx])
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             opt.step()
         model.eval()
         with torch.no_grad():
-            X_va, _ = make_sequences(X_all, y_all, pos["val"])
+            X_va, y_va = make_sequences(X_all, y_all, pos["val"])
             pv = torch.sigmoid(model(torch.from_numpy(X_va))).numpy()
-        acc = ((pv > 0.5).astype(int) == y_all[pos["val"]]).mean()
-        if acc > best_acc:
-            best_acc, patience = acc, 0
+        va_auc = roc_auc_score(y_va, pv) if len(np.unique(y_va)) > 1 else 0.5
+        if va_auc > best_auc:
+            best_auc, patience = va_auc, 0
             best_state = {k: v.clone() for k, v in model.state_dict().items()}
         else:
             patience += 1
-        if patience >= 6:
+        if patience >= 10:
             break
-    model.load_state_dict(best_state)
+    if best_state is not None:
+        model.load_state_dict(best_state)
     model.eval()
 
     # ---- Collect val+test predictions ----
@@ -125,7 +133,7 @@ def train_models_for_ticker(ticker, data_dir="data/multi"):
             X_s, _ = make_sequences(X_all, y_all, pos[split])
             p_lstm = torch.sigmoid(model(torch.from_numpy(X_s))).numpy()
             sub = pd.DataFrame({
-                "timestamps": df["timestamps"].iloc[pos[split]].dt.strftime("%Y-%m-%d").values,
+                "timestamps": df["timestamps"].iloc[pos[split]].astype(str).values,
                 "split": split,
                 "p_xgb": p_xgb,
                 "p_lstm": p_lstm,
@@ -145,6 +153,10 @@ def train_models_for_ticker(ticker, data_dir="data/multi"):
         acc[f"xgb_{split}"] = float(((m.p_xgb > .5).astype(int) == m.actual_up).mean())
         acc[f"lstm_{split}"] = float(((m.p_lstm > .5).astype(int) == m.actual_up).mean())
         acc[f"avg_{split}"] = float(((m.p_avg > .5).astype(int) == m.actual_up).mean())
+        acc[f"xgb_{split}_auc"] = float(roc_auc_score(m.actual_up, m.p_xgb) if m.actual_up.nunique() > 1 else 0.5)
+        acc[f"lstm_{split}_auc"] = float(roc_auc_score(m.actual_up, m.p_lstm) if m.actual_up.nunique() > 1 else 0.5)
+        acc[f"avg_{split}_auc"] = float(roc_auc_score(m.actual_up, m.p_avg) if m.actual_up.nunique() > 1 else 0.5)
+        acc[f"lstm_{split}_p_std"] = float(m.p_lstm.std())
     return preds, acc
 
 

@@ -1,52 +1,52 @@
 {
   "results": {
     "1_phase4_aapl_long_only_5bps": {
-      "total_ret_pct": 75.55,
-      "ann_ret_pct": 44.83,
-      "sharpe": 1.582,
-      "max_dd_pct": -13.82,
-      "win_rate_pct": 53.82,
-      "exposure_pct": 97.98
+      "total_ret_pct": 34.54,
+      "ann_ret_pct": 24.37,
+      "sharpe": 1.027,
+      "max_dd_pct": -17.27,
+      "win_rate_pct": 52.75,
+      "exposure_pct": 89.05
     },
     "2_multiticker_long_only_5bps": {
-      "total_ret_pct": 65.69,
-      "ann_ret_pct": 38.86,
-      "sharpe": 1.839,
-      "max_dd_pct": -13.88,
-      "win_rate_pct": 55.33,
-      "exposure_pct": 100.0
+      "total_ret_pct": 38.63,
+      "ann_ret_pct": 24.97,
+      "sharpe": 1.576,
+      "max_dd_pct": -14.92,
+      "win_rate_pct": 52.92,
+      "exposure_pct": 98.56
     },
     "2b_multiticker_regime_long_5bps": {
-      "total_ret_pct": 17.8,
-      "ann_ret_pct": 12.74,
-      "sharpe": 0.984,
-      "max_dd_pct": -9.78,
-      "win_rate_pct": 53.47,
-      "exposure_pct": 95.39
+      "total_ret_pct": 12.08,
+      "ann_ret_pct": 8.86,
+      "sharpe": 0.824,
+      "max_dd_pct": -10.12,
+      "win_rate_pct": 52.66,
+      "exposure_pct": 91.93
     },
     "3_ls_regime_ideal_5bps": {
-      "total_ret_pct": -1.51,
-      "ann_ret_pct": -0.9,
-      "sharpe": -0.142,
-      "max_dd_pct": -7.47,
-      "win_rate_pct": 49.67,
-      "exposure_pct": 43.52
+      "total_ret_pct": 4.79,
+      "ann_ret_pct": 3.64,
+      "sharpe": 0.525,
+      "max_dd_pct": -6.36,
+      "win_rate_pct": 46.84,
+      "exposure_pct": 54.76
     },
     "3_ls_regime_retail_15bps": {
-      "total_ret_pct": -3.02,
-      "ann_ret_pct": -2.02,
-      "sharpe": -0.317,
-      "max_dd_pct": -8.43,
-      "win_rate_pct": 49.01,
-      "exposure_pct": 43.52
+      "total_ret_pct": 2.63,
+      "ann_ret_pct": 2.13,
+      "sharpe": 0.307,
+      "max_dd_pct": -6.75,
+      "win_rate_pct": 46.32,
+      "exposure_pct": 54.76
     },
     "3_ls_regime_high_vol_30bps": {
-      "total_ret_pct": -5.23,
-      "ann_ret_pct": -3.7,
-      "sharpe": -0.58,
-      "max_dd_pct": -9.98,
-      "win_rate_pct": 45.7,
-      "exposure_pct": 43.52
+      "total_ret_pct": -0.52,
+      "ann_ret_pct": -0.14,
+      "sharpe": -0.02,
+      "max_dd_pct": -8.31,
+      "win_rate_pct": 45.79,
+      "exposure_pct": 54.76
     },
     "benchmark_buyhold_portfolio": {
       "total_ret_pct": 73.82,
@@ -54,6 +54,6 @@
       "max_dd_pct": -17.73
     }
   },
-  "verdict": "NO-GO",
+  "verdict": "GO",
   "n_test_days": 347
 }

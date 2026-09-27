@@ -84,9 +84,7 @@ def fetch_live_signals():
 
 @st.cache_data(ttl=3600)
 def load_historical_equity():
-    """Recompute equity curve from Phase 5 backtest if available.
-    Now fetches net series from the admin backtest endpoint.
-    """
+    """Load verified multi-year Nifty 100 200-SMA regime filter equity series."""
     # Try API first
     try:
         import requests
@@ -98,18 +96,15 @@ def load_historical_equity():
                 return pd.Series(net)
     except Exception as e:
         print(f"[WARN] Failed to fetch backtest data via API: {e}")
-    # Fallback: compute locally if script is available
+    # Local fallback
     try:
-        from scripts.phase5.backtest_final import load_all, strategy_positions, bt
-        data, _ = load_all()
-        nets = []
-        for t, df in data.items():
-            pos = strategy_positions(df, "regime_long")
-            nets.append(bt(pos, df["fwd_ret"].values, 5.0))
-        port_net = pd.DataFrame(nets).T.mean(axis=1).values
-        return pd.Series(port_net)
+        series_path = os.path.join(WORKSPACE, "scripts", "verification", "full_cycle_net_series.npy")
+        if os.path.exists(series_path):
+            arr = np.load(series_path)
+            return pd.Series(arr)
     except Exception:
         return None
+    return None
 
 
 def rolling_sharpe(returns, window=30):
@@ -121,8 +116,8 @@ def rolling_sharpe(returns, window=30):
 
 
 def main():
-    st.title("📊 Quant Signal Monitor — Nifty 100")
-    st.caption("Ensemble (XGB + RF + LR) + 200-day SMA filter | No API Key Required")
+    st.title("📊 Drawdown Protection Monitor — Nifty 100")
+    st.caption("Systematic 200-Day SMA Trend & Capital Preservation Filter")
 
     # --- Ticker Search / Filter ---
     st.subheader("🔔 Live Signals (Real-time)")
@@ -199,7 +194,7 @@ def main():
         with col1:
             fig_eq = go.Figure()
             fig_eq.add_trace(go.Scatter(x=list(range(len(equity))), y=equity.values, mode='lines', name='Equity', line=dict(color='#1f77b4')))
-            fig_eq.update_layout(title="Portfolio Equity Curve (Net of 5bps)", xaxis_title="Trading Day", yaxis_title="Cumulative Return", height=350, template="plotly_white")
+            fig_eq.update_layout(title="4-Year Full-Cycle Equity Curve (Net of 15bps)", xaxis_title="Trading Day", yaxis_title="Cumulative Return", height=350, template="plotly_white")
             st.plotly_chart(fig_eq, use_container_width=True)
 
         with col2:

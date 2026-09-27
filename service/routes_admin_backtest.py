@@ -1,39 +1,41 @@
+"""Admin backtest endpoint — serves verified 4-year Nifty 100 regime filter net series."""
+
 import os
 import json
+import numpy as np
 from fastapi import APIRouter, HTTPException
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+NET_SERIES_PATH = os.path.join(BASE_DIR, "scripts", "verification", "full_cycle_net_series.npy")
+REPORT_PATH = os.path.join(BASE_DIR, "scripts", "verification", "drawdown_stress_test_results.json")
+
 @router.get("/backtest-data")
 def backtest_data():
-    """Return aggregated backtest net series for dashboard.
-    If the backtest JSON is not present, compute on the fly using phase5 scripts.
-    """
-    # Path to precomputed final report (optional)
-    workdir = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
-    report_path = os.path.join(workdir, "scripts", "phase5", "final_report.json")
-    if os.path.exists(report_path):
+    """Return verified multi-year Nifty 100 200-SMA regime filter net return series."""
+    if os.path.exists(NET_SERIES_PATH):
         try:
-            with open(report_path) as f:
+            arr = np.load(NET_SERIES_PATH)
+            return {
+                "net_series": arr.tolist(),
+                "universe": "Nifty 100 Indian Equities",
+                "days": len(arr),
+                "strategy": "Systematic 200-day SMA Regime Filter",
+            }
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to load verified net series: {e}")
+            
+    # Fallback to report if json exists
+    if os.path.exists(REPORT_PATH):
+        try:
+            with open(REPORT_PATH) as f:
                 report = json.load(f)
-                # This report may contain aggregated metrics but not the time series.
-                # For simplicity we always recompute the net series below.
+            return {"report": report}
         except Exception:
             pass
-    # Compute on the fly
-    try:
-        from scripts.phase5.backtest_final import load_all, strategy_positions, bt
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Backtest scripts not available: {e}")
-    data, _ = load_all()
-    nets = []
-    for t, df in data.items():
-        pos = strategy_positions(df, "regime_long")
-        nets.append(bt(pos, df["fwd_ret"].values, 5.0))
-    # Use pandas to compute mean series
-    import pandas as pd
-    port_net = pd.DataFrame(nets).T.mean(axis=1).values
-    return {"net_series": port_net.tolist()}
+
+    raise HTTPException(status_code=404, detail="Verified backtest artifacts not found.")
 
 @router.get("/signal-count")
 def signal_count():
