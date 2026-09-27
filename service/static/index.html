@@ -2902,18 +2902,18 @@
 
         // Panel tickers — always show (current regime state)
         const panelTickers = d.panel_tickers || [
-            'RELIANCE.NS','HDFCBANK.NS','TCS.NS','SUNPHARMA.NS','TATASTEEL.NS',
-            'BAJFINANCE.NS','NTPC.NS','MARUTI.NS','HINDUNILVR.NS','BHARTIARTL.NS'
+            'RELIANCE.NS','HDFCBANK.NS','BHARTIARTL.NS','TCS.NS','TATASTEEL.NS',
+            'CHOLAFIN.NS','TORNTPOWER.NS','ESCORTS.NS','GRANULES.NS','CROMPTON.NS'
         ];
         const panelState = d.panel_state || {};
 
         // Sector labels for panel
         const sectorMap = {
             'RELIANCE.NS':   'Energy',    'HDFCBANK.NS':  'Banking',
-            'TCS.NS':        'IT Svcs',   'SUNPHARMA.NS': 'Pharma',
-            'TATASTEEL.NS':  'Metals',    'BAJFINANCE.NS':'NBFC',
-            'NTPC.NS':       'Utilities', 'MARUTI.NS':    'Autos',
-            'HINDUNILVR.NS': 'FMCG',      'BHARTIARTL.NS':'Telecom',
+            'BHARTIARTL.NS': 'Telecom',   'TCS.NS':        'IT Svcs',
+            'TATASTEEL.NS':  'Metals',    'CHOLAFIN.NS':   'NBFC',
+            'TORNTPOWER.NS': 'Utilities', 'ESCORTS.NS':    'Autos',
+            'GRANULES.NS':   'Pharma',    'CROMPTON.NS':   'Consumer Durables',
         };
 
         let panelHtml = '';

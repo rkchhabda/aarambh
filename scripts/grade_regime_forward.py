@@ -42,24 +42,25 @@ sys.path.insert(0, BASE_DIR)
 #
 # These 10 tickers are the public visibility subset of the 138-ticker tracked
 # universe. Selected on 2026-09-27 by objective criteria (one per sector,
-# market-cap spread, all in features/universe.py) BEFORE observing any forward
-# outcomes. Rotating underperformers out or adding outperformers would introduce
+# verified cap-tier split of 6 Large-Cap / 2 Mid-Cap / 2 Small-Lower-Cap within
+# the universe, all in features/universe.py) BEFORE observing any forward outcomes.
+# Rotating underperformers out or adding outperformers would introduce
 # survivorship bias and retroactively invalidate the public track record.
 #
 # To propose a change: open a dated commit with explicit written rationale,
 # reviewed separately from any performance observed during tracking.
 # ─────────────────────────────────────────────────────────────────────────────
 FORWARD_TEST_PANEL = [
-    "RELIANCE.NS",   # Energy / Conglomerate  — large cap
-    "HDFCBANK.NS",   # Private Banking        — large cap
-    "TCS.NS",        # IT Services            — large cap
-    "SUNPHARMA.NS",  # Pharmaceuticals        — large cap
-    "TATASTEEL.NS",  # Metals & Mining        — large cap
-    "BAJFINANCE.NS", # NBFC                   — large cap
-    "NTPC.NS",       # Utilities              — large cap
-    "MARUTI.NS",     # Automobiles            — large cap
-    "HINDUNILVR.NS", # Consumer Staples       — large cap
-    "BHARTIARTL.NS", # Telecom                — large cap
+    "RELIANCE.NS",   # Energy / Conglomerate          — Large-Cap
+    "HDFCBANK.NS",   # Private Banking                — Large-Cap
+    "BHARTIARTL.NS", # Telecom                        — Large-Cap
+    "TCS.NS",        # IT Services                    — Large-Cap
+    "TATASTEEL.NS",  # Metals & Mining                — Large-Cap
+    "CHOLAFIN.NS",   # NBFC / Financial Services      — Large-Cap
+    "TORNTPOWER.NS", # Utilities / Power              — Mid-Cap (near Large/Mid boundary; classification varies slightly by source and date)
+    "ESCORTS.NS",    # Automobiles & Farm Machinery   — Mid-Cap
+    "GRANULES.NS",   # Pharmaceuticals                — Small-Lower-Cap (in tracked universe)
+    "CROMPTON.NS",   # Consumer Durables / Electrical — Small-Lower-Cap (in tracked universe)
 ]
 
 # ── Constants ─────────────────────────────────────────────────────────────────
