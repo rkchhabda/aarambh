@@ -50,16 +50,16 @@ sys.path.insert(0, BASE_DIR)
 # reviewed separately from any performance observed during tracking.
 # ─────────────────────────────────────────────────────────────────────────────
 FORWARD_TEST_PANEL = [
-    "RELIANCE.NS",   # Energy / Conglomerate  — largest NSE constituent
-    "HDFCBANK.NS",   # Private Banking        — Nifty 50 anchor
-    "TCS.NS",        # IT Services            — defensive export earner
-    "SUNPHARMA.NS",  # Pharmaceuticals        — defensive domestic
-    "TATASTEEL.NS",  # Metals & Mining        — cyclical stress amplifier
-    "BAJFINANCE.NS", # NBFC                   — high-beta credit cycle
-    "NTPC.NS",       # Utilities              — regulated PSU power
-    "MARUTI.NS",     # Automobiles            — domestic consumer cyclical
-    "HINDUNILVR.NS", # Consumer Staples       — most defensive in universe
-    "APOLLOHOSP.NS", # Healthcare Services    — growth/defensive hybrid
+    "RELIANCE.NS",   # Energy / Conglomerate  — large cap
+    "HDFCBANK.NS",   # Private Banking        — large cap
+    "TCS.NS",        # IT Services            — large cap
+    "SUNPHARMA.NS",  # Pharmaceuticals        — large cap
+    "TATASTEEL.NS",  # Metals & Mining        — large cap
+    "BAJFINANCE.NS", # NBFC                   — large cap
+    "NTPC.NS",       # Utilities              — large cap
+    "MARUTI.NS",     # Automobiles            — large cap
+    "HINDUNILVR.NS", # Consumer Staples       — large cap
+    "BHARTIARTL.NS", # Telecom                — large cap
 ]
 
 # ── Constants ─────────────────────────────────────────────────────────────────
