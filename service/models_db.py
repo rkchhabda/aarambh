@@ -1,4 +1,4 @@
-"""SQLAlchemy ORM models — User, Session, Signal, Watchlist, Alert, Subscription."""
+"""SQLAlchemy ORM models — User, Session, Signal, Watchlist, Alert, Subscription, RegimeForwardLog."""
 
 import uuid
 import time
@@ -182,3 +182,60 @@ class APIKey(Base):
     is_active = Column(Boolean, default=True)
     calls_today = Column(Integer, default=0)
     created_at = Column(DateTime, default=_now)
+
+
+# ─── Live Forward-Test Regime Log ────────────────────────────────────────────
+# LOCKED as of 2026-09-27. DO NOT ROTATE OR MODIFY based on forward performance.
+#
+# One row per ticker per NSE trading day. Stores:
+#   - The regime state (RISK-ON / RISK-OFF) as determined by the 200-day SMA
+#     at the close of trade_date.
+#   - The next trading day's close and 1-day return, filled the following run
+#     using only already-closed point-in-time data — no lookahead possible.
+#   - A was_protected boolean grading whether the regime state delivered
+#     protection (RISK-OFF + down day) or participation (RISK-ON + up day).
+#
+# SEPARATE from signal_ledger (ML ensemble events). Different grain (per
+# calendar-day vs per signal event) and different semantics (pure 200-SMA
+# regime filter vs directional ML signal).
+#
+# tracker_start records the hardcoded public start date of this live run —
+# the date that makes this evidence rather than a claim.
+# ─────────────────────────────────────────────────────────────────────────────
+class RegimeForwardLog(Base):
+    __tablename__ = "regime_forward_log"
+
+    id            = Column(Integer, primary_key=True, autoincrement=True)
+
+    # ── Identity (one row per ticker per trading day) ──
+    trade_date    = Column(String(10), nullable=False)    # YYYY-MM-DD (NSE close date)
+    ticker        = Column(String(20), nullable=False)
+
+    # ── Regime state as-of this close ──
+    close_price   = Column(Float, nullable=False)         # EOD close used for SMA calc
+    sma_200       = Column(Float, nullable=False)         # Rolling 200-day SMA
+    regime_state  = Column(String(10), nullable=False)    # 'RISK-ON' or 'RISK-OFF'
+
+    # ── Next-day outcome (filled the following trading day's run) ──
+    next_close    = Column(Float, nullable=True)          # Following day's close
+    ret_1d        = Column(Float, nullable=True)          # (next_close/close_price) - 1
+
+    # ── Grading (filled alongside ret_1d, no lookahead) ──
+    # TRUE  if RISK-OFF + ret_1d <= 0  (protection delivered — filter was flat on a down day)
+    # TRUE  if RISK-ON  + ret_1d >  0  (participation delivered — filter invested on up day)
+    # FALSE if RISK-OFF + ret_1d >  0  (opportunity cost — filter was flat on an up day)
+    # FALSE if RISK-ON  + ret_1d <= 0  (drawdown exposure — filter invested on a down day)
+    was_protected = Column(Boolean, nullable=True)
+
+    # ── Metadata ──
+    data_source   = Column(String(20), nullable=False, default="NSE_DIRECT")
+    tracker_start = Column(String(10), nullable=False)    # hardcoded public start date
+    created_at    = Column(DateTime, default=_now)
+
+    __table_args__ = (
+        # Idempotent upsert safety: one row per ticker per day
+        UniqueConstraint("trade_date", "ticker", name="uq_rfl_date_ticker"),
+        Index("ix_rfl_ticker_date", "ticker", "trade_date"),
+        Index("ix_rfl_date", "trade_date"),
+    )
+

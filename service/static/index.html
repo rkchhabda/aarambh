@@ -461,6 +461,12 @@
             100% { background-position: 200% 0; }
         }
 
+        /* ── Live Tracker Pulse ── */
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
         /* ── Sector Heatmap ── */
         .heatmap-grid {
             display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
@@ -580,6 +586,7 @@
         <a href="#" data-page="portfolio" onclick="navigate('portfolio');return false;">Portfolio</a>
         <a href="#" data-page="watchlist" onclick="navigate('watchlist');return false;">Watchlist</a>
         <a href="#" data-page="methodology" onclick="navigate('methodology');return false;">Methodology</a>
+        <a href="#" data-page="live-tracker" onclick="navigate('live-tracker');return false;" style="color:var(--green);font-weight:700;">⬤ Live Tracker</a>
         <a href="#" data-page="pricing" onclick="navigate('pricing');return false;">Pricing</a>
         <a href="#" data-page="admin" id="adminNavLink" style="display:none;" onclick="navigate('admin');return false;">Admin</a>
         <button id="authBtn" onclick="openAuthModal('login')">Login</button>
@@ -602,6 +609,7 @@
     <a href="#" onclick="navigate('portfolio');closeMobileMenu();return false;">Portfolio</a>
     <a href="#" onclick="navigate('watchlist');closeMobileMenu();return false;">Watchlist</a>
     <a href="#" onclick="navigate('methodology');closeMobileMenu();return false;">Methodology</a>
+    <a href="#" onclick="navigate('live-tracker');closeMobileMenu();return false;" style="color:var(--green);font-weight:700;">⬤ Live Tracker</a>
     <a href="#" onclick="navigate('pricing');closeMobileMenu();return false;">Pricing</a>
     <a href="#" id="mobileAdminLink" style="display:none;" onclick="navigate('admin');closeMobileMenu();return false;">Admin</a>
     <button id="mobileAuthBtn" onclick="openAuthModal('login');closeMobileMenu();">Login</button>
@@ -1391,7 +1399,7 @@
             </p>
             <ul style="margin-bottom:6px;">
                 <li><strong>Quant Score</strong> &mdash; A 0-100 number combining model output with rule-based indicator scores. Not a proven predictor of future price moves.</li>
-                <li><strong>Confidence</strong> &mdash; The probability the underlying model assigns to its own prediction. Not validated to be reliable &mdash; see the disclaimer on this page.</li>
+                <li><strong>Confidence</strong> &mdash; The probability the underlying model assigns to its own prediction. Not validated to be reliable &mdash; see the disclaimer on the Signals page.</li>
                 <li><strong>ATR % (Average True Range)</strong> &mdash; How much a stock typically moves day-to-day, as a percentage of price &mdash; a measure of volatility, not direction.</li>
                 <li><strong>Stop-Loss Estimate</strong> &mdash; A rough, volatility-based reference point for where a protective sell order might sit. Not personalized advice.</li>
                 <li><strong>RSI (Relative Strength Index)</strong> &mdash; A 0-100 momentum reading; high values suggest a stock may be "overbought," low values "oversold."</li>
@@ -1404,6 +1412,207 @@
             </ul>
         </div>
     </details>
+</div>
+
+<!-- ── Live Forward-Test Tracker Page ── -->
+<div class="page" id="page-live-tracker">
+    <div class="page-header" style="margin-bottom:28px;">
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+            <div>
+                <h1 style="display:flex;align-items:center;gap:10px;">
+                    <span style="color:var(--green);font-size:14px;animation:pulse-dot 2s infinite;">⬤</span>
+                    Live Forward-Test Tracker
+                </h1>
+                <p style="color:var(--text-muted);font-size:13px;margin-top:4px;">
+                    200-Day SMA Regime Filter — real-time, dated, un-fakeable public track record
+                </p>
+            </div>
+            <div id="tracker-start-badge" style="
+                background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);
+                border-radius:var(--radius);padding:10px 18px;font-size:13px;
+                display:flex;flex-direction:column;align-items:flex-start;gap:2px;">
+                <span style="color:var(--text-muted);font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Live Tracking Started</span>
+                <span style="font-weight:700;font-family:'JetBrains Mono',monospace;color:var(--green);font-size:16px;" id="tracker-start-display">2026-09-29</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- What this tracker is (and isn't) -->
+    <div style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.15);
+                border-radius:var(--radius);padding:16px 20px;margin-bottom:24px;">
+        <p style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin:0;">
+            <strong style="color:var(--accent-light);">What this measures:</strong>
+            The 200-Day SMA regime filter's live drawdown-avoidance behaviour — identical framing to the
+            <a href="#" onclick="navigate('backtest');return false;" style="color:var(--accent-light);">verified backtest</a>
+            (−13.11% MaxDD vs −21.15% B&amp;H, 1.61× reduction over 4 years). This is not a directional
+            predictor. It does not claim RISK-ON days always go up or RISK-OFF days always go down.
+            The metric is capital protection during market stress, measured over time, across
+            <strong id="tracker-universe-size" style="color:var(--text-primary);">138</strong> tickers.
+        </p>
+    </div>
+
+    <!-- Status / N gate -->
+    <div id="tracker-status-banner" style="margin-bottom:24px;">
+        <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:center;">
+            <div style="font-size:32px;margin-bottom:12px;">⏳</div>
+            <p id="tracker-status-message" style="font-size:14px;color:var(--text-secondary);margin:0;">
+                Loading tracker status…
+            </p>
+            <p style="font-size:12px;color:var(--text-muted);margin-top:8px;">
+                Headline metrics will appear once N ≥ 60 trading days are collected.
+                Below that threshold any percentage would be statistically meaningless.
+            </p>
+        </div>
+    </div>
+
+    <!-- Main metrics (hidden until N >= 60) -->
+    <div id="tracker-metrics-section" style="display:none;">
+
+        <!-- Sample size counter — always prominent -->
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:24px;">
+            <div class="stat-card" style="flex:1;min-width:160px;">
+                <div class="label">Sample Size (N)</div>
+                <div class="value" id="tracker-n" style="color:var(--accent-light);">—</div>
+                <div class="sub">trading days of live data</div>
+            </div>
+            <div class="stat-card" style="flex:1;min-width:160px;">
+                <div class="label">Filter Max Drawdown</div>
+                <div class="value" id="tracker-filter-dd" style="color:var(--green);">—</div>
+                <div class="sub">200-SMA Regime Filter (live)</div>
+            </div>
+            <div class="stat-card" style="flex:1;min-width:160px;">
+                <div class="label">B&amp;H Max Drawdown</div>
+                <div class="value" id="tracker-bh-dd" style="color:var(--red);">—</div>
+                <div class="sub">Buy &amp; Hold Benchmark (live)</div>
+            </div>
+            <div class="stat-card" style="flex:1;min-width:160px;">
+                <div class="label">DD Reduction Ratio</div>
+                <div class="value" id="tracker-dd-ratio" style="color:var(--yellow);">—</div>
+                <div class="sub">Filter vs B&amp;H (backtest: 1.61×)</div>
+            </div>
+        </div>
+
+        <!-- Equity curve chart -->
+        <div class="card" style="margin-bottom:24px;">
+            <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                <h2>Live Equity Curves — Filter vs Buy &amp; Hold</h2>
+                <div style="font-size:12px;color:var(--text-muted);">
+                    Equal-weight, 138-ticker universe &bull; Same methodology as verified backtest
+                </div>
+            </div>
+            <div style="padding:20px;">
+                <canvas id="tracker-equity-chart" height="120" style="width:100%;"></canvas>
+                <div style="display:flex;gap:20px;margin-top:12px;font-size:12px;">
+                    <span style="display:flex;align-items:center;gap:6px;">
+                        <span style="display:inline-block;width:20px;height:3px;background:var(--green);border-radius:2px;"></span>
+                        200-SMA Filter (RISK-ON when above SMA, flat when RISK-OFF)
+                    </span>
+                    <span style="display:flex;align-items:center;gap:6px;">
+                        <span style="display:inline-block;width:20px;height:3px;background:var(--red);border-radius:2px;border-style:dashed;"></span>
+                        Buy &amp; Hold (always invested)
+                    </span>
+                </div>
+                <p style="font-size:11px;color:var(--text-muted);margin-top:12px;line-height:1.5;">
+                    No transaction costs applied to live curves. For direct comparison with the backtest
+                    (which applied 15bps retail cost), the live drawdown protection is measured gross.
+                    The backtest MaxDD reduction was 1.61× <em>net</em> of 15bps.
+                </p>
+            </div>
+        </div>
+
+        <!-- Regime behaviour matrix -->
+        <div class="card" style="margin-bottom:24px;">
+            <div class="card-header">
+                <h2>Regime Behaviour Matrix (all graded days)</h2>
+            </div>
+            <div style="padding:20px;">
+                <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;line-height:1.6;">
+                    The regime filter is <strong>not</strong> a directional predictor — "accuracy" is the wrong frame.
+                    The table below shows what the filter actually did on each type of day.
+                    The <em>drawdown reduction</em> comes from Protection rows dominating during market stress.
+                </p>
+                <div style="overflow-x:auto;">
+                    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+                        <thead>
+                            <tr style="background:var(--bg-tertiary);">
+                                <th style="padding:10px 14px;text-align:left;color:var(--text-muted);font-weight:600;">Regime State</th>
+                                <th style="padding:10px 14px;text-align:right;color:var(--green);font-weight:600;">✅ Aligned (N)</th>
+                                <th style="padding:10px 14px;text-align:right;color:var(--red);font-weight:600;">⚠️ Misaligned (N)</th>
+                                <th style="padding:10px 14px;text-align:right;color:var(--text-muted);font-weight:600;">Alignment %</th>
+                                <th style="padding:10px 14px;text-align:left;color:var(--text-muted);font-weight:600;">Interpretation</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr style="border-top:1px solid var(--border);">
+                                <td style="padding:10px 14px;font-weight:600;color:var(--green);">RISK-ON</td>
+                                <td style="padding:10px 14px;text-align:right;font-family:'JetBrains Mono',monospace;" id="matrix-riskon-protected">—</td>
+                                <td style="padding:10px 14px;text-align:right;font-family:'JetBrains Mono',monospace;" id="matrix-riskon-not">—</td>
+                                <td style="padding:10px 14px;text-align:right;font-family:'JetBrains Mono',monospace;" id="matrix-riskon-pct">—</td>
+                                <td style="padding:10px 14px;color:var(--text-muted);font-size:12px;">Invested on up days = participation delivered</td>
+                            </tr>
+                            <tr style="border-top:1px solid var(--border);">
+                                <td style="padding:10px 14px;font-weight:600;color:var(--red);">RISK-OFF</td>
+                                <td style="padding:10px 14px;text-align:right;font-family:'JetBrains Mono',monospace;" id="matrix-riskoff-protected">—</td>
+                                <td style="padding:10px 14px;text-align:right;font-family:'JetBrains Mono',monospace;" id="matrix-riskoff-not">—</td>
+                                <td style="padding:10px 14px;text-align:right;font-family:'JetBrains Mono',monospace;" id="matrix-riskoff-pct">—</td>
+                                <td style="padding:10px 14px;color:var(--text-muted);font-size:12px;">Flat on down days = protection delivered; flat on up days = opportunity cost</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p style="font-size:11px;color:var(--text-muted);margin-top:10px;">
+                    Aligned = filter delivered its expected behaviour (participation or protection).
+                    Misaligned = opportunity cost (RISK-OFF on an up day) or drawdown exposure (RISK-ON on a down day).
+                </p>
+            </div>
+        </div>
+
+    </div><!-- /tracker-metrics-section -->
+
+    <!-- 10-Ticker Panel — always visible -->
+    <div class="card" style="margin-bottom:24px;">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+            <h2>Visibility Panel — 10 Representative Tickers</h2>
+            <div style="font-size:11px;color:var(--text-muted);max-width:480px;text-align:right;line-height:1.4;">
+                Locked 2026-09-27 by sector &amp; cap criteria. Never rotated on performance.
+                Full 138-ticker evidence base drives the equity curves above.
+            </div>
+        </div>
+        <div style="padding:20px;">
+            <div id="tracker-panel-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">
+                <!-- Populated by JS -->
+                <div style="color:var(--text-muted);font-size:13px;grid-column:1/-1;">Loading panel data…</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CSV Download -->
+    <div style="background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+            <p style="font-size:13px;font-weight:600;color:var(--text-primary);margin:0;">Full Daily Log — Audit Trail</p>
+            <p style="font-size:12px;color:var(--text-muted);margin:4px 0 0;">
+                Every graded row since <span id="csv-start-date">2026-09-29</span>:
+                date, ticker, close, SMA-200, regime state, next-day return, grading.
+            </p>
+        </div>
+        <a href="/forward-tracker/download" download="aarambh_regime_forward_log.csv"
+           style="display:inline-flex;align-items:center;gap:8px;padding:10px 18px;
+                  background:var(--accent);color:white;border-radius:var(--radius-sm);
+                  font-size:13px;font-weight:600;text-decoration:none;">
+            ⬇ Download CSV
+        </a>
+    </div>
+
+    <!-- Disclaimer -->
+    <div class="disclaimer" style="margin-top:0;">
+        <strong>Forward-Test Transparency Note:</strong> This tracker was started on 2026-09-29
+        as a live, dated, prospective record. The verified historical backtest (2022–2026, 1006
+        trading sessions, 138 Nifty 100 tickers) showed the 200-SMA regime filter reduced
+        maximum drawdown by 1.61× versus Buy &amp; Hold. This tracker measures whether that
+        drawdown-avoidance property persists going forward. It does not constitute investment advice.
+        Past drawdown reduction does not guarantee future protection. SEBI Registered Investment
+        Advisors Act 2013 — this is educational, not personalized advice.
+    </div>
 </div>
 
 <!-- ── Pricing Page ── -->
@@ -1666,6 +1875,7 @@
         if (page === 'history') loadSignalHistory();
         if (page === 'portfolio') loadPortfolio();
         if (page === 'admin') loadAdmin();
+        if (page === 'live-tracker') loadLiveTracker();
     };
 
     // ── Mobile Menu ──
@@ -2584,8 +2794,220 @@
         loadWatchlist();
     };
 
+    // ── Live Forward-Test Tracker ──────────────────────────────────────────────
+    async function loadLiveTracker() {
+        const statusBanner  = $('tracker-status-banner');
+        const metricsSection = $('tracker-metrics-section');
+        const msgEl         = $('tracker-status-message');
+        const panelGrid     = $('tracker-panel-grid');
+
+        // Reset to loading state
+        statusBanner.style.display   = 'block';
+        metricsSection.style.display = 'none';
+        msgEl.textContent = 'Loading tracker status…';
+        panelGrid.innerHTML = '<div style="color:var(--text-muted);font-size:13px;grid-column:1/-1;">Loading panel data…</div>';
+
+        let d;
+        try {
+            const res = await fetch('/forward-tracker/summary');
+            d = await res.json();
+        } catch (err) {
+            msgEl.textContent = 'Could not load tracker data. Will retry on next pipeline run.';
+            panelGrid.innerHTML = '<div style="color:var(--text-muted);font-size:13px;grid-column:1/-1;">No data yet.</div>';
+            return;
+        }
+
+        // Always show the tracker start date
+        const startDate = d.tracker_start || '2026-09-29';
+        const startEl = $('tracker-start-display');
+        if (startEl) startEl.textContent = startDate;
+        const csvStartEl = $('csv-start-date');
+        if (csvStartEl) csvStartEl.textContent = startDate;
+        const uniEl = $('tracker-universe-size');
+        if (uniEl && d.universe_size) uniEl.textContent = d.universe_size;
+
+        const n       = d.sample_n || 0;
+        const minN    = d.min_sample_n || 60;
+        const status  = d.status || (n === 0 ? 'pending' : n < minN ? 'early' : 'active');
+        const lastDate = d.last_date || '';
+
+        if (status === 'pending' || n === 0) {
+            // Pre-threshold: informational message
+            statusBanner.style.display = 'block';
+            metricsSection.style.display = 'none';
+            const remaining = minN;
+            msgEl.innerHTML = `<strong style="color:var(--green);">Live tracking started ${startDate}</strong><br>
+                N = 0 days collected — tracking begins on the first NSE trading day after ${startDate}.<br>
+                <span style="color:var(--text-muted);font-size:12px;">
+                Headline metrics will appear after N = ${minN} graded trading days.
+                </span>`;
+
+        } else if (status === 'early' || n < minN) {
+            // Early: show N clearly, no headline metrics
+            statusBanner.style.display = 'block';
+            metricsSection.style.display = 'none';
+            const remaining = minN - n;
+            msgEl.innerHTML = `<strong style="color:var(--green);">Live tracking started ${startDate}</strong> —
+                N = <strong style="color:var(--accent-light);">${n}</strong> trading days collected
+                (last: ${lastDate}).<br>
+                <strong style="color:var(--yellow);">${remaining} more trading days needed</strong>
+                before reliable headline metrics can be shown.<br>
+                <span style="color:var(--text-muted);font-size:12px;">
+                At N = ${n} any MaxDD figure would be statistically premature. Check back in ~${Math.ceil(remaining/5)} weeks.
+                </span>`;
+
+        } else {
+            // Active: show full metrics
+            statusBanner.style.display = 'none';
+            metricsSection.style.display = 'block';
+
+            // Sample size and headline stats
+            $('tracker-n').textContent = n;
+            const filterDD = d.filter_max_dd_pct;
+            const bhDD     = d.bh_max_dd_pct;
+            $('tracker-filter-dd').textContent = filterDD != null ? filterDD.toFixed(2) + '%' : '—';
+            $('tracker-bh-dd').textContent     = bhDD != null ? bhDD.toFixed(2) + '%' : '—';
+
+            // DD Reduction ratio
+            if (filterDD != null && bhDD != null && filterDD !== 0) {
+                const ratio = Math.abs(bhDD) / Math.abs(filterDD);
+                $('tracker-dd-ratio').textContent = ratio.toFixed(2) + '×';
+            } else {
+                $('tracker-dd-ratio').textContent = '—';
+            }
+
+            // Equity curve chart using SVG
+            const canvas = $('tracker-equity-chart');
+            if (canvas && d.filter_equity_curve && d.bh_equity_curve) {
+                _drawEquityChart(canvas, d.filter_equity_curve, d.bh_equity_curve);
+            }
+
+            // Grading matrix
+            const matrix = d.grading_matrix || {};
+            const ron    = matrix['RISK-ON']  || {};
+            const roff   = matrix['RISK-OFF'] || {};
+            const ronP   = ron.protected  || 0;
+            const ronN   = ron.not        || 0;
+            const roffP  = roff.protected || 0;
+            const roffN  = roff.not       || 0;
+            const ronPct = (ronP + ronN) > 0 ? ((ronP / (ronP + ronN)) * 100).toFixed(1) + '%' : '—';
+            const roffPct = (roffP + roffN) > 0 ? ((roffP / (roffP + roffN)) * 100).toFixed(1) + '%' : '—';
+            $('matrix-riskon-protected').textContent  = ronP;
+            $('matrix-riskon-not').textContent        = ronN;
+            $('matrix-riskon-pct').textContent        = ronPct;
+            $('matrix-riskoff-protected').textContent = roffP;
+            $('matrix-riskoff-not').textContent       = roffN;
+            $('matrix-riskoff-pct').textContent       = roffPct;
+        }
+
+        // Panel tickers — always show (current regime state)
+        const panelTickers = d.panel_tickers || [
+            'RELIANCE.NS','HDFCBANK.NS','TCS.NS','SUNPHARMA.NS','TATASTEEL.NS',
+            'BAJFINANCE.NS','NTPC.NS','MARUTI.NS','HINDUNILVR.NS','APOLLOHOSP.NS'
+        ];
+        const panelState = d.panel_state || {};
+
+        // Sector labels for panel
+        const sectorMap = {
+            'RELIANCE.NS':   'Energy',    'HDFCBANK.NS':  'Banking',
+            'TCS.NS':        'IT Svcs',   'SUNPHARMA.NS': 'Pharma',
+            'TATASTEEL.NS':  'Metals',    'BAJFINANCE.NS':'NBFC',
+            'NTPC.NS':       'Utilities', 'MARUTI.NS':    'Autos',
+            'HINDUNILVR.NS': 'FMCG',      'APOLLOHOSP.NS':'Healthcare',
+        };
+
+        let panelHtml = '';
+        panelTickers.forEach(t => {
+            const info = panelState[t];
+            const sector = sectorMap[t] || '';
+            const shortName = t.replace('.NS', '');
+            if (!info) {
+                // No data yet
+                panelHtml += `<div style="background:var(--bg-secondary);border:1px solid var(--border);
+                    border-radius:var(--radius);padding:14px;">
+                    <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">${sector}</div>
+                    <div style="font-weight:700;font-size:14px;color:var(--text-primary);">${shortName}</div>
+                    <div style="font-size:12px;color:var(--text-muted);margin-top:6px;">No data yet</div>
+                </div>`;
+                return;
+            }
+            const isOn   = info.regime_state === 'RISK-ON';
+            const color  = isOn ? 'var(--green)' : 'var(--red)';
+            const bg     = isOn ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)';
+            const border = isOn ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)';
+            const close  = info.close_price ? '₹' + Number(info.close_price).toLocaleString('en-IN', {maximumFractionDigits:2}) : '—';
+            const sma    = info.sma_200    ? '₹' + Number(info.sma_200).toLocaleString('en-IN', {maximumFractionDigits:2}) : '—';
+            panelHtml += `<div style="background:${bg};border:1px solid ${border};
+                border-radius:var(--radius);padding:14px;">
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:4px;">${sector}</div>
+                <div style="font-weight:700;font-size:14px;color:var(--text-primary);">${shortName}</div>
+                <div style="margin-top:8px;display:inline-flex;align-items:center;gap:6px;
+                    background:${bg};border:1px solid ${border};border-radius:20px;
+                    padding:3px 10px;font-size:12px;font-weight:700;color:${color};">
+                    ${isOn ? '▲ RISK-ON' : '▼ RISK-OFF'}
+                </div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:8px;">
+                    Close: <strong style="color:var(--text-primary);">${close}</strong>
+                    &nbsp;|&nbsp; SMA-200: ${sma}
+                </div>
+            </div>`;
+        });
+        panelGrid.innerHTML = panelHtml || '<div style="color:var(--text-muted);font-size:13px;grid-column:1/-1;">Panel data not yet available.</div>';
+    }
+
+    // Draw a two-series line chart onto a canvas element using 2D context
+    function _drawEquityChart(canvas, filterCurve, bhCurve) {
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        const W = canvas.offsetWidth || 800;
+        const H = canvas.height      || 200;
+        canvas.width  = W;
+        canvas.height = H;
+        ctx.clearRect(0, 0, W, H);
+
+        const all  = filterCurve.concat(bhCurve);
+        const yMin = Math.min(...all) * 0.998;
+        const yMax = Math.max(...all) * 1.002;
+        const yRange = yMax - yMin || 0.01;
+        const n    = filterCurve.length;
+        const xStep = W / Math.max(n - 1, 1);
+
+        function toX(i) { return i * xStep; }
+        function toY(v) { return H - ((v - yMin) / yRange) * H; }
+
+        function drawLine(curve, color, dashed) {
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            if (dashed) ctx.setLineDash([6, 4]);
+            else ctx.setLineDash([]);
+            curve.forEach((v, i) => {
+                if (i === 0) ctx.moveTo(toX(i), toY(v));
+                else ctx.lineTo(toX(i), toY(v));
+            });
+            ctx.stroke();
+        }
+
+        // Grid line at y=1 (breakeven)
+        ctx.beginPath();
+        ctx.strokeStyle = 'rgba(148,163,184,0.15)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 4]);
+        const baseY = toY(1.0);
+        ctx.moveTo(0, baseY);
+        ctx.lineTo(W, baseY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // B&H (red dashed) drawn first so filter is on top
+        drawLine(bhCurve, '#ef4444', true);
+        // Filter (green solid)
+        drawLine(filterCurve, '#22c55e', false);
+    }
+
     // ── Init ──
     async function init() {
+
         if (state.token) {
             await loadUser();
         }

@@ -12,7 +12,7 @@ permissions:
 jobs:
   refresh-cache:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 55   # Extended from 45 to allow grading step
 
     steps:
       - name: Checkout Repository
@@ -56,11 +56,48 @@ jobs:
           print("[VALIDATION] Cache validation passed successfully.")
           '
 
-      - name: Commit and Push Updated Cache
+      # ── Regime Forward-Test Grader ─────────────────────────────────────────
+      # Runs AFTER the cache rebuild so today's EOD closes are available.
+      # Fills yesterday's outcomes (ret_1d, was_protected) using today's
+      # settled close, then logs today's regime state for all 138 tickers.
+      # No lookahead: all data used is already-closed point-in-time.
+      - name: Run Regime Forward-Test Grader
+        run: |
+          python scripts/grade_regime_forward.py
+
+      - name: Validate Grader Output
+        run: |
+          python -c '
+          import json, os, sys
+          summary_file = "service/models/regime_forward_summary.json"
+          csv_file = "service/models/regime_forward_log.csv"
+          if not os.path.exists(summary_file):
+              # First run before tracker start is allowed — script exits cleanly
+              print("[INFO] regime_forward_summary.json not yet written (pre-start date). OK.")
+              sys.exit(0)
+          with open(summary_file) as f:
+              s = json.load(f)
+          n = s.get("sample_n", 0)
+          print(f"[VALIDATION] Grader: sample_n={n}, tracker_start={s.get(\"tracker_start\")}")
+          if not os.path.exists(csv_file):
+              print("[WARN] regime_forward_log.csv not written (may be empty log). Continuing.")
+          else:
+              with open(csv_file) as f:
+                  lines = f.readlines()
+              print(f"[VALIDATION] CSV: {len(lines)-1} data rows (excluding header).")
+          '
+
+      - name: Commit and Push Updated Cache & Tracker Files
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore(data): automated daily EOD ticker & indices cache update [skip ci]"
-          file_pattern: "service/models/ticker_cache.json service/models/indices_cache.json"
+          commit_message: "chore(data): automated daily EOD cache + regime forward-test log [skip ci]"
+          file_pattern: >-
+            service/models/ticker_cache.json
+            service/models/indices_cache.json
+            service/models/regime_forward_summary.json
+            service/models/regime_forward_log.csv
+            service/aarambh.db
           commit_user_name: "github-actions[bot]"
           commit_user_email: "github-actions[bot]@users.noreply.github.com"
           commit_author: "github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
+
