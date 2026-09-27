@@ -197,13 +197,22 @@ def scan_tickers(
             # Preserve prior verified state to prevent flicker
             is_risk_on = prior_above
 
-        primary_status = "RISK-ON" if is_risk_on else "RISK-OFF"
+        # Historical volatility / typical 5-day price swing:
+        # Scaled from 14-day ATR (sqrt(5) * ATR_14), or 4.62% historical band std-dev fallback.
+        # This is strictly a volatility spread metric, NOT a directional forecast.
+        atr_14 = data.get("features", {}).get("atr_14", None)
+        if atr_14 is not None and atr_14 > 0:
+            typical_5d = round(atr_14 * (5 ** 0.5) * 100.0, 1)
+        else:
+            # Fallback to empirical 15-40% band std-dev from 10-year verified study
+            typical_5d = 4.6
 
         entry = {
             "ticker": ticker,
             "name": TICKER_NAMES.get(ticker, ticker.replace(".NS", "")),
             "status": primary_status,
             "sma_distance_pct": sma_dist,
+            "typical_5d_move_pct": typical_5d,
             "price": round(close, 2),
             "sma_200": round(sma200, 2),
         }

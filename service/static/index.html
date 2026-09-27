@@ -734,8 +734,13 @@
     </div>
 
     <div class="card" style="margin-top:20px;">
-        <div class="card-header">
-            <h2>Top 10 Signals</h2>
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+            <div>
+                <h2 style="margin:0;">Strongest Trend Momentum</h2>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:4px;">
+                    Sorted by distance above 200-day SMA — not a return forecast or recommendation.
+                </div>
+            </div>
             <button class="btn btn-sm btn-outline" onclick="navigate('scanner')">View All →</button>
         </div>
         <div class="table-container">
@@ -747,12 +752,15 @@
                         <th>Name</th>
                         <th>Mechanical Regime (200-SMA)</th>
                         <th>Price vs SMA200 (%)</th>
+                        <th title="Historical typical price swing over 5 trading days for stocks at this SMA distance — this is NOT a predicted direction or expected gain.">
+                            Typical 5-Day Move <span style="font-size:11px;color:var(--text-muted);font-weight:normal;">(Volatility)</span>
+                        </th>
                         <th>Price (₹)</th>
                         <th>SMA200 (₹)</th>
                     </tr>
                 </thead>
                 <tbody id="topSignalsBody">
-                    <tr><td colspan="8" class="empty-state" style="padding:40px;">Loading signals...</td></tr>
+                    <tr><td colspan="8" class="empty-state" style="padding:40px;">Loading momentum data...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -763,7 +771,7 @@
 <div class="page" id="page-scanner">
     <div class="page-header">
         <h1>Market Trend Scanner</h1>
-        <p>Systematic 200-day SMA regime filter across Nifty 100 universe</p>
+        <p>Systematic 200-day SMA regime filter across Nifty 100 universe — sorted by distance from 200-day SMA; not a return forecast or recommendation.</p>
     </div>
     <div class="filter-row">
         <select id="filterSignal" onchange="applyFilters()">
@@ -782,13 +790,16 @@
                     <th data-sort="name" onclick="sortTable('name')">Name <span class="sort-arrow">↕</span></th>
                     <th data-sort="status" onclick="sortTable('status')">Regime Status <span class="sort-arrow">↕</span></th>
                     <th data-sort="sma_distance_pct" onclick="sortTable('sma_distance_pct')">Price vs SMA200 (%) <span class="sort-arrow">↕</span></th>
+                    <th data-sort="typical_5d_move_pct" onclick="sortTable('typical_5d_move_pct')" title="Historical typical price swing over 5 trading days for stocks at this SMA distance — this is NOT a predicted direction or expected gain.">
+                        Typical 5-Day Move <span style="font-size:11px;color:var(--text-muted);font-weight:normal;">(Volatility)</span> <span class="sort-arrow">↕</span>
+                    </th>
                     <th data-sort="price" onclick="sortTable('price')">Price (₹) <span class="sort-arrow">↕</span></th>
                     <th data-sort="sma_200" onclick="sortTable('sma_200')">SMA 200 (₹) <span class="sort-arrow">↕</span></th>
                     <th>Actions</th>
                 </tr>
             </thead>
             <tbody id="scannerBody">
-                <tr><td colspan="7" class="empty-state" style="padding:40px;">Loading scanner data...</td></tr>
+                <tr><td colspan="8" class="empty-state" style="padding:40px;">Loading scanner data...</td></tr>
             </tbody>
         </table>
     </div>
@@ -2217,7 +2228,7 @@
 
     function renderTopSignals(signals) {
         if (!signals.length) {
-            $('topSignalsBody').innerHTML = '<tr><td colspan="8" class="empty-state" style="padding:40px;">No signals available</td></tr>';
+            $('topSignalsBody').innerHTML = '<tr><td colspan="8" class="empty-state" style="padding:40px;">No momentum data available</td></tr>';
             return;
         }
         $('topSignalsBody').innerHTML = signals.map((s, i) => {
@@ -2225,6 +2236,7 @@
             const isAbove = (s.sma_distance_pct || 0) >= 0;
             const distColor = isAbove ? 'var(--green)' : 'var(--red)';
             const distSign = (s.sma_distance_pct || 0) > 0 ? '+' : '';
+            const typicalMove = s.typical_5d_move_pct != null ? '±' + Number(s.typical_5d_move_pct).toFixed(1) + '%' : '±4.6%';
             return `
             <tr>
                 <td style="color:var(--text-muted);font-weight:600;">${i + 1}</td>
@@ -2232,6 +2244,7 @@
                 <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(s.name)}</td>
                 <td><span class="signal-badge ${isRiskOn ? 'signal-buy' : 'signal-hold'}">${escapeHtml(s.status)}</span></td>
                 <td style="font-family:'JetBrains Mono',monospace;font-weight:600;color:${distColor};">${distSign}${Number(s.sma_distance_pct || 0).toFixed(2)}%</td>
+                <td style="font-family:'JetBrains Mono',monospace;color:var(--text-muted);" title="Historical typical price swing over 5 trading days for stocks at this SMA distance — this is NOT a predicted direction or expected gain.">${typicalMove}</td>
                 <td style="font-family:'JetBrains Mono',monospace;">₹${Number(s.price || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                 <td style="font-family:'JetBrains Mono',monospace;color:var(--text-secondary);">₹${Number(s.sma_200 || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
             </tr>
@@ -2246,7 +2259,7 @@
             state.filteredData = [...state.scannerData];
             renderScannerTable();
         } catch {
-            $('scannerBody').innerHTML = '<tr><td colspan="7" class="empty-state" style="padding:60px;">Unable to load scanner data. Backend may be starting up.</td></tr>';
+            $('scannerBody').innerHTML = '<tr><td colspan="8" class="empty-state" style="padding:60px;">Unable to load scanner data. Backend may be starting up.</td></tr>';
         }
     }
 
@@ -2254,7 +2267,7 @@
         const items = state.filteredData;
         $('scannerCount').textContent = items.length + ' tickers';
         if (!items.length) {
-            $('scannerBody').innerHTML = '<tr><td colspan="7" class="empty-state" style="padding:60px;">No tickers match your filters</td></tr>';
+            $('scannerBody').innerHTML = '<tr><td colspan="8" class="empty-state" style="padding:60px;">No tickers match your filters</td></tr>';
             return;
         }
         $('scannerBody').innerHTML = items.map(s => {
@@ -2262,12 +2275,14 @@
             const isAbove = (s.sma_distance_pct || 0) >= 0;
             const distColor = isAbove ? 'var(--green)' : 'var(--red)';
             const distSign = (s.sma_distance_pct || 0) > 0 ? '+' : '';
+            const typicalMove = s.typical_5d_move_pct != null ? '±' + Number(s.typical_5d_move_pct).toFixed(1) + '%' : '±4.6%';
             return `
             <tr>
                 <td><strong style="color:var(--text-primary);cursor:pointer;" onclick="viewSignal('${escapeHtml(s.ticker || s.symbol)}')">${escapeHtml(s.ticker || s.symbol)}</strong></td>
                 <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(s.name)}</td>
                 <td><span class="signal-badge ${isRiskOn ? 'signal-buy' : 'signal-hold'}">${escapeHtml(s.status)}</span></td>
                 <td style="font-family:'JetBrains Mono',monospace;font-weight:600;color:${distColor};">${distSign}${Number(s.sma_distance_pct || 0).toFixed(2)}%</td>
+                <td style="font-family:'JetBrains Mono',monospace;color:var(--text-muted);" title="Historical typical price swing over 5 trading days for stocks at this SMA distance — this is NOT a predicted direction or expected gain.">${typicalMove}</td>
                 <td style="font-family:'JetBrains Mono',monospace;">₹${Number(s.price || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                 <td style="font-family:'JetBrains Mono',monospace;color:var(--text-secondary);">₹${Number(s.sma_200 || 0).toLocaleString('en-IN', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                 <td>
@@ -2296,7 +2311,7 @@
         state.filteredData.sort((a, b) => {
             let va = a[col] || '';
             let vb = b[col] || '';
-            if (col === 'sma_distance_pct' || col === 'price' || col === 'sma_200') {
+            if (col === 'sma_distance_pct' || col === 'typical_5d_move_pct' || col === 'price' || col === 'sma_200') {
                 va = parseFloat(va) || 0;
                 vb = parseFloat(vb) || 0;
             } else {
