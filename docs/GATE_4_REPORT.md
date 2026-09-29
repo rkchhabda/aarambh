@@ -33,7 +33,9 @@ Before training, the pre-registered question was posed:
 
 The empirical walk-forward results provide a definitive answer:
 1. **The Collinearity Trap Confirmed:** In the baseline model (M0), simply trading in the direction of the 200-SMA produced a negative/flat mean validation AUC ($0.4870$), largely because buying extended stocks in late 2024–2025 suffered sharp mean-reversions (Fold 3 Val AUC = $0.4560$).
-2. **Opposing Coefficient Cancellation:** In the incremental model (M1), `vix_spike_5d` ($\beta \approx -0.051$) and the interaction term `vix_accel_x_sma_regime` ($\beta \approx +0.052$) have nearly identical opposite magnitudes. When a stock is above its 200-SMA, the two terms cancel out ($\text{net } \beta \approx +0.001$), meaning **VIX spikes provide zero incremental predictive signal during bull regimes**.
+2. **Opposing Coefficient Cancellation & Asymmetry:** In the incremental model (M1), `vix_spike_5d` ($\beta \approx -0.051$) and the interaction term `vix_accel_x_sma_regime` ($\beta \approx +0.052$) have nearly identical opposite magnitudes:
+   - In bull regimes (`sma_200_regime == 1`, `regime_sign = +1`), the interaction term offsets the VIX spike term ($\text{net } \beta \approx -0.051 + 0.052 \approx +0.002$), meaning VIX spikes provide virtually zero predictive signal during bull regimes.
+   - Conversely, the same collinearity math implies a larger (still economically negligible) net negative coefficient for VIX spikes during bear regimes (`sma_200_regime == 0`, `regime_sign = -1`): $\text{net } \beta \approx -0.051 - 0.052 \approx -0.10$ (vs $\approx +0.002$ in bull regimes). While intuitive (volatility spikes in bear markets coincide with downward drift and panic selling), a coefficient of $\sim -0.10$ remains economically negligible for generating a viable 5-day directional trading edge, and it does not rescue the model from sub-period instability or alter the null verdict.
 3. **Regime Inconsistency:** The only validation fold where macro features produced an AUC $>0.50$ was Fold 2 (Val AUC = $0.5400$, Oct 2023 to Oct 2024), a period characterized by an uninterrupted macro rally across the Indian market. In the other two years (Fold 1: choppy market, Fold 3: late-cycle consolidation), the model failed completely ($\text{AUC} < 0.49$).
 
 ---
@@ -77,6 +79,13 @@ Each validation fold contains **237 trading days (~1 year)** separated by a **10
 | `vix_spike_5d` | **-0.0512** ($p < 10^{-10}$) | **-0.0529** ($p < 10^{-10}$) | **-0.0495** ($p < 10^{-10}$) | Stable negative baseline coefficient |
 | `pct_universe_above_50sma` | **-0.0352** ($p < 10^{-10}$) | **-0.0176** ($p = 2\times 10^{-4}$) | **-0.0290** ($p < 10^{-10}$) | High market breadth slightly reduces 5-day forward return probability |
 | `vix_accel_x_sma_regime` | **+0.0558** ($p < 10^{-10}$) | **+0.0474** ($p < 10^{-10}$) | **+0.0514** ($p < 10^{-10}$) | Offsets `vix_spike_5d` during bull regime ($+0.0558 - 0.0512 \approx 0$) |
+
+*Regime-Dependent Collinearity Note:*  
+Because `vix_accel_x_sma_regime` is formulated as $\text{vix\_spike\_5d} \times \text{sign}(\text{sma\_200\_regime})$, the net effective coefficient of a VIX spike depends directly on the 200-SMA regime state:
+- **Bull regimes ($\text{Close} > \text{200-SMA}$):** $\beta_{\text{net}} = \beta_{\text{vix}} + \beta_{\text{accel}} \approx -0.051 + 0.052 \approx \mathbf{+0.002}$ (virtually zero directional sensitivity).
+- **Bear regimes ($\text{Close} \le \text{200-SMA}$):** $\beta_{\text{net}} = \beta_{\text{vix}} - \beta_{\text{accel}} \approx -0.051 - 0.052 \approx \mathbf{-0.10}$ (larger net negative coefficient, reflecting heightened drift/drawdowns during bear market volatility spikes).
+
+While this regime asymmetry is mathematically consistent and economically intuitive, a net sensitivity of $\sim -0.10$ remains economically negligible for establishing a profitable 5-day directional trading edge, and does not alter the overall null verdict.
 
 ---
 
