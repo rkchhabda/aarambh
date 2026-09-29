@@ -20,15 +20,18 @@ Furthermore, Amendment 1 Section G explicitly conditions this milestone:
 
 ---
 
-## 2. Candidate Sourcing Audit for the 138-Ticker Universe
+## 2. Commercial & Free Vendor Sourcing Audit (Pricing & Technical Depth)
 
-To evaluate whether a viable fundamental dataset could be integrated for Gate 3, an audit of candidate data sources across the 138-ticker Indian universe was performed:
+A concrete pricing and coverage investigation was conducted across primary Indian financial data providers:
 
-| Source | Historical Depth | Universe Coverage | Point-in-Time (PIT) Release Dates | Accessibility / Cost | Assessment & Decision |
-|---|---|---|---|---|---|
-| **Yahoo Finance API (`yfinance` / `quoteSummary`)** | ~4 to 8 quarters (2024–2026 only) | Partial (~85% of 138 tickers) | **Fails PIT discipline.** Balance sheet/income dates map to fiscal quarter-end dates, not actual market disclosure dates. Lacks historical earnings surprise depth. | Free, but unauthenticated endpoints are rate-limited or blocked. | **REJECTED.** Insufficient historical depth (<2 years vs. 9-year development requirement) and severe lookahead risk. |
-| **NSE India Official Corporate Disclosures (XBRL / Announcements)** | ~2–3 years online; historical archives heterogeneous | 100% of 138 tickers | Available in announcement metadata, but unstructured across PDF/HTML/XBRL formats. | Free on web portal, but lacks bulk historical PIT download API. | **REJECTED.** Constructing a clean, point-in-time backfilled panel for 2016–2025 requires institutional data pipeline engineering outside scope. |
-| **Commercial PIT Databases (CMIE Prowess, Capital IQ, FactSet, Trendlyne Paid)** | 10+ years (full 2016–2025 span) | 100% | High-integrity point-in-time release timestamps and restatement audit trails. | Commercial / Paid subscription required. | **UNAVAILABLE.** No commercial vendor export is currently stored or provisioned in the repository. |
+| Vendor / Provider | Tier / Product | Verified Pricing (Annual) | Historical Depth | Universe Coverage | Point-in-Time (PIT) Release Audit | Viability Verdict |
+|---|---|---|---|---|---|---|
+| **CMIE Prowess / Prowessdx** | Institutional / Prowess-IP on Web / Prowessdx | **₹3.30 Lakhs – ₹3.52 Lakhs + 18% GST** (~₹3.9L–₹4.15L net; ~$4,600–$5,000 USD/yr) | 10+ years (full 2016–2025 panel) | 100% of NSE/BSE listed universe | **Full PIT integrity.** Normalized standardized disclosures, actual board announcement timestamps, restatement tracking. | **Viable for future institutional licensing.** Currently not licensed for this project. |
+| **Trendlyne** | StratQ (Professional) / GuruQ | **₹5,900/year** (StratQ) / **₹2,190/year** (GuruQ) | ~3–5 years historical ratios; 10y raw statements | 100% of Nifty universe | **Partial PIT.** Excel Connect / web data downloader allows CSV exports, but public developer API is unavailable for retail tiers; historical consensus forecast timestamps are restricted. | **Inexpensive research tool, but lacks automated programmatic PIT time-series API.** |
+| **Screener.in** | Premium Tier | **₹4,999/year** (~$60 USD/yr) | 10+ years annual/quarterly statements | 100% of NSE/BSE listed universe | **Lacks precise historical PIT timestamps.** Early years (2016–2019) align primarily to fiscal quarter-ends rather than exact press release dates. | **Low cost for manual Excel exports, but requires manual PIT lag reconstruction.** |
+| **Yahoo Finance API** | Free (`yfinance` / `quoteSummary`) | ₹0 (Free / Public) | ~4 to 8 trailing quarters only | Partial (~85% of 138 tickers) | **Fails PIT discipline completely.** Lacks historical announcement dates; unauthenticated endpoints rate-limited. | **REJECTED.** Severe lookahead risk and insufficient depth (<2 years vs. 9-year development requirement). |
+| **NSE Corporate Disclosures** | Direct XBRL / Announcements | ₹0 (Free portal) | ~2–3 years readily structured; older filings heterogeneous | 100% of 138 tickers | Available in raw PDF/HTML/XBRL announcement metadata. | Requires custom multi-year extraction pipeline; no turnkey bulk PIT dataset available. | **REJECTED for automated use without custom pipeline.** |
+| **Institutional Terminals** | Bloomberg / FactSet / S&P Capital IQ | **$12,000 – $30,000 USD/year** (~₹10 Lakhs – ₹25 Lakhs/yr) | 10+ years | 100% | Institutional-grade PIT point-in-time point data. | Cost-prohibitive for current research stage. |
 
 ---
 

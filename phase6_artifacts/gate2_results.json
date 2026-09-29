@@ -1,5 +1,26 @@
+{
   "gate": "Gate 2",
   "verdict": "NULL_RESULT",
+  "status": "DISQUALIFIED_ZERO_WEIGHT",
+  "carry_forward_weight": 0.0,
+  "eligible_for_future_gates": false,
+  "feature_eligibility": {
+    "relative_ret_5d": {
+      "status": "DISQUALIFIED",
+      "carry_forward_weight": 0.0,
+      "reason": "Validation AUC 0.500, coefficients within noise, expanding folds dependent"
+    },
+    "relative_ret_5d_vs_index": {
+      "status": "DISQUALIFIED",
+      "carry_forward_weight": 0.0,
+      "reason": "Validation AUC 0.500, coefficients within noise, expanding folds dependent"
+    },
+    "sector_rank_pct": {
+      "status": "DISQUALIFIED",
+      "carry_forward_weight": 0.0,
+      "reason": "Validation AUC 0.500, coefficients near zero, expanding folds dependent"
+    }
+  },
   "methodological_disclaimer": "Consistent coefficient signs across folds do NOT constitute evidence of a real relationship (val AUC = 0.500, expanding folds share 80-90% training data, magnitudes within noise). Features carry zero weight into Gate 3.",
   "dataset": "Development data strictly (2016-09-26 to 2025-09-16)",
   "features": [
