@@ -37,7 +37,7 @@ In accordance with **Amendment 1 Section C, D, and E**, test-set data for Phase 
 
 - **Status:** SEALED
 - **Archive Filename:** `window_a_sealed.7z`
-- **Archive SHA-256:** `be4529b140847aa3d0bdf264ac8e71757d26ac6f49a2c38a0f544e3e0735b170`
+- **Archive SHA-256:** `71d16366ea3b8b7e7388ba1119e7a14f94fdbd19a474e85ed1fcbf829d364b6f`
 - **External Storage Location:** `C:\Users\r_chh\gaurvideep_vault\window_a_sealed.7z`
 - **Backup Location:** `C:\Users\r_chh\OneDrive - optgbrc\Apps\gaurvideep_vault\window_a_sealed.7z`
 - **Date Range:** 2025-10-01 to 2026-03-31 (actual trading dates: 2025-10-01 to 2026-03-30)
@@ -72,7 +72,7 @@ In accordance with **Amendment 1 Section C, D, and E**, test-set data for Phase 
 
 - **Status:** SEALED
 - **Archive Filename:** `window_b_sealed.7z`
-- **Archive SHA-256:** `31624f50f6d850031a1410df6dab626c2e22c69fedd638150e1d57a2a48b5995`
+- **Archive SHA-256:** `2e76ad72536d9df095e352c218c2acd3eee8cacea581d25eb1828795b4a89965`
 - **External Storage Location:** `C:\Users\r_chh\gaurvideep_vault\window_b_sealed.7z`
 - **Backup Location:** `C:\Users\r_chh\OneDrive - optgbrc\Apps\gaurvideep_vault\window_b_sealed.7z`
 - **Date Range:** 2026-04-01 to 2026-09-25
