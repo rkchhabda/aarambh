@@ -28,6 +28,10 @@ jobs:
           python test_features.py
           python test_phase_a.py
 
+      - name: Run Phase 6 Pre-Registration Safeguards CI Check
+        run: |
+          python test_phase6_safeguards.py
+
       - name: Trigger Render Deploy Hook (API)
         if: env.RENDER_API_DEPLOY_HOOK != ''
         run: |

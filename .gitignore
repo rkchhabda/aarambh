@@ -19,4 +19,9 @@ debug_*.py
 check_*.py
 test_exec.py
 
-
+# Sealed holdouts and vault files
+*.7z
+*.gpg
+vault/
+*sealed*
+*holdout_data*
