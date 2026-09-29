@@ -155,8 +155,34 @@ def load_development_raw(
     return load_data(dataset_type="raw", start_date=start_date, end_date=end_date, tickers=tickers)
 
 
+def load_development_vix(
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+) -> pd.DataFrame:
+    """Load India VIX development data strictly bounded by the development cutoff."""
+    _validate_date_bounds(start_date, end_date)
+    vix_path = os.path.join(BASE_DIR, "data", "multi", "india_vix_development.csv")
+    if not os.path.exists(vix_path):
+        raise FileNotFoundError(f"VIX dataset file not found at: {vix_path}")
+    df = pd.read_csv(vix_path)
+    df = df.assign(date=df["date"].astype(str).str.strip().str[:10])
+    
+    # Invariant: refuse any row dated after cutoff
+    post_cutoff_mask = df["date"] > DEVELOPMENT_CUTOFF_DATE
+    if post_cutoff_mask.any():
+        raise PreRegistrationDataLeakError(
+            f"[PRE-REGISTRATION INTEGRITY FAILURE] VIX contains dates > {DEVELOPMENT_CUTOFF_DATE}"
+        )
+    if start_date is not None:
+        df = df[df["date"] >= str(start_date).strip()[:10]]
+    if end_date is not None:
+        df = df[df["date"] <= str(end_date).strip()[:10]]
+    return df.reset_index(drop=True)
+
+
 # Primary alias matching Amendment 1 Section E specification
 load_data = load_development_data
+
 
 
 if __name__ == "__main__":
