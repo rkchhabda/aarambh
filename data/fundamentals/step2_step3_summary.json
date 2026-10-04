@@ -1,0 +1,12 @@
+{
+  "total_resolved_quarters": 3550,
+  "consolidated_count": 3189,
+  "standalone_fallback_count": 361,
+  "valid_eps_count": 3524,
+  "valid_pat_count": 3524,
+  "usable_eps_rate": 0.9926760563380281,
+  "taxonomy_breakdown": {
+    "Ind-AS": 2152,
+    "Banking": 1372
+  }
+}

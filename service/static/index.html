@@ -808,8 +808,8 @@
 <!-- ── Signals Page ── -->
 <div class="page" id="page-signals">
     <div class="page-header">
-        <h1>Signal Analysis</h1>
-        <p>Search any Nifty 100 ticker for detailed quantitative analysis</p>
+        <h1>Quantitative Analysis</h1>
+        <p>Search any Nifty 100 ticker for detailed quantitative model output</p>
     </div>
     <div class="search-box">
         <span class="search-icon">🔍</span>
@@ -846,8 +846,8 @@
                         <strong style="color:#eab308;">⚠ Research &amp; Educational Use Only</strong> — Not investment advice.
                         This model's historical backtest produced a Sharpe ratio of <strong style="color:#e2e8f0;">−0.399</strong>,
                         which did <strong style="color:#e2e8f0;">not outperform</strong> a simple buy-and-hold benchmark net of costs.
-                        BUY/HOLD signals are outputs of an unvalidated quantitative model.
-                        Consult a SEBI-registered advisor before acting on any signal.
+                        Headline badges reflect the mechanical 200-SMA regime state. Underlying BUY/HOLD classifications shown under Model Predictions and historical logs are raw outputs of an unvalidated quantitative model.
+                        Consult a SEBI-registered advisor before acting on any quantitative model outputs.
                     </div>
                 </div>
 
@@ -915,7 +915,7 @@
     <div id="signalEmpty" class="empty-state" style="margin-top:40px;">
         <div class="icon">📊</div>
         <h3>Search for a stock ticker</h3>
-        <p>Enter a Nifty 100 ticker symbol above to get detailed quantitative signal analysis.</p>
+        <p>Enter a Nifty 100 ticker symbol above to view detailed quantitative analysis and model output.</p>
     </div>
 </div>
 
@@ -923,7 +923,7 @@
 <div class="page" id="page-watchlist">
     <div class="page-header">
         <h1>My Watchlist</h1>
-        <p>Track your favourite Nifty 100 tickers and their quant signals</p>
+        <p>Track your favourite Nifty 100 tickers and their quantitative regime status</p>
     </div>
     <div id="watchlistContent">
         <div class="search-box" style="margin-bottom:20px;">
@@ -939,7 +939,7 @@
                         <tr>
                             <th>Ticker</th>
                             <th>Name</th>
-                            <th>Signal</th>
+                            <th>Regime Status</th>
                             <th>Score</th>
                             <th>Risk</th>
                             <th>Momentum</th>
@@ -994,11 +994,11 @@
                         <input type="number" id="pfQty" value="10" min="1" style="width:100%;">
                     </div>
                     <div>
-                        <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px;">Buy Price (₹)</label>
+                        <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px;">Purchase Price (₹)</label>
                         <input type="number" id="pfPrice" step="0.01" style="width:100%;">
                     </div>
                     <div>
-                        <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px;">Buy Date</label>
+                        <label style="display:block;font-size:12px;color:var(--text-secondary);margin-bottom:4px;">Purchase Date</label>
                         <input type="date" id="pfDate" style="width:100%;">
                     </div>
                     <button class="btn btn-blue" onclick="addHolding()">Add</button>
@@ -1272,13 +1272,13 @@
 <!-- ── Signal History Page ── -->
 <div class="page" id="page-history">
     <div class="page-header">
-        <h1>Signal History</h1>
-        <p>Track record of all generated signals</p>
+        <h1>Historical Model Logs</h1>
+        <p>Systematic ledger of logged quantitative model evaluations</p>
     </div>
 
     <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px;">
-        <div class="stat-card"><div class="stat-val" id="histTotal">--</div><div class="stat-label">Total Signals</div></div>
-        <div class="stat-card"><div class="stat-val" id="histBuy">--</div><div class="stat-label">BUY Signals</div></div>
+        <div class="stat-card"><div class="stat-val" id="histTotal">--</div><div class="stat-label">Total Evaluations</div></div>
+        <div class="stat-card"><div class="stat-val" id="histBuy">--</div><div class="stat-label">Positive Classifier Tags (BUY)</div></div>
         <div class="stat-card"><div class="stat-val" id="histConf">--</div><div class="stat-label">Avg Confidence</div></div>
         <div class="stat-card"><div class="stat-val" id="histRet">--</div><div class="stat-label">Avg 5D Return</div></div>
     </div>
@@ -1404,9 +1404,9 @@
                 <li><strong>Single-Event Caveat</strong> &mdash; A note that a result was shown in only one historical event (e.g., one crisis) and hasn't yet been proven to repeat in a different kind of event.</li>
             </ul>
 
-            <h3 style="font-size:15px;margin-bottom:6px;margin-top:20px;">Signal Detail Page</h3>
+            <h3 style="font-size:15px;margin-bottom:6px;margin-top:20px;">Quantitative Analysis Tab</h3>
             <p style="font-size:12px;color:var(--text-muted);font-style:italic;margin-bottom:10px;">
-                Terms below describe fields on the Signals page. As noted there, the underlying model has not demonstrated a validated predictive edge &mdash; these definitions explain what each number IS, not whether it should be trusted.
+                Terms below describe fields on the Quantitative Analysis tab. As noted there, the underlying model has not demonstrated a validated predictive edge &mdash; these definitions explain what each number IS, not whether it should be trusted.
             </p>
             <ul style="margin-bottom:6px;">
                 <li><strong>Quant Score</strong> &mdash; A 0-100 number combining model output with rule-based indicator scores. Not a proven predictor of future price moves.</li>
@@ -1800,12 +1800,16 @@
         signalData: null,
         signalDetail: null
     };
+    window.state = state;
 
     const API = '';
 
     // ── Utilities ──
     function $(id) { return document.getElementById(id); }
     function $$(sel) { return document.querySelectorAll(sel); }
+    window.$ = $;
+    window.$$ = $$;
+    window.api = api;
 
     async function api(path, opts = {}) {
         const headers = { 'Content-Type': 'application/json' };
@@ -1822,11 +1826,28 @@
 
     function signalClass(signal) {
         if (!signal) return 'signal-hold';
-        const s = signal.toUpperCase();
-        if (s === 'STRONG BUY') return 'signal-strong-buy';
-        if (s === 'BUY') return 'signal-buy';
-        if (s === 'SELL' || s === 'STRONG SELL') return 'signal-sell';
+        const s = String(signal).toUpperCase();
+        if (s === 'RISK-ON' || s === 'RISK ON' || s === 'BULL' || s === 'BUY' || s === 'STRONG BUY') return 'signal-buy';
+        if (s === 'RISK-OFF' || s === 'RISK OFF' || s === 'BEAR' || s === 'HOLD' || s === 'SELL' || s === 'STRONG SELL') return 'signal-hold';
         return 'signal-hold';
+    }
+
+    function getRegimeStatus(d) {
+        if (!d) return 'RISK-OFF';
+        if (d.status === 'RISK-ON' || d.status === 'RISK-OFF') return d.status;
+        const price = typeof d.price === 'number' ? d.price : parseFloat(d.price);
+        const sma200 = typeof d.sma_200 === 'number' ? d.sma_200 : parseFloat(d.sma_200);
+        if (sma200 > 0 && !isNaN(price)) {
+            const dist = ((price - sma200) / sma200) * 100.0;
+            if (dist > 1.00) return 'RISK-ON';
+            if (dist < -1.00) return 'RISK-OFF';
+            if (d.above_sma !== undefined) return d.above_sma ? 'RISK-ON' : 'RISK-OFF';
+            if (d.regime) return d.regime.toUpperCase().includes('BULL') ? 'RISK-ON' : 'RISK-OFF';
+            return price >= sma200 ? 'RISK-ON' : 'RISK-OFF';
+        }
+        if (d.above_sma !== undefined) return d.above_sma ? 'RISK-ON' : 'RISK-OFF';
+        if (d.regime) return d.regime.toUpperCase().includes('BULL') ? 'RISK-ON' : 'RISK-OFF';
+        return 'RISK-OFF';
     }
 
     function riskClass(risk) {
@@ -1882,8 +1903,8 @@
                 searchSignal();
             }
         }
-        if (page === 'watchlist') loadWatchlist();
-        if (page === 'history') loadSignalHistory();
+        if (page === 'watchlist') (window.loadWatchlist || loadWatchlist)();
+        if (page === 'history') (window.loadSignalHistory || loadSignalHistory)();
         if (page === 'portfolio') loadPortfolio();
         if (page === 'admin') loadAdmin();
         if (page === 'live-tracker') loadLiveTracker();
@@ -2380,12 +2401,16 @@
         const qsObj = d.quant_score || {};
         const score = Math.round((typeof qsObj === 'object' ? qsObj.score : qsObj) || d.score || 0);
         const price = d.price || d.ltp || '—';
-        const signal = d.signal || 'HOLD';
         // confidence is raw 0-1 probability — multiply by 100 for display
         const confidence = (d.confidence != null) ? d.confidence * 100 : 0;
         const risk = (d.risk && typeof d.risk === 'object') ? (d.risk.risk_level || 'Medium') : (d.risk || 'Medium');
         const momentum = d.momentum || 'Moderate';
-        const regime = d.regime || 'NEUTRAL';
+        const regimeStatus = getRegimeStatus(d);
+        const isRiskOn = regimeStatus === 'RISK-ON';
+        const smaDist = d.sma_distance_pct != null ? d.sma_distance_pct : (
+            (typeof price === 'number' && d.sma_200 > 0) ? ((price - d.sma_200) / d.sma_200) * 100 : null
+        );
+        const smaDistText = smaDist != null ? `${smaDist >= 0 ? '+' : ''}${Number(smaDist).toFixed(2)}% vs 200-SMA` : regimeStatus;
 
         $('signalTickerTitle').textContent = ticker;
         $('signalPriceBadge').textContent = typeof price === 'number' ? '₹' + price.toFixed(2) : price;
@@ -2397,12 +2422,12 @@
         const deg = (score / 100) * 360;
         $('gaugeFill').style.background = `conic-gradient(${gaugeColor} 0deg, ${gaugeColor} ${deg}deg, transparent ${deg}deg, transparent 360deg)`;
 
-        // Meta
+        // Meta - mechanical 200-SMA regime status replacing recommendation badge
         $('signalMeta').innerHTML = `
-            <span class="signal-badge ${signalClass(signal)}" style="font-size:14px;padding:6px 14px;">${escapeHtml(signal)}</span>
+            <span class="signal-badge ${isRiskOn ? 'signal-buy' : 'signal-hold'}" style="font-size:14px;padding:6px 14px;">${escapeHtml(regimeStatus)}</span>
             <span class="risk-badge ${riskClass(risk)}" style="font-size:13px;padding:5px 12px;">${escapeHtml(risk)} Risk</span>
             <span style="font-size:13px;color:var(--text-secondary);">Confidence: <strong style="color:var(--text-primary);">${formatPct(confidence)}</strong></span>
-            <span style="font-size:13px;color:var(--text-secondary);">Regime: <strong style="color:var(--text-primary);">${escapeHtml(regime)}</strong></span>
+            <span style="font-size:13px;color:var(--text-secondary);">Regime: <strong style="color:var(--text-primary);">${escapeHtml(smaDistText)}</strong></span>
         `;
 
         // Components — correct path is quant_score.components, NOT top-level d.components
@@ -2486,11 +2511,12 @@
     function renderSignalBasic(d) {
         const ticker = d.ticker || d.symbol || '—';
         const score = Math.round(d.quant_score || d.score || 0);
-        const signal = d.signal || 'HOLD';
         const risk = d.risk || 'Medium';
         const momentum = d.momentum || 'Moderate';
         const price = d.price || d.ltp || '—';
         const confidence = d.confidence || 0;
+        const regimeStatus = getRegimeStatus(d);
+        const isRiskOn = regimeStatus === 'RISK-ON';
 
         $('signalTickerTitle').textContent = ticker;
         $('signalPriceBadge').textContent = typeof price === 'number' ? '₹' + price.toFixed(2) : price;
@@ -2502,7 +2528,7 @@
         $('gaugeFill').style.background = `conic-gradient(${gaugeColor} 0deg, ${gaugeColor} ${deg}deg, transparent ${deg}deg, transparent 360deg)`;
 
         $('signalMeta').innerHTML = `
-            <span class="signal-badge ${signalClass(signal)}" style="font-size:14px;padding:6px 14px;">${escapeHtml(signal)}</span>
+            <span class="signal-badge ${isRiskOn ? 'signal-buy' : 'signal-hold'}" style="font-size:14px;padding:6px 14px;">${escapeHtml(regimeStatus)}</span>
             <span class="risk-badge ${riskClass(risk)}" style="font-size:13px;padding:5px 12px;">${escapeHtml(risk)} Risk</span>
             <span style="font-size:13px;color:var(--text-secondary);">Confidence: <strong style="color:var(--text-primary);">${formatPct(confidence)}</strong></span>
         `;
@@ -2585,6 +2611,7 @@
 
     // ── Signal History ──
     async function loadSignalHistory() {
+        window.loadSignalHistory = loadSignalHistory;
         const ticker = $('histTicker').value;
         const signal = $('histSignal').value;
         let url = '/signals/history?limit=100';
@@ -2592,12 +2619,10 @@
         if (signal) url += '&signal=' + encodeURIComponent(signal);
 
         try {
-            const [histRes, statsRes] = await Promise.all([
-                fetch(url),
-                fetch('/signals/stats')
+            const [hist, stats] = await Promise.all([
+                api(url),
+                api('/signals/stats')
             ]);
-            const hist = await histRes.json();
-            const stats = await statsRes.json();
 
             $('histTotal').textContent = stats.total_signals;
             $('histBuy').textContent = stats.buy_signals;
@@ -2606,20 +2631,24 @@
 
             if (hist.signals && hist.signals.length) {
                 let html = '<table style="width:100%;font-size:13px;border-collapse:collapse;">';
-                html += '<tr style="border-bottom:1px solid var(--border);"><th style="text-align:left;padding:8px;">Date</th><th style="text-align:left;padding:8px;">Ticker</th><th style="text-align:left;padding:8px;">Signal</th><th style="text-align:right;padding:8px;">Confidence</th><th style="text-align:right;padding:8px;">Price</th><th style="text-align:left;padding:8px;">Regime</th><th style="text-align:right;padding:8px;">5D Return</th></tr>';
+                html += '<tr style="border-bottom:1px solid var(--border);"><th style="text-align:left;padding:8px;">Date</th><th style="text-align:left;padding:8px;">Ticker</th><th style="text-align:left;padding:8px;">Model Output</th><th style="text-align:right;padding:8px;">Confidence</th><th style="text-align:right;padding:8px;">Price</th><th style="text-align:left;padding:8px;">Regime</th><th style="text-align:right;padding:8px;">5D Return</th></tr>';
                 hist.signals.forEach(s => {
                     const sigClass = s.signal === 'BUY' ? 'positive' : 'muted';
                     const retStr = s.ret_5d != null ? (s.ret_5d * 100).toFixed(2) + '%' : '—';
                     const retColor = s.ret_5d != null ? (s.ret_5d >= 0 ? 'var(--positive)' : 'var(--negative)') : 'var(--text-muted)';
-                    html += `<tr style="border-bottom:1px solid var(--border);"><td style="padding:8px;">${(s.timestamp||'').slice(0,10)}</td><td style="padding:8px;">${s.ticker}</td><td style="padding:8px;"><span class="signal-badge ${sigClass}">${s.signal}</span></td><td style="text-align:right;padding:8px;">${(s.confidence*100).toFixed(1)}%</td><td style="text-align:right;padding:8px;">₹${s.price}</td><td style="padding:8px;">${s.regime}</td><td style="text-align:right;padding:8px;color:${retColor}">${retStr}</td></tr>`;
+                    const rawReg = (s.regime || '').toUpperCase();
+                    const regimeDisplay = (rawReg.includes('BULL') || rawReg === 'RISK-ON') ? 'RISK-ON' : 'RISK-OFF';
+                    const isRiskOn = regimeDisplay === 'RISK-ON';
+                    html += `<tr style="border-bottom:1px solid var(--border);"><td style="padding:8px;">${(s.timestamp||'').slice(0,10)}</td><td style="padding:8px;">${s.ticker}</td><td style="padding:8px;"><span class="signal-badge ${sigClass}">${s.signal}</span></td><td style="text-align:right;padding:8px;">${(s.confidence*100).toFixed(1)}%</td><td style="text-align:right;padding:8px;">₹${s.price}</td><td style="padding:8px;"><span class="signal-badge ${isRiskOn ? 'signal-buy' : 'signal-hold'}">${regimeDisplay}</span></td><td style="text-align:right;padding:8px;color:${retColor}">${retStr}</td></tr>`;
                 });
                 html += '</table>';
                 $('histTable').innerHTML = html;
             } else {
-                $('histTable').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">No signals recorded yet. Signals are logged automatically when you search for a stock.</div>';
+                $('histTable').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">No evaluations recorded yet. Model outputs are logged automatically when you analyze a stock.</div>';
             }
         } catch (err) {
-            $('histTable').innerHTML = '<div style="color:var(--negative);">Error loading signal history</div>';
+            console.error('History error:', err);
+            $('histTable').innerHTML = '<div style="color:var(--negative);">Error loading model history: ' + escapeHtml(err.message || String(err)) + '</div>';
         }
     }
 
@@ -2649,7 +2678,7 @@
 
             if (data.holdings && data.holdings.length) {
                 let html = '<table style="width:100%;font-size:13px;border-collapse:collapse;">';
-                html += '<tr style="border-bottom:1px solid var(--border);"><th style="text-align:left;padding:8px;">Ticker</th><th style="text-align:right;padding:8px;">Qty</th><th style="text-align:right;padding:8px;">Buy ₹</th><th style="text-align:right;padding:8px;">Current ₹</th><th style="text-align:right;padding:8px;">P&L</th><th style="text-align:right;padding:8px;">P&L %</th><th style="text-align:right;padding:8px;">Score</th><th style="text-align:center;padding:8px;"></th></tr>';
+                html += '<tr style="border-bottom:1px solid var(--border);"><th style="text-align:left;padding:8px;">Ticker</th><th style="text-align:right;padding:8px;">Qty</th><th style="text-align:right;padding:8px;">Purchase ₹</th><th style="text-align:right;padding:8px;">Current ₹</th><th style="text-align:right;padding:8px;">P&L</th><th style="text-align:right;padding:8px;">P&L %</th><th style="text-align:right;padding:8px;">Score</th><th style="text-align:center;padding:8px;"></th></tr>';
                 data.holdings.forEach(h => {
                     const pnlColor = h.pnl >= 0 ? 'var(--positive)' : 'var(--negative)';
                     const scoreColor = h.quant_score.score >= 70 ? 'var(--positive)' : h.quant_score.score >= 55 ? 'var(--accent)' : h.quant_score.score >= 40 ? 'var(--text-muted)' : 'var(--negative)';
@@ -2702,6 +2731,8 @@
 
     // ── Watchlist ──
     async function loadWatchlist() {
+        window.loadWatchlist = loadWatchlist;
+        window.renderWatchlist = renderWatchlist;
         if (!state.token || !state.user) {
             $('watchlistContent').style.display = 'none';
             $('watchlistLoginPrompt').style.display = 'block';
@@ -2730,6 +2761,7 @@
     }
 
     function renderWatchlist() {
+        window.renderWatchlist = renderWatchlist;
         if (!state.watchlist.length) {
             $('watchlistChips').innerHTML = '<div style="color:var(--text-muted);font-size:13px;padding:8px 0;">No tickers in watchlist. Search above to add.</div>';
             $('watchlistTableCard').style.display = 'none';
@@ -2750,30 +2782,44 @@
         if (!tickers.length) return;
 
         $('watchlistTableCard').style.display = 'block';
-        $('watchlistTableBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:30px;">Loading signals...</td></tr>';
+        $('watchlistTableBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:30px;">Loading analysis...</td></tr>';
 
-        Promise.allSettled(tickers.map(t => api('/v1/signal', { method: 'POST', body: JSON.stringify({ ticker: t }) })))
+        Promise.allSettled(tickers.map(t =>
+            api('/v1/signal/detailed', { method: 'POST', body: JSON.stringify({ ticker: t }) })
+                .catch(() => api('/v1/signal', { method: 'POST', body: JSON.stringify({ ticker: t }) }))
+        ))
             .then(results => {
                 const items = results
                     .map((r, i) => r.status === 'fulfilled' ? { ...r.value, ticker: tickers[i] } : null)
                     .filter(Boolean);
                 if (!items.length) {
-                    $('watchlistTableBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:30px;">Unable to load signals</td></tr>';
+                    $('watchlistTableBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:30px;">Unable to load quantitative analysis</td></tr>';
                     return;
                 }
-                $('watchlistTableBody').innerHTML = items.map(s => `
+                $('watchlistTableBody').innerHTML = items.map((s, i) => {
+                    const ticker = s.ticker || tickers[i];
+                    const wlItem = state.watchlist.find(w => (w.ticker || w.symbol || w) === ticker);
+                    const tickerName = s.name || (wlItem && wlItem.name) || ticker.replace('.NS', '');
+                    const regimeStatus = getRegimeStatus(s);
+                    const isRiskOn = regimeStatus === 'RISK-ON';
+                    const rawScore = (s.score != null) ? s.score : (s.quant_score && typeof s.quant_score.score === 'number' ? s.quant_score.score : (typeof s.quant_score === 'number' ? s.quant_score : null));
+                    const scoreDisplay = rawScore != null ? Math.round(rawScore) : '—';
+                    const scoreCol = rawScore != null ? scoreColor(rawScore) : 'var(--text-muted)';
+                    const riskStr = (s.risk && typeof s.risk === 'object') ? (s.risk.risk_level || 'Medium') : (s.risk || 'Medium');
+                    const momStr = (s.momentum && typeof s.momentum === 'object') ? (s.momentum.label || 'Moderate') : (s.momentum || 'Moderate');
+                    return `
                     <tr>
-                        <td><strong style="color:var(--text-primary);cursor:pointer;" onclick="viewSignal('${escapeHtml(s.ticker)}')">${escapeHtml(s.ticker)}</strong></td>
-                        <td>${escapeHtml(s.name || '—')}</td>
-                        <td><span class="signal-badge ${signalClass(s.signal)}">${escapeHtml(s.signal || '—')}</span></td>
-                        <td style="font-family:'JetBrains Mono',monospace;font-weight:600;color:${scoreColor(s.score)};">${formatScore(s.score)}</td>
-                        <td><span class="risk-badge ${riskClass(s.risk)}">${escapeHtml(s.risk || '—')}</span></td>
-                        <td style="text-transform:capitalize;">${escapeHtml(s.momentum || '—')}</td>
+                        <td><strong style="color:var(--text-primary);cursor:pointer;" onclick="viewSignal('${escapeHtml(ticker)}')">${escapeHtml(ticker)}</strong></td>
+                        <td>${escapeHtml(tickerName)}</td>
+                        <td><span class="signal-badge ${isRiskOn ? 'signal-buy' : 'signal-hold'}">${escapeHtml(regimeStatus)}</span></td>
+                        <td style="font-family:'JetBrains Mono',monospace;font-weight:600;color:${scoreCol};">${scoreDisplay}</td>
+                        <td><span class="risk-badge ${riskClass(riskStr)}">${escapeHtml(riskStr)}</span></td>
+                        <td style="text-transform:capitalize;">${escapeHtml(momStr)}</td>
                         <td>
-                            <button class="btn btn-sm btn-outline" onclick="viewSignal('${escapeHtml(s.ticker)}')">Analyze</button>
+                            <button class="btn btn-sm btn-outline" onclick="viewSignal('${escapeHtml(ticker)}')">Analyze</button>
                         </td>
                     </tr>
-                `).join('');
+                `;}).join('');
             });
     }
 
@@ -3047,6 +3093,10 @@
             }
         });
     }
+
+    window.loadWatchlist = loadWatchlist;
+    window.renderWatchlist = renderWatchlist;
+    window.loadSignalHistory = loadSignalHistory;
 
     init();
 

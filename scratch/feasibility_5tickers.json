@@ -1,0 +1,312 @@
+{
+  "RELIANCE": {
+    "total_filings_count": 130,
+    "xbrl_filings_count": 53,
+    "html_filings_count": 75,
+    "earliest_xbrl_toDate": "30-Jun-2018",
+    "earliest_xbrl_filingDate": "07-Aug-2018 17:10",
+    "latest_xbrl_toDate": "31-Dec-2024",
+    "latest_xbrl_filingDate": "16-Jan-2025 20:20",
+    "sample_pre2018_html": {
+      "toDate": "31-Dec-2017",
+      "filingDate": "24-Jan-2018 14:08",
+      "broadCastDate": "24-Jan-2018 14:08:15",
+      "html_url": "https://nsearchives.nseindia.com/archives/financial_results/financial_res_RELIANCE_1035297.html"
+    },
+    "samples": [
+      {
+        "toDate": "31-Dec-2024",
+        "filingDate": "16-Jan-2025 20:20",
+        "broadCastDate": "16-Jan-2025 20:20:21",
+        "consolidated": "Non-Consolidated",
+        "xbrl_url": "https://nsearchives.nseindia.com/corporate/xbrl/INDAS_117298_1348254_16012025082021.xml",
+        "parsed": {
+          "board_meeting_date": "2025-01-16",
+          "report_nature": "Standalone",
+          "quarter_eps": "6.44",
+          "quarter_pat": "87210000000.00",
+          "quarter_start": "2024-10-01",
+          "quarter_end": "2024-12-31"
+        }
+      },
+      {
+        "toDate": "30-Sep-2021",
+        "filingDate": "22-Oct-2021 21:27",
+        "broadCastDate": "22-Oct-2021 21:27:30",
+        "consolidated": "Non-Consolidated",
+        "xbrl_url": "https://nsearchives.nseindia.com/corporate/xbrl/INDAS_76647_545136_22102021092730_WEB.xml",
+        "parsed": {
+          "board_meeting_date": null,
+          "report_nature": "Standalone",
+          "quarter_eps": "14.09",
+          "quarter_pat": "92280000000.00",
+          "quarter_start": "2021-07-01",
+          "quarter_end": "2021-09-30"
+        }
+      },
+      {
+        "toDate": "30-Jun-2018",
+        "filingDate": "07-Aug-2018 17:10",
+        "broadCastDate": "07-Aug-2018 17:10:30",
+        "consolidated": "Consolidated",
+        "xbrl_url": "https://nsearchives.nseindia.com/corporate/xbrl/INDAS_37522_30151_27072018083745_WEB.xml",
+        "parsed": {
+          "board_meeting_date": null,
+          "report_nature": "Consolidated",
+          "quarter_eps": "15.97",
+          "quarter_pat": "94750000000.00",
+          "quarter_start": "2018-04-01",
+          "quarter_end": "2018-06-30"
+        }
+      }
+    ]
+  },
+  "TCS": {
+    "total_filings_count": 162,
+    "xbrl_filings_count": 52,
+    "html_filings_count": 104,
+    "earliest_xbrl_toDate": "30-Sep-2018",
+    "earliest_xbrl_filingDate": "15-Oct-2018 19:04",
+    "latest_xbrl_toDate": "31-Dec-2024",
+    "latest_xbrl_filingDate": "09-Jan-2025 21:39",
+    "sample_pre2018_html": {
+      "toDate": "31-Dec-2017",
+      "filingDate": "11-Jan-2018 19:42",
+      "broadCastDate": "11-Jan-2018 19:42:17",
+      "html_url": "https://nsearchives.nseindia.com/archives/financial_results/financial_res_TCS_1035151.html"
+    },
+    "samples": [
+      {
+        "toDate": "31-Dec-2024",
+        "filingDate": "09-Jan-2025 21:39",
+        "broadCastDate": "09-Jan-2025 21:39:43",
+        "consolidated": "Consolidated",
+        "xbrl_url": "https://nsearchives.nseindia.com/corporate/xbrl/INDAS_117182_1341298_09012025093940.xml",
+        "parsed": {
+          "board_meeting_date": "2025-01-09",
+          "report_nature": "Consolidated",
+          "quarter_eps": "34.21",
+          "quarter_pat": "124440000000.00",
+          "quarter_start": "2024-10-01",
+          "quarter_end": "2024-12-31"
+        }
+      },
+      {
+        "toDate": "30-Sep-2021",
+        "filingDate": "08-Oct-2021 22:11",
+        "broadCastDate": "08-Oct-2021 22:11:45",
+        "consolidated": "Non-Consolidated",
+        "xbrl_url": "https://nsearchives.nseindia.com/corporate/xbrl/INDAS_76337_526101_08102021101145_WEB.xml",
+        "parsed": {
+          "board_meeting_date": null,
+          "report_nature": "Standalone",
+          "quarter_eps": "27.45",
+          "quarter_pat": "101520000000.00",
+          "quarter_start": "2021-07-01",
+          "quarter_end": "2021-09-30"
+        }
+      },
+      {
+        "toDate": "30-Sep-2018",
+        "filingDate": "15-Oct-2018 19:04",
+        "broadCastDate": "15-Oct-2018 19:04:28",
+        "consolidated": "Consolidated",
+        "xbrl_url": "https://nsearchives.nseindia.com/corporate/xbrl/INDAS_39299_47383_11102018062001_WEB.xml",
+        "parsed": {
+          "board_meeting_date": null,
+          "report_nature": "Consolidated",
+          "quarter_eps": "20.66",
+          "quarter_pat": "79270000000.00",
+          "quarter_start": "2018-07-01",
+          "quarter_end": "2018-09-30"
+        }
+      }
+    ]
+  },
+  "HDFCBANK": {
+    "total_filings_count": 103,
+    "xbrl_filings_count": 49,
+    "html_filings_count": 52,
+    "earliest_xbrl_toDate": "30-Jun-2018",
+    "earliest_xbrl_filingDate": "10-Aug-2018 14:18",
+    "latest_xbrl_toDate": "31-Dec-2024",
+    "latest_xbrl_filingDate": "23-Jan-2025 12:27",
+    "sample_pre2018_html": {
+      "toDate": "31-Dec-2017",
+      "filingDate": "22-Jan-2018 19:02",
+      "broadCastDate": "22-Jan-2018 19:02:31",
+      "html_url": "https://nsearchives.nseindia.com/archives/financial_results/financial_res_HDFCBANK_1035301.html"
+    },
+    "samples": [
+      {
+        "toDate": "31-Dec-2024",
+        "filingDate": "23-Jan-2025 12:27",
+        "broadCastDate": "23-Jan-2025 12:27:21",
+        "consolidated": "Consolidated",
+        "xbrl_url": "https://nsearchives.nseindia.com/corporate/xbrl/BANKING_117525_1359016_23012025122721.xml",
+        "parsed": {
+          "board_meeting_date": "2025-01-22",
+          "report_nature": "Consolidated",
+          "quarter_eps": null,
+          "quarter_pat": null,
+          "quarter_start": "2024-10-01",
+          "quarter_end": "2024-12-31"
+        }
+      },
+      {
+        "toDate": "31-Mar-2022",
+        "filingDate": "18-Apr-2022 14:32",
+        "broadCastDate": "18-Apr-2022 14:32:49",
+        "consolidated": "Consolidated",
+        "xbrl_url": "https://nsearchives.nseindia.com/corporate/xbrl/BANKING_83532_638252_18042022023249_WEB.xml",
+        "parsed": {
+          "board_meeting_date": null,
+          "report_nature": "Consolidated",
+          "quarter_eps": null,
+          "quarter_pat": null,
+          "quarter_start": null,
+          "quarter_end": "2022-03-31"
+        }
+      },
+      {
+        "toDate": "30-Jun-2018",
+        "filingDate": "10-Aug-2018 14:18",
+        "broadCastDate": "10-Aug-2018 14:18:12",
+        "consolidated": "Non-Consolidated",
+        "xbrl_url": "https://nsearchives.nseindia.com/corporate/xbrl/BANKING_37206_29076_26072018063602_WEB.xml",
+        "parsed": {
+          "board_meeting_date": null,
+          "report_nature": "Standalone",
+          "quarter_eps": null,
+          "quarter_pat": null,
+          "quarter_start": null,
+          "quarter_end": "2018-06-30"
+        }
+      }
+    ]
+  },
+  "TORNTPOWER": {
+    "total_filings_count": 145,
+    "xbrl_filings_count": 56,
+    "html_filings_count": 89,
+    "earliest_xbrl_toDate": "31-Mar-2018",
+    "earliest_xbrl_filingDate": "04-Jul-2018 11:04",
+    "latest_xbrl_toDate": "31-Dec-2024",
+    "latest_xbrl_filingDate": "04-Feb-2025 19:22",
+    "sample_pre2018_html": {
+      "toDate": "31-Dec-2017",
+      "filingDate": "15-Feb-2018 17:58",
+      "broadCastDate": "15-Feb-2018 17:58:55",
+      "html_url": "https://nsearchives.nseindia.com/archives/financial_results/financial_res_TORNTPOWER_1036541.html"
+    },
+    "samples": [
+      {
+        "toDate": "31-Dec-2024",
+        "filingDate": "04-Feb-2025 19:22",
+        "broadCastDate": "04-Feb-2025 19:22:31",
+        "consolidated": "Consolidated",
+        "xbrl_url": "https://nsearchives.nseindia.com/corporate/xbrl/INDAS_118640_1370841_04022025072231.xml",
+        "parsed": {
+          "board_meeting_date": "2025-02-04",
+          "report_nature": "Consolidated",
+          "quarter_eps": "9.76",
+          "quarter_pat": "4893300000.00",
+          "quarter_start": "2024-10-01",
+          "quarter_end": "2024-12-31"
+        }
+      },
+      {
+        "toDate": "30-Jun-2021",
+        "filingDate": "07-Aug-2021 15:33",
+        "broadCastDate": "07-Aug-2021 15:33:20",
+        "consolidated": "Consolidated",
+        "xbrl_url": "https://nsearchives.nseindia.com/corporate/xbrl/INDAS_74364_501231_07082021033320_WEB.xml",
+        "parsed": {
+          "board_meeting_date": null,
+          "report_nature": "Consolidated",
+          "quarter_eps": "4.30",
+          "quarter_pat": "2077800000.00",
+          "quarter_start": "2021-04-01",
+          "quarter_end": "2021-06-30"
+        }
+      },
+      {
+        "toDate": "31-Mar-2018",
+        "filingDate": "04-Jul-2018 11:04",
+        "broadCastDate": "04-Jul-2018 11:04:40",
+        "consolidated": "Consolidated",
+        "xbrl_url": "https://nsearchives.nseindia.com/corporate/xbrl/INDAS_36267_13097_30052018041628_WEB.xml",
+        "parsed": {
+          "board_meeting_date": null,
+          "report_nature": "Consolidated",
+          "quarter_eps": "4.51",
+          "quarter_pat": "2212500000.00",
+          "quarter_start": "2018-01-01",
+          "quarter_end": "2018-03-31"
+        }
+      }
+    ]
+  },
+  "GRANULES": {
+    "total_filings_count": 145,
+    "xbrl_filings_count": 52,
+    "html_filings_count": 89,
+    "earliest_xbrl_toDate": "31-Mar-2018",
+    "earliest_xbrl_filingDate": "28-May-2018 15:28",
+    "latest_xbrl_toDate": "31-Dec-2024",
+    "latest_xbrl_filingDate": "24-Jan-2025 14:46",
+    "sample_pre2018_html": {
+      "toDate": "31-Dec-2017",
+      "filingDate": "14-Feb-2018 17:43",
+      "broadCastDate": "14-Feb-2018 17:43:33",
+      "html_url": "https://nsearchives.nseindia.com/archives/financial_results/financial_res_GRANULES_1036583.html"
+    },
+    "samples": [
+      {
+        "toDate": "31-Dec-2024",
+        "filingDate": "24-Jan-2025 14:46",
+        "broadCastDate": "24-Jan-2025 14:46:51",
+        "consolidated": "Consolidated",
+        "xbrl_url": "https://nsearchives.nseindia.com/corporate/xbrl/INDAS_117604_1360155_24012025024650.xml",
+        "parsed": {
+          "board_meeting_date": "2025-01-24",
+          "report_nature": "Consolidated",
+          "quarter_eps": "4.85",
+          "quarter_pat": "1176030000.00",
+          "quarter_start": "2024-10-01",
+          "quarter_end": "2024-12-31"
+        }
+      },
+      {
+        "toDate": "30-Sep-2021",
+        "filingDate": "12-Nov-2021 18:37",
+        "broadCastDate": "12-Nov-2021 18:37:07",
+        "consolidated": "Consolidated",
+        "xbrl_url": "https://nsearchives.nseindia.com/corporate/xbrl/INDAS_78904_556622_12112021063707_WEB.xml",
+        "parsed": {
+          "board_meeting_date": null,
+          "report_nature": "Consolidated",
+          "quarter_eps": "3.26",
+          "quarter_pat": "806787000.00",
+          "quarter_start": "2021-07-01",
+          "quarter_end": "2021-09-30"
+        }
+      },
+      {
+        "toDate": "31-Mar-2018",
+        "filingDate": "28-May-2018 15:28",
+        "broadCastDate": "28-May-2018 15:28:20",
+        "consolidated": "Non-Consolidated",
+        "xbrl_url": "https://nsearchives.nseindia.com/corporate/xbrl/INDAS_35622_11189_24052018051538_WEB.xml",
+        "parsed": {
+          "board_meeting_date": null,
+          "report_nature": "Standalone",
+          "quarter_eps": "1.35",
+          "quarter_pat": "341829000.00",
+          "quarter_start": "2018-01-01",
+          "quarter_end": "2018-03-31"
+        }
+      }
+    ]
+  }
+}

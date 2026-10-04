@@ -28,11 +28,12 @@ class SignalLogRequest(BaseModel):
 @router.post("/log")
 def log_signal(req: SignalLogRequest, db: Session = Depends(get_db)):
     """Record a signal to the ledger. Called internally after each /v1/signal response."""
+    regime_val = "RISK-ON" if req.regime in ("BULL", "RISK-ON") else "RISK-OFF"
     rec = SignalRecord(
         ticker=req.ticker,
         signal=req.signal,
         confidence=req.confidence,
-        regime=req.regime,
+        regime=regime_val,
         price=req.price,
         sma_200=req.sma_200,
         model_version=req.model_version,
@@ -67,7 +68,7 @@ def signal_history(
                 "ticker": r.ticker,
                 "signal": r.signal,
                 "confidence": r.confidence,
-                "regime": r.regime,
+                "regime": "RISK-ON" if r.regime in ("BULL", "RISK-ON") else "RISK-OFF",
                 "price": r.price,
                 "sma_200": r.sma_200,
                 "model_version": r.model_version,

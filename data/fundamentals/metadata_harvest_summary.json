@@ -1,0 +1,559 @@
+{
+  "tickers_total": 138,
+  "tickers_success": 138,
+  "tickers_failed": [],
+  "ticker_stats": {
+    "ADANIENT": {
+      "total_records": 158,
+      "total_xbrl": 53
+    },
+    "ADANIPORTS": {
+      "total_records": 123,
+      "total_xbrl": 51
+    },
+    "APOLLOHOSP": {
+      "total_records": 106,
+      "total_xbrl": 48
+    },
+    "ASIANPAINT": {
+      "total_records": 164,
+      "total_xbrl": 55
+    },
+    "AXISBANK": {
+      "total_records": 101,
+      "total_xbrl": 45
+    },
+    "BAJAJ-AUTO": {
+      "total_records": 110,
+      "total_xbrl": 54
+    },
+    "BAJFINANCE": {
+      "total_records": 110,
+      "total_xbrl": 47
+    },
+    "BAJAJFINSV": {
+      "total_records": 134,
+      "total_xbrl": 52
+    },
+    "BPCL": {
+      "total_records": 109,
+      "total_xbrl": 49
+    },
+    "BHARTIARTL": {
+      "total_records": 137,
+      "total_xbrl": 52
+    },
+    "BRITANNIA": {
+      "total_records": 129,
+      "total_xbrl": 54
+    },
+    "CIPLA": {
+      "total_records": 133,
+      "total_xbrl": 54
+    },
+    "COALINDIA": {
+      "total_records": 120,
+      "total_xbrl": 56
+    },
+    "DIVISLAB": {
+      "total_records": 128,
+      "total_xbrl": 51
+    },
+    "DRREDDY": {
+      "total_records": 138,
+      "total_xbrl": 56
+    },
+    "EICHERMOT": {
+      "total_records": 153,
+      "total_xbrl": 56
+    },
+    "GRASIM": {
+      "total_records": 165,
+      "total_xbrl": 56
+    },
+    "HCLTECH": {
+      "total_records": 119,
+      "total_xbrl": 54
+    },
+    "HDFCBANK": {
+      "total_records": 103,
+      "total_xbrl": 49
+    },
+    "HDFCLIFE": {
+      "total_records": 0,
+      "total_xbrl": 0
+    },
+    "HEROMOTOCO": {
+      "total_records": 107,
+      "total_xbrl": 52
+    },
+    "HINDALCO": {
+      "total_records": 106,
+      "total_xbrl": 51
+    },
+    "HINDUNILVR": {
+      "total_records": 106,
+      "total_xbrl": 51
+    },
+    "ICICIBANK": {
+      "total_records": 115,
+      "total_xbrl": 50
+    },
+    "ITC": {
+      "total_records": 107,
+      "total_xbrl": 50
+    },
+    "INDUSINDBK": {
+      "total_records": 101,
+      "total_xbrl": 44
+    },
+    "INFY": {
+      "total_records": 144,
+      "total_xbrl": 52
+    },
+    "JSWSTEEL": {
+      "total_records": 159,
+      "total_xbrl": 53
+    },
+    "KOTAKBANK": {
+      "total_records": 159,
+      "total_xbrl": 51
+    },
+    "LT": {
+      "total_records": 129,
+      "total_xbrl": 56
+    },
+    "M&M": {
+      "total_records": 107,
+      "total_xbrl": 48
+    },
+    "MARUTI": {
+      "total_records": 108,
+      "total_xbrl": 47
+    },
+    "NESTLEIND": {
+      "total_records": 9,
+      "total_xbrl": 8
+    },
+    "NTPC": {
+      "total_records": 108,
+      "total_xbrl": 49
+    },
+    "ONGC": {
+      "total_records": 106,
+      "total_xbrl": 49
+    },
+    "POWERGRID": {
+      "total_records": 93,
+      "total_xbrl": 51
+    },
+    "RELIANCE": {
+      "total_records": 130,
+      "total_xbrl": 53
+    },
+    "SBILIFE": {
+      "total_records": 0,
+      "total_xbrl": 0
+    },
+    "SBIN": {
+      "total_records": 145,
+      "total_xbrl": 50
+    },
+    "SUNPHARMA": {
+      "total_records": 163,
+      "total_xbrl": 55
+    },
+    "TCS": {
+      "total_records": 162,
+      "total_xbrl": 52
+    },
+    "TATACONSUM": {
+      "total_records": 156,
+      "total_xbrl": 54
+    },
+    "TATASTEEL": {
+      "total_records": 156,
+      "total_xbrl": 55
+    },
+    "TECHM": {
+      "total_records": 148,
+      "total_xbrl": 52
+    },
+    "TITAN": {
+      "total_records": 115,
+      "total_xbrl": 56
+    },
+    "ULTRACEMCO": {
+      "total_records": 128,
+      "total_xbrl": 51
+    },
+    "UPL": {
+      "total_records": 159,
+      "total_xbrl": 53
+    },
+    "WIPRO": {
+      "total_records": 134,
+      "total_xbrl": 50
+    },
+    "ADANIGREEN": {
+      "total_records": 62,
+      "total_xbrl": 56
+    },
+    "AMBUJACEM": {
+      "total_records": 116,
+      "total_xbrl": 50
+    },
+    "APOLLOTYRE": {
+      "total_records": 147,
+      "total_xbrl": 54
+    },
+    "ASHOKLEY": {
+      "total_records": 106,
+      "total_xbrl": 48
+    },
+    "ASTRAL": {
+      "total_records": 119,
+      "total_xbrl": 56
+    },
+    "AUROPHARMA": {
+      "total_records": 154,
+      "total_xbrl": 50
+    },
+    "BALKRISIND": {
+      "total_records": 105,
+      "total_xbrl": 52
+    },
+    "BANDHANBNK": {
+      "total_records": 25,
+      "total_xbrl": 22
+    },
+    "BANKBARODA": {
+      "total_records": 104,
+      "total_xbrl": 51
+    },
+    "BEL": {
+      "total_records": 107,
+      "total_xbrl": 51
+    },
+    "BHEL": {
+      "total_records": 106,
+      "total_xbrl": 50
+    },
+    "BIOCON": {
+      "total_records": 168,
+      "total_xbrl": 52
+    },
+    "BOSCHLTD": {
+      "total_records": 104,
+      "total_xbrl": 46
+    },
+    "CANBK": {
+      "total_records": 101,
+      "total_xbrl": 48
+    },
+    "CHOLAFIN": {
+      "total_records": 150,
+      "total_xbrl": 47
+    },
+    "COLPAL": {
+      "total_records": 72,
+      "total_xbrl": 28
+    },
+    "CONCOR": {
+      "total_records": 106,
+      "total_xbrl": 49
+    },
+    "CROMPTON": {
+      "total_records": 62,
+      "total_xbrl": 51
+    },
+    "CUMMINSIND": {
+      "total_records": 110,
+      "total_xbrl": 53
+    },
+    "DABUR": {
+      "total_records": 168,
+      "total_xbrl": 56
+    },
+    "DALBHARAT": {
+      "total_records": 50,
+      "total_xbrl": 50
+    },
+    "DEEPAKNTR": {
+      "total_records": 87,
+      "total_xbrl": 53
+    },
+    "DLF": {
+      "total_records": 144,
+      "total_xbrl": 53
+    },
+    "EDELWEISS": {
+      "total_records": 136,
+      "total_xbrl": 53
+    },
+    "EMAMILTD": {
+      "total_records": 146,
+      "total_xbrl": 51
+    },
+    "ENDURANCE": {
+      "total_records": 74,
+      "total_xbrl": 56
+    },
+    "ESCORTS": {
+      "total_records": 99,
+      "total_xbrl": 49
+    },
+    "EXIDEIND": {
+      "total_records": 106,
+      "total_xbrl": 46
+    },
+    "FEDERALBNK": {
+      "total_records": 99,
+      "total_xbrl": 44
+    },
+    "GAIL": {
+      "total_records": 111,
+      "total_xbrl": 54
+    },
+    "GLENMARK": {
+      "total_records": 151,
+      "total_xbrl": 54
+    },
+    "GODREJCP": {
+      "total_records": 164,
+      "total_xbrl": 53
+    },
+    "GODREJPROP": {
+      "total_records": 128,
+      "total_xbrl": 53
+    },
+    "GRANULES": {
+      "total_records": 145,
+      "total_xbrl": 52
+    },
+    "HAVELLS": {
+      "total_records": 113,
+      "total_xbrl": 49
+    },
+    "HINDPETRO": {
+      "total_records": 108,
+      "total_xbrl": 51
+    },
+    "ICICIGI": {
+      "total_records": 0,
+      "total_xbrl": 0
+    },
+    "ICICIPRULI": {
+      "total_records": 0,
+      "total_xbrl": 0
+    },
+    "IDEA": {
+      "total_records": 146,
+      "total_xbrl": 47
+    },
+    "IDFCFIRSTB": {
+      "total_records": 59,
+      "total_xbrl": 46
+    },
+    "IGL": {
+      "total_records": 107,
+      "total_xbrl": 51
+    },
+    "INDIGO": {
+      "total_records": 63,
+      "total_xbrl": 50
+    },
+    "INDUSTOWER": {
+      "total_records": 105,
+      "total_xbrl": 51
+    },
+    "JINDALSTEL": {
+      "total_records": 147,
+      "total_xbrl": 54
+    },
+    "JUBLFOOD": {
+      "total_records": 89,
+      "total_xbrl": 49
+    },
+    "LICHSGFIN": {
+      "total_records": 105,
+      "total_xbrl": 44
+    },
+    "LUPIN": {
+      "total_records": 163,
+      "total_xbrl": 56
+    },
+    "MARICO": {
+      "total_records": 168,
+      "total_xbrl": 56
+    },
+    "MAXHEALTH": {
+      "total_records": 36,
+      "total_xbrl": 36
+    },
+    "MFSL": {
+      "total_records": 98,
+      "total_xbrl": 40
+    },
+    "MOTHERSON": {
+      "total_records": 168,
+      "total_xbrl": 57
+    },
+    "MPHASIS": {
+      "total_records": 158,
+      "total_xbrl": 55
+    },
+    "MRF": {
+      "total_records": 98,
+      "total_xbrl": 51
+    },
+    "MUTHOOTFIN": {
+      "total_records": 78,
+      "total_xbrl": 44
+    },
+    "NAUKRI": {
+      "total_records": 99,
+      "total_xbrl": 47
+    },
+    "NAVINFLUOR": {
+      "total_records": 97,
+      "total_xbrl": 52
+    },
+    "NBCC": {
+      "total_records": 104,
+      "total_xbrl": 54
+    },
+    "NMDC": {
+      "total_records": 95,
+      "total_xbrl": 51
+    },
+    "OBEROIRLTY": {
+      "total_records": 124,
+      "total_xbrl": 51
+    },
+    "PAGEIND": {
+      "total_records": 78,
+      "total_xbrl": 29
+    },
+    "PERSISTENT": {
+      "total_records": 121,
+      "total_xbrl": 51
+    },
+    "PETRONET": {
+      "total_records": 108,
+      "total_xbrl": 50
+    },
+    "PFC": {
+      "total_records": 95,
+      "total_xbrl": 41
+    },
+    "PIDILITIND": {
+      "total_records": 149,
+      "total_xbrl": 56
+    },
+    "PIIND": {
+      "total_records": 86,
+      "total_xbrl": 54
+    },
+    "PNB": {
+      "total_records": 104,
+      "total_xbrl": 50
+    },
+    "POLYCAB": {
+      "total_records": 47,
+      "total_xbrl": 47
+    },
+    "PVRINOX": {
+      "total_records": 140,
+      "total_xbrl": 52
+    },
+    "RAMCOCEM": {
+      "total_records": 112,
+      "total_xbrl": 52
+    },
+    "RBLBANK": {
+      "total_records": 56,
+      "total_xbrl": 46
+    },
+    "RECLTD": {
+      "total_records": 92,
+      "total_xbrl": 45
+    },
+    "SAIL": {
+      "total_records": 105,
+      "total_xbrl": 46
+    },
+    "SHREECEM": {
+      "total_records": 106,
+      "total_xbrl": 49
+    },
+    "SIEMENS": {
+      "total_records": 102,
+      "total_xbrl": 49
+    },
+    "SRF": {
+      "total_records": 122,
+      "total_xbrl": 50
+    },
+    "SYNGENE": {
+      "total_records": 69,
+      "total_xbrl": 51
+    },
+    "TATACHEM": {
+      "total_records": 148,
+      "total_xbrl": 54
+    },
+    "TATACOMM": {
+      "total_records": 142,
+      "total_xbrl": 54
+    },
+    "TATAPOWER": {
+      "total_records": 142,
+      "total_xbrl": 53
+    },
+    "TORNTPHARM": {
+      "total_records": 163,
+      "total_xbrl": 55
+    },
+    "TORNTPOWER": {
+      "total_records": 145,
+      "total_xbrl": 56
+    },
+    "TRENT": {
+      "total_records": 103,
+      "total_xbrl": 51
+    },
+    "TVSMOTOR": {
+      "total_records": 105,
+      "total_xbrl": 51
+    },
+    "UBL": {
+      "total_records": 93,
+      "total_xbrl": 48
+    },
+    "UNIONBANK": {
+      "total_records": 102,
+      "total_xbrl": 49
+    },
+    "VBL": {
+      "total_records": 74,
+      "total_xbrl": 54
+    },
+    "VEDL": {
+      "total_records": 156,
+      "total_xbrl": 56
+    },
+    "VOLTAS": {
+      "total_records": 145,
+      "total_xbrl": 56
+    },
+    "WHIRLPOOL": {
+      "total_records": 87,
+      "total_xbrl": 51
+    },
+    "ZYDUSLIFE": {
+      "total_records": 168,
+      "total_xbrl": 56
+    }
+  }
+}

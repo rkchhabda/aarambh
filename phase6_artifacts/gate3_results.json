@@ -1,0 +1,430 @@
+{
+  "gate": "Gate 3",
+  "timestamp": "2026-09-30",
+  "universe_size": 133,
+  "excluded_tickers": [
+    "HDFCLIFE.NS",
+    "ICICIGI.NS",
+    "SBILIFE.NS",
+    "NESTLEIND.NS",
+    "ICICIPRULI.NS"
+  ],
+  "development_window": "2018-01-01 to 2025-09-16",
+  "baseline_features": [
+    "relative_ret_5d",
+    "relative_ret_5d_vs_index",
+    "sector_rank_pct"
+  ],
+  "incremental_features": [
+    "relative_ret_5d",
+    "relative_ret_5d_vs_index",
+    "sector_rank_pct",
+    "sue"
+  ],
+  "folds": [
+    {
+      "fold_num": 1,
+      "train_days": 782,
+      "val_days": 240,
+      "train_samples": 82354,
+      "val_samples": 31920,
+      "winsorization_bounds": {
+        "p01": -2.7393453095653992,
+        "p99": 3.221614502078111
+      },
+      "baseline_m0": {
+        "train_auc": 0.5168089216835128,
+        "val_auc": 0.49363063338027835,
+        "brier": 0.24711571611360977
+      },
+      "incremental_m1": {
+        "train_auc": 0.5174653614552394,
+        "val_auc": 0.49610410572019614,
+        "delta_auc": 0.0024734723399177927,
+        "xgb_val_auc": 0.49498002436363087,
+        "brier": 0.24713220150639936,
+        "coefficients": {
+          "relative_ret_5d": {
+            "beta": -0.10217528404711614,
+            "odds_ratio": 0.9028712788661488,
+            "p_value": 6.791338602596397e-10
+          },
+          "relative_ret_5d_vs_index": {
+            "beta": 0.07551248030908851,
+            "odds_ratio": 1.0784366868572486,
+            "p_value": 3.280822688189744e-06
+          },
+          "sector_rank_pct": {
+            "beta": -0.019125023701730637,
+            "odds_ratio": 0.9810566992349281,
+            "p_value": 0.013778146025513971
+          },
+          "sue_win": {
+            "beta": -0.020775941326458956,
+            "odds_ratio": 0.97943839165312,
+            "p_value": 0.002987521322236786
+          }
+        }
+      },
+      "standalone_sue": {
+        "val_auc": 0.5058080034085682
+      },
+      "economic_metrics": {
+        "strategy_sharpe_net": 0.4710604542146436,
+        "buy_and_hold_sharpe": 1.0207059356000292,
+        "delta_sharpe": -0.5496454813853856,
+        "cohens_d": -0.06171340352903195,
+        "welch_t_stat": -4.295256652780714,
+        "welch_p_val": 1.7645867724215223e-05
+      },
+      "calibration_table": [
+        {
+          "decile": 1,
+          "count": 3192,
+          "pred_prob_mean": 0.5146380565296726,
+          "actual_rate": 0.5535714285714286,
+          "abs_error": 0.038933372041755954
+        },
+        {
+          "decile": 2,
+          "count": 3192,
+          "pred_prob_mean": 0.5244562395146376,
+          "actual_rate": 0.5708020050125313,
+          "abs_error": 0.04634576549789371
+        },
+        {
+          "decile": 3,
+          "count": 3192,
+          "pred_prob_mean": 0.5289756685451772,
+          "actual_rate": 0.5607769423558897,
+          "abs_error": 0.031801273810712516
+        },
+        {
+          "decile": 4,
+          "count": 3192,
+          "pred_prob_mean": 0.5325267752175189,
+          "actual_rate": 0.5708020050125313,
+          "abs_error": 0.03827522979501241
+        },
+        {
+          "decile": 5,
+          "count": 3192,
+          "pred_prob_mean": 0.5356213789346791,
+          "actual_rate": 0.5548245614035088,
+          "abs_error": 0.019203182468829683
+        },
+        {
+          "decile": 6,
+          "count": 3192,
+          "pred_prob_mean": 0.538610762668309,
+          "actual_rate": 0.5679824561403509,
+          "abs_error": 0.029371693472041938
+        },
+        {
+          "decile": 7,
+          "count": 3192,
+          "pred_prob_mean": 0.5417408001875414,
+          "actual_rate": 0.5629699248120301,
+          "abs_error": 0.02122912462448867
+        },
+        {
+          "decile": 8,
+          "count": 3192,
+          "pred_prob_mean": 0.5452454950449418,
+          "actual_rate": 0.5635964912280702,
+          "abs_error": 0.01835099618312841
+        },
+        {
+          "decile": 9,
+          "count": 3192,
+          "pred_prob_mean": 0.5496592177757471,
+          "actual_rate": 0.5661027568922306,
+          "abs_error": 0.01644353911648344
+        },
+        {
+          "decile": 10,
+          "count": 3192,
+          "pred_prob_mean": 0.55897600580734,
+          "actual_rate": 0.5382205513784462,
+          "abs_error": 0.020755454428893816
+        }
+      ]
+    },
+    {
+      "fold_num": 2,
+      "train_days": 1022,
+      "val_days": 240,
+      "train_samples": 114274,
+      "val_samples": 31920,
+      "winsorization_bounds": {
+        "p01": -2.640141880038476,
+        "p99": 3.310912217526168
+      },
+      "baseline_m0": {
+        "train_auc": 0.5105162871591167,
+        "val_auc": 0.4945190371754754,
+        "brier": 0.24416808256058772
+      },
+      "incremental_m1": {
+        "train_auc": 0.5109297421867421,
+        "val_auc": 0.48965960244010653,
+        "delta_auc": -0.004859434735368873,
+        "xgb_val_auc": 0.5001541476537956,
+        "brier": 0.24434316845234733,
+        "coefficients": {
+          "relative_ret_5d": {
+            "beta": -0.05627637943482516,
+            "odds_ratio": 0.9452778444278704,
+            "p_value": 7.795073374761152e-05
+          },
+          "relative_ret_5d_vs_index": {
+            "beta": 0.028276351670510673,
+            "odds_ratio": 1.028679922559794,
+            "p_value": 0.04293081454346659
+          },
+          "sector_rank_pct": {
+            "beta": -0.01011170609258514,
+            "odds_ratio": 0.9899392453275906,
+            "p_value": 0.1250637242216237
+          },
+          "sue_win": {
+            "beta": -0.015685045835762208,
+            "odds_ratio": 0.9844373238688101,
+            "p_value": 0.008329808350453272
+          }
+        }
+      },
+      "standalone_sue": {
+        "val_auc": 0.48636846098685027
+      },
+      "economic_metrics": {
+        "strategy_sharpe_net": 1.063199857281483,
+        "buy_and_hold_sharpe": 1.4995736942321363,
+        "delta_sharpe": -0.43637383695065335,
+        "cohens_d": -0.06120593452470566,
+        "welch_t_stat": -4.461803337659522,
+        "welch_p_val": 8.224837148987502e-06
+      },
+      "calibration_table": [
+        {
+          "decile": 1,
+          "count": 3192,
+          "pred_prob_mean": 0.5277470684288331,
+          "actual_rate": 0.599937343358396,
+          "abs_error": 0.07219027492956287
+        },
+        {
+          "decile": 2,
+          "count": 3192,
+          "pred_prob_mean": 0.5357685448975976,
+          "actual_rate": 0.5911654135338346,
+          "abs_error": 0.05539686863623694
+        },
+        {
+          "decile": 3,
+          "count": 3192,
+          "pred_prob_mean": 0.5391145033070298,
+          "actual_rate": 0.5921052631578947,
+          "abs_error": 0.05299075985086488
+        },
+        {
+          "decile": 4,
+          "count": 3192,
+          "pred_prob_mean": 0.5417322101922876,
+          "actual_rate": 0.5993107769423559,
+          "abs_error": 0.05757856675006834
+        },
+        {
+          "decile": 5,
+          "count": 3192,
+          "pred_prob_mean": 0.5440051626752267,
+          "actual_rate": 0.599937343358396,
+          "abs_error": 0.0559321806831693
+        },
+        {
+          "decile": 6,
+          "count": 3192,
+          "pred_prob_mean": 0.5461963263977081,
+          "actual_rate": 0.5958646616541353,
+          "abs_error": 0.04966833525642722
+        },
+        {
+          "decile": 7,
+          "count": 3192,
+          "pred_prob_mean": 0.5484551015546174,
+          "actual_rate": 0.5758145363408521,
+          "abs_error": 0.027359434786234704
+        },
+        {
+          "decile": 8,
+          "count": 3192,
+          "pred_prob_mean": 0.5509944129874339,
+          "actual_rate": 0.5805137844611529,
+          "abs_error": 0.02951937147371897
+        },
+        {
+          "decile": 9,
+          "count": 3192,
+          "pred_prob_mean": 0.5542352373556936,
+          "actual_rate": 0.5795739348370927,
+          "abs_error": 0.025338697481399164
+        },
+        {
+          "decile": 10,
+          "count": 3192,
+          "pred_prob_mean": 0.5612129257430567,
+          "actual_rate": 0.568295739348371,
+          "abs_error": 0.007082813605314264
+        }
+      ]
+    },
+    {
+      "fold_num": 3,
+      "train_days": 1262,
+      "val_days": 240,
+      "train_samples": 146194,
+      "val_samples": 31919,
+      "winsorization_bounds": {
+        "p01": -2.566308806881667,
+        "p99": 3.437656602355383
+      },
+      "baseline_m0": {
+        "train_auc": 0.5069581919434007,
+        "val_auc": 0.5091497098469521,
+        "brier": 0.25391864972733125
+      },
+      "incremental_m1": {
+        "train_auc": 0.5069620765571335,
+        "val_auc": 0.5090152740003595,
+        "delta_auc": -0.00013443584659256214,
+        "xgb_val_auc": 0.4980200782356605,
+        "brier": 0.25392184489800634,
+        "coefficients": {
+          "relative_ret_5d": {
+            "beta": -0.038085978998759096,
+            "odds_ratio": 0.9626301713547212,
+            "p_value": 0.0025978120169007912
+          },
+          "relative_ret_5d_vs_index": {
+            "beta": 0.011807680119001912,
+            "odds_ratio": 1.0118776659594486,
+            "p_value": 0.3408506095552488
+          },
+          "sector_rank_pct": {
+            "beta": -0.0010545093045247994,
+            "odds_ratio": 0.9989460464950294,
+            "p_value": 0.856754730953988
+          },
+          "sue_win": {
+            "beta": 0.0006445455782735732,
+            "odds_ratio": 1.0006447533424103,
+            "p_value": 0.9025095053639245
+          }
+        }
+      },
+      "standalone_sue": {
+        "val_auc": 0.4976200742415521
+      },
+      "economic_metrics": {
+        "strategy_sharpe_net": 0.04963954773983209,
+        "buy_and_hold_sharpe": -0.1026958963802583,
+        "delta_sharpe": 0.1523354441200904,
+        "cohens_d": 0.02109770706989741,
+        "welch_t_stat": 1.4943508868539375,
+        "welch_p_val": 0.1351204408157726
+      },
+      "calibration_table": [
+        {
+          "decile": 1,
+          "count": 3192,
+          "pred_prob_mean": 0.5420580690866148,
+          "actual_rate": 0.48464912280701755,
+          "abs_error": 0.05740894627959725
+        },
+        {
+          "decile": 2,
+          "count": 3192,
+          "pred_prob_mean": 0.547322995764103,
+          "actual_rate": 0.4692982456140351,
+          "abs_error": 0.07802475015006793
+        },
+        {
+          "decile": 3,
+          "count": 3192,
+          "pred_prob_mean": 0.5494696886436926,
+          "actual_rate": 0.4859022556390977,
+          "abs_error": 0.06356743300459489
+        },
+        {
+          "decile": 4,
+          "count": 3192,
+          "pred_prob_mean": 0.550987495415191,
+          "actual_rate": 0.4793233082706767,
+          "abs_error": 0.07166418714451428
+        },
+        {
+          "decile": 5,
+          "count": 3192,
+          "pred_prob_mean": 0.5522569167580822,
+          "actual_rate": 0.48370927318295737,
+          "abs_error": 0.06854764357512483
+        },
+        {
+          "decile": 6,
+          "count": 3191,
+          "pred_prob_mean": 0.5534868387656764,
+          "actual_rate": 0.5057975556251959,
+          "abs_error": 0.04768928314048049
+        },
+        {
+          "decile": 7,
+          "count": 3192,
+          "pred_prob_mean": 0.5547458074159447,
+          "actual_rate": 0.4830827067669173,
+          "abs_error": 0.07166310064902742
+        },
+        {
+          "decile": 8,
+          "count": 3192,
+          "pred_prob_mean": 0.5561720531001203,
+          "actual_rate": 0.487468671679198,
+          "abs_error": 0.0687033814209223
+        },
+        {
+          "decile": 9,
+          "count": 3192,
+          "pred_prob_mean": 0.5581226399379873,
+          "actual_rate": 0.5006265664160401,
+          "abs_error": 0.05749607352194719
+        },
+        {
+          "decile": 10,
+          "count": 3192,
+          "pred_prob_mean": 0.5630704256658016,
+          "actual_rate": 0.5068922305764411,
+          "abs_error": 0.056178195089360505
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "m0_baseline_mean_val_auc": 0.49909979346756855,
+    "m1_incremental_mean_val_auc": 0.49825966072022077,
+    "m1_incremental_mean_train_auc": 0.5117857267330383,
+    "delta_mean_val_auc": -0.0008401327473477882,
+    "m_sue_standalone_mean_val_auc": 0.4965988462123236,
+    "xgb_incremental_mean_val_auc": 0.4977180834176957,
+    "auc_95_ci_lower": 0.48915296653788903,
+    "auc_95_ci_upper": 0.5073663549025526,
+    "strategy_sharpe_net": 0.5279666197453196,
+    "buy_and_hold_sharpe": 0.8058612444839691,
+    "mean_cohens_d": -0.03394054366128007,
+    "section_1_criteria": {
+      "auc_threshold_met": false,
+      "sharpe_threshold_met": false,
+      "effect_size_met": false,
+      "stability_met": false,
+      "overall_verdict": "NULL / NO EDGE"
+    }
+  }
+}

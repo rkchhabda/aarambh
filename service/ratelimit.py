@@ -49,8 +49,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return f"ip:{ip}", "anonymous"
 
     async def dispatch(self, request: Request, call_next):
-        # Skip rate limiting for health and static
+        # Skip rate limiting for health, static, and loopback/localhost requests
         if request.url.path in ("/health", "/docs", "/openapi.json") or request.url.path.startswith("/static"):
+            return await call_next(request)
+        if request.client and request.client.host in ("127.0.0.1", "localhost", "::1"):
             return await call_next(request)
 
         client_id, tier = self._get_client_id(request)

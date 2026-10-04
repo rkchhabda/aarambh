@@ -249,7 +249,7 @@ def _refresh_cache_loop():
             print(f"[WARN] Cache refresh failed: {e}")
         time.sleep(CACHE_REFRESH_HOURS * 3600)
 
-if rebuild_cache is not None:
+if rebuild_cache is not None and not os.environ.get("SKIP_CACHE_REBUILD"):
     threading.Thread(target=_refresh_cache_loop, daemon=True).start()
     print(f"[OK] Cache auto-refresh scheduled every {CACHE_REFRESH_HOURS}h (first run on boot)")
 
@@ -429,6 +429,22 @@ def signal(req: SignalRequest, x_api_key: str = Header(default="")):
     # Apply regime filter (long-only: BUY only if above SMA and prob > threshold)
     signal_value = "BUY" if (final_prob > _THRESHOLD and above_sma) else "HOLD"
 
+    # 200-SMA mechanical regime status with 1.00% hysteresis matching routes_scanner.py
+    if sma200 > 0:
+        sma_dist = round(((close - sma200) / sma200) * 100.0, 2)
+    else:
+        sma_dist = 0.0
+
+    HYSTERESIS_BAND_PCT = 1.00
+    if sma_dist > HYSTERESIS_BAND_PCT:
+        is_risk_on = True
+    elif sma_dist < -HYSTERESIS_BAND_PCT:
+        is_risk_on = False
+    else:
+        is_risk_on = bool(above_sma)
+
+    primary_status = "RISK-ON" if is_risk_on else "RISK-OFF"
+
     # Record signal to ledger (background, non-blocking)
     try:
         from service.database import SessionLocal
@@ -438,7 +454,7 @@ def signal(req: SignalRequest, x_api_key: str = Header(default="")):
             ticker=ticker,
             signal=signal_value,
             confidence=round(float(final_prob), 4),
-            regime="BULL" if above_sma else "BEAR",
+            regime=primary_status,
             price=round(close, 2),
             sma_200=round(sma200, 2),
             model_version="v2",
@@ -451,11 +467,34 @@ def signal(req: SignalRequest, x_api_key: str = Header(default="")):
     except Exception as _log_err:
         print(f"[WARN] Signal log failed: {_log_err}")
 
+    from service.routes_scanner import TICKER_NAMES
+    name = TICKER_NAMES.get(ticker, ticker.replace(".NS", ""))
+    try:
+        from service.routes_signal_detail import _compute_quant_score, _compute_risk_metrics
+        quant = _compute_quant_score(features, above_sma)
+        risk_info = _compute_risk_metrics(features, close)
+        score_val = quant["score"]
+        risk_lvl = risk_info["risk_level"]
+        mom_comp = quant.get("components", {}).get("Momentum", 50)
+        mom_lbl = "Strong" if mom_comp >= 60 else ("Moderate" if mom_comp >= 40 else "Weak")
+    except Exception:
+        score_val = 50
+        risk_lvl = "Medium"
+        mom_lbl = "Moderate"
+        quant = {"score": score_val}
+
     return {
         "ticker": ticker,
+        "name": name,
+        "status": primary_status,
+        "sma_distance_pct": sma_dist,
         "signal": signal_value,
         "confidence": round(float(final_prob), 4),
-        "regime": "BULL" if above_sma else "BEAR",
+        "regime": primary_status,
+        "score": score_val,
+        "quant_score": quant,
+        "risk": risk_lvl,
+        "momentum": mom_lbl,
         "price": round(close, 2),
         "sma_200": round(sma200, 2),
         "tier": tier,

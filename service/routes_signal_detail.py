@@ -23,15 +23,15 @@ FACTOR_GROUPS = {
 }
 
 FACTOR_DESCRIPTIONS = {
-    "sma_ratio": "Price vs 20-day SMA — positive means uptrend",
-    "macd": "MACD histogram — positive means bullish momentum",
-    "bb_pos": "Bollinger Band position — higher means overbought territory",
-    "rsi_14": "14-day RSI — >70 overbought, <30 oversold",
-    "williams_r": "Williams %R — momentum oscillator",
+    "sma_ratio": "Price vs 20-day SMA — positive indicates upward trend",
+    "macd": "MACD histogram — positive indicates upward momentum",
+    "bb_pos": "Bollinger Band position — relative location within volatility bands",
+    "rsi_14": "14-day RSI — relative strength index oscillator (>70 elevated, <30 compressed)",
+    "williams_r": "Williams %R — momentum oscillator indicating range positioning",
     "roc_10": "10-day Rate of Change — price momentum",
     "cci": "Commodity Channel Index — trend strength",
     "atr_14": "Average True Range — volatility measure",
-    "obv_slope": "On-Balance Volume slope — volume trend",
+    "obv_slope": "On-Balance Volume slope — volume flow trend",
     "ret_10": "10-day return — recent price performance",
 }
 
@@ -307,22 +307,50 @@ def detailed_signal(req: DetailedSignalRequest):
     ret_10 = features.get("ret_10", 0)
     daily_change_pct = round((ret_10 / 10) * 100, 2) if ret_10 else 0
 
-    # Price vs SMA distances
+    # Price vs SMA distances and 200-SMA mechanical regime with 1.00% hysteresis band
     sma_distance_pct = round(((close - sma200) / sma200) * 100, 2) if sma200 else 0
+    HYSTERESIS_BAND_PCT = 1.00
+    if sma_distance_pct > HYSTERESIS_BAND_PCT:
+        is_risk_on = True
+    elif sma_distance_pct < -HYSTERESIS_BAND_PCT:
+        is_risk_on = False
+    else:
+        is_risk_on = bool(above_sma)
+    primary_status = "RISK-ON" if is_risk_on else "RISK-OFF"
 
     from datetime import datetime, timezone
+    from service.routes_scanner import TICKER_NAMES
+    name = TICKER_NAMES.get(ticker, ticker.replace(".NS", ""))
+
+    mom_comp = quant.get("components", {}).get("Momentum", 50)
+    if mom_comp >= 60:
+        momentum_label = "Strong"
+    elif mom_comp >= 40:
+        momentum_label = "Moderate"
+    else:
+        momentum_label = "Weak"
+
+    risk_lvl = risk.get("risk_level", "Medium") if isinstance(risk, dict) else str(risk)
+    score_val = quant.get("score", 50) if isinstance(quant, dict) else 50
+
     return {
         "ticker": ticker,
+        "name": name,
+        "status": primary_status,
         "signal": signal_value,
         "confidence": round(float(final_prob), 4),
-        "regime": "BULL" if above_sma else "BEAR",
+        "regime": primary_status,
         "price": round(close, 2),
         "sma_200": round(sma200, 2),
         "sma_distance_pct": sma_distance_pct,
         "daily_change_pct": daily_change_pct,
         "threshold": _THRESHOLD,
+        "score": score_val,
         "quant_score": quant,
-        "risk": risk,
+        "risk": risk_lvl,
+        "risk_detail": risk,
+        "momentum": momentum_label,
+        "momentum_score": mom_comp,
         "factor_analysis": factor_analysis,
         "model_predictions": base_probas,
         "model_count": len(model_names),

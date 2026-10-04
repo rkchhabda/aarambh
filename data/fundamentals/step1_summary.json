@@ -1,0 +1,46 @@
+{
+  "total_tickers": 138,
+  "total_raw_filings": 15625,
+  "total_xbrl_filings": 6730,
+  "total_dev_xbrl_filings": 6730,
+  "usable_tickers_count": 133,
+  "insufficient_tickers_count": 5,
+  "insufficient_tickers": [
+    {
+      "ticker": "HDFCLIFE.NS",
+      "quarters_in_dev_window": 0,
+      "total_filings": 0,
+      "xbrl_filings": 0
+    },
+    {
+      "ticker": "NESTLEIND.NS",
+      "quarters_in_dev_window": 6,
+      "total_filings": 9,
+      "xbrl_filings": 8
+    },
+    {
+      "ticker": "SBILIFE.NS",
+      "quarters_in_dev_window": 0,
+      "total_filings": 0,
+      "xbrl_filings": 0
+    },
+    {
+      "ticker": "ICICIGI.NS",
+      "quarters_in_dev_window": 0,
+      "total_filings": 0,
+      "xbrl_filings": 0
+    },
+    {
+      "ticker": "ICICIPRULI.NS",
+      "quarters_in_dev_window": 0,
+      "total_filings": 0,
+      "xbrl_filings": 0
+    }
+  ],
+  "coverage_stats": {
+    "mean_quarters": 26.646616541353385,
+    "median_quarters": 27.0,
+    "min_quarters": 18,
+    "max_quarters": 29
+  }
+}
