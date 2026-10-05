@@ -1,0 +1,244 @@
+# ==============================================================================
+# GaurviDEEP Phase 7 Research Configuration
+# ==============================================================================
+# Research Programme: AI Stock-Ranking for Liquid Indian Equities
+# Jurisdiction: India (NSE)
+# Status: PREREGISTERED
+# Environment Standard: Python 3.12 (.venv-phase7)
+# ==============================================================================
+
+metadata:
+  programme_name: "GaurviDEEP Phase 7 Cross-Sectional Stock Ranking"
+  preregistration_version: "1.0.0"
+  preregistration_date: "2026-10-05"
+  governing_document: "docs/PHASE7_RESEARCH_PREREGISTRATION.md"
+  runtime_python_version: "3.12"
+  target_virtual_environment: ".venv-phase7"
+  status: "PREREGISTERED"
+  phase6_closure_checkpoint: "c978968ec822aa20453920c8708673fcaa736695"
+  phase6_closure_tag: "phase6-closed-2026-10-04"
+
+universe:
+  target_index: "Nifty 500"
+  point_in_time_required: true
+  fail_closed_on_unknown_timing: true
+  min_closing_price_inr: 20
+  min_trading_history_days: 252
+  min_median_daily_traded_value_60d_crore: 10
+  financials_treatment: "EXCLUDE_INITIAL_ACCOUNTING_OR_SECTOR_SPECIFIC"
+  universe_provider: "phase7.data.universe.PointInTimeUniverseBuilder"
+  prohibited_universe_providers:
+    - "features.universe"
+    - "features.universe.TICKERS"
+
+targets:
+  primary:
+    target_id: "target_20d_sector_relative"
+    description: "20-trading-day sector-relative total return"
+    horizon_trading_days: 20
+    execution_lag_trading_days: 1
+    prediction_type: "cross_sectional_rank"
+    formula: "stock_total_return(t+1 -> t+20) - sector_total_return(t+1 -> t+20)"
+    execution_assumption: "next_session_executable_price"
+  secondary:
+    target_id: "target_60d_residual"
+    description: "60-trading-day beta-adjusted market residual return"
+    horizon_trading_days: 60
+    execution_lag_trading_days: 1
+    prediction_type: "cross_sectional_rank"
+    formula: "stock_total_return(t+1 -> t+60) - estimated_beta(t) * market_total_return(t+1 -> t+60)"
+    execution_assumption: "next_session_executable_price"
+
+validation:
+  architecture: "expanding_walk_forward"
+  min_expanding_windows: 10
+  primary_target_purge_days: 20
+  primary_target_embargo_days: 5
+  secondary_target_purge_days: 60
+  secondary_target_embargo_days: 10
+  fold_local_preprocessing: true
+  fold_local_hyperparameter_selection: true
+  deterministic_seed: 42
+
+feature_families:
+  permitted:
+    - family_id: "medium_term_momentum"
+      features:
+        - "mom_12m_minus_1m"
+        - "mom_6m_sector_relative"
+        - "mom_3m_residual"
+        - "distance_from_52w_high"
+        - "momentum_consistency"
+        - "volume_confirmed_momentum"
+    - family_id: "sue_earnings_surprise"
+      features:
+        - "standardized_unexpected_earnings"
+        - "eps_yoy_growth_adjusted"
+      data_dependency: "data/fundamentals/sue_features_quarterly.csv"
+      status: "PERMITTED_STANDALONE_HYPOTHESIS"
+    - family_id: "quality_accounting_pit"
+      features:
+        - "roce"
+        - "incremental_roce"
+        - "ocf_to_pat"
+        - "fcf_margin"
+        - "receivables_vs_revenue_growth"
+        - "inventory_vs_revenue_growth"
+        - "interest_coverage"
+        - "net_debt_to_ebitda"
+        - "gross_margin_stability"
+        - "share_dilution"
+      status: "GATED_ON_PIT_AVAILABILITY"
+    - family_id: "valuation_pit"
+      features:
+        - "sector_relative_pe_percentile"
+        - "earnings_yield"
+        - "fcf_yield"
+        - "ev_to_ebitda"
+        - "price_to_book_financials"
+      status: "GATED_ON_PIT_AVAILABILITY"
+
+  deferred:
+    - family_id: "analyst_consensus_and_revisions"
+      reason: "No licensed point-in-time consensus estimates feed in repository (BLK-05)"
+      status: "DEFERRED_FUTURE_AMENDMENT"
+    - family_id: "corporate_announcements_nlp"
+      reason: "No timestamped dissemination announcements feed available (BLK-08)"
+      status: "DEFERRED_FUTURE_AMENDMENT"
+    - family_id: "promoter_holding_and_pledging"
+      reason: "Historical quarterly shareholding pattern files require verification"
+      status: "DEFERRED_FUTURE_AMENDMENT"
+    - family_id: "management_guidance_extraction"
+      reason: "Unstructured call transcripts require verified first-seen timestamps"
+      status: "DEFERRED_FUTURE_AMENDMENT"
+
+model_families:
+  hierarchy_order:
+    - "baselines"
+    - "linear"
+    - "tree"
+    - "ranking"
+  baselines:
+    - "equal_weight_eligible_universe"
+    - "sector_neutral_equal_weight"
+    - "momentum_12_minus_1"
+    - "simple_quality_sue_composite"
+    - "momentum_quality_valuation_composite"
+    - "sma_200_regime_filter_benchmark"
+  linear:
+    - "ridge_regression"
+    - "elastic_net"
+  tree:
+    - "lightgbm_regressor"
+    - "xgboost_regressor"
+  ranking:
+    - "lightgbm_lambdarank"
+    - "xgboost_pairwise_ranking"
+  prohibited_architectures:
+    - "lstm"
+    - "transformer"
+    - "reinforcement_learning"
+    - "deep_neural_network"
+    - "uncontrolled_technical_indicators"
+
+portfolio:
+  type: "long_only"
+  selection_target_count: 20
+  rebalance_frequency: "weekly"
+  primary_allocation: "equal_weight"
+  secondary_comparison: "volatility_controlled"
+  max_initial_stock_weight_bps: 500       # 5.00%
+  max_sector_weight_bps: 2500             # 25.00%
+  leverage_allowed: false
+  short_selling_allowed: false
+  min_intended_holding_days: 20
+  liquidity_max_participation_rate_bps: 500 # 5.00% of 60d MDTV
+  test_portfolio_capacities_inr:
+    - 1000000     # 10 Lakh
+    - 2500000     # 25 Lakh
+    - 10000000    # 1 Crore
+    - 50000000    # 5 Crore
+
+transaction_costs_bps:
+  base_scenario_bps: 25
+  conservative_scenario_bps: 50
+  stress_scenario_bps: 75
+  cost_components:
+    - "brokerage"
+    - "securities_transaction_tax"
+    - "exchange_transaction_charges"
+    - "clearing_charges"
+    - "gst"
+    - "sebi_turnover_fee"
+    - "stamp_duty"
+    - "bid_ask_spread"
+    - "slippage"
+    - "market_impact"
+
+success_criteria:
+  gate1_data_integrity:
+    zero_critical_lookahead_leakage: true
+    zero_retrospective_membership_leakage: true
+    zero_target_leakage: true
+    min_audited_timing_accuracy_pct: 99.5
+    corporate_action_audit_required: true
+  gate2_development_walk_forward:
+    min_mean_rank_ic: 0.030
+    min_median_rank_ic: 0.015
+    min_positive_monthly_rank_ic_pct: 60.0
+    min_positive_windows_count: 8
+    total_validation_windows: 10
+    bootstrap_ci_95_lower_gt_zero: true
+    positive_quintile_spread_required: true
+    min_net_sharpe_base_costs: 0.80
+    min_sortino_ratio: 1.00
+    max_drawdown_limit_pct: 20.0
+    min_calmar_ratio: 0.50
+    min_positive_excess_return_windows: 7
+    positive_net_alpha_at_50bps_required: true
+    max_monthly_one_way_turnover_pct: 40.0
+    min_median_holding_days: 20
+  gate3_robustness_anti_overfitting:
+    min_positive_regimes_count: 4
+    total_predefined_regimes: 6
+    min_positive_major_sectors_pct: 60.0
+    max_single_sector_alpha_contribution_pct: 35.0
+    max_single_year_net_alpha_pct: 40.0
+    positive_after_dropping_best_month: true
+    positive_after_dropping_top_5_trades: true
+    min_independent_model_families_positive: 2
+    min_deflated_sharpe_probability_pct: 90.0
+    preferred_deflated_sharpe_prob_pct: 95.0
+  gate4_phase7_holdout:
+    min_holdout_rank_ic: 0.020
+    min_positive_months_pct: 55.0
+    min_net_sharpe: 0.60
+    positive_benchmark_relative_net_return: true
+    max_drawdown_limit_pct: 25.0
+    positive_quintile_spread_required: true
+    positive_net_performance_at_50bps: true
+  gate5_live_shadow:
+    min_duration_months: 12
+    min_scheduled_rebalances: 50
+    min_net_sharpe_12m: 0.70
+    max_drawdown_limit_pct: 20.0
+    min_sector_relative_hit_rate_pct: 53.0
+    min_system_availability_pct: 90.0
+    append_only_ledger_required: true
+
+governance:
+  max_total_registered_trials: 100
+  max_trials_per_hypothesis: 15
+  stop_on_mandatory_gate_failure: true
+  null_result_outcome_acknowledged: true
+  holdout_creation_gated_on_owner_approval: true
+  holdout_access_phrase: "AUTHORIZE PHASE 7 HOLDOUT EVALUATION"
+  phase6_immutability_enforced: true
+  prohibited_vault_paths:
+    - "gaurvideep_vault"
+    - "gaurvideep_vault\\"
+    - "C:\\Users\\r_chh\\gaurvideep_vault"
+    - "C:\\Users\\r_chh\\OneDrive - optgbrc\\Apps\\gaurvideep_vault"
+  prohibited_vault_archives:
+    - "window_a_sealed.7z"
+    - "window_b_sealed.7z"

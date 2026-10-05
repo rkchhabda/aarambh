@@ -1,0 +1,31 @@
+# ==============================================================================
+# GaurviDEEP Phase 7 Research Environment Requirements
+# ==============================================================================
+# Target Environment: .venv-phase7
+# Target Python Version: 3.12
+# Purpose: Isolated quantitative research, walk-forward CV, ranking models
+# ==============================================================================
+
+# Core numerical and tabular computation
+numpy==2.2.3
+pandas==2.2.3
+scipy==1.15.2
+
+# Machine learning & ranking libraries (Permitted Phase 7 models)
+scikit-learn==1.6.1
+lightgbm==4.6.0
+xgboost==3.0.0
+
+# Statistical and econometric modeling
+statsmodels==0.14.4
+
+# Configuration and schema validation
+pyyaml==6.0.2
+pydantic==2.10.6
+
+# Testing and verification
+pytest==8.3.4
+
+# Optional progress tracking and utilities
+joblib==1.4.2
+tqdm==4.67.1
