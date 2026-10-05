@@ -19,6 +19,7 @@ from phase7.data.contracts import (
     CorporateActionType,
     DailyPriceRecord,
     PriceAdjustmentState,
+    canonicalize_corporate_action_type,
 )
 
 
@@ -62,11 +63,18 @@ class CorporateActionEngine:
         Returns:
             NormalizedCorporateAction containing resolved multiplier or manual review flag.
         """
-        # Complex actions requiring manual review
-        if action.action_type in (
-            CorporateActionType.RIGHTS,
-            CorporateActionType.MERGER,
-            CorporateActionType.DEMERGER,
+        # 1. Canonicalize action type and resolve aliases
+        canon_type, resolution, note = canonicalize_corporate_action_type(action.action_type)
+        if resolution != CorporateActionResolution.APPLIED or canon_type is None:
+            return NormalizedCorporateAction(
+                record=action,
+                resolution=resolution,
+                multiplier=Decimal("1.0"),
+                note=note,
+            )
+
+        # 2. Unsupported or manual review actions (SYMBOL_CHANGE, DELISTING)
+        if canon_type in (
             CorporateActionType.SYMBOL_CHANGE,
             CorporateActionType.DELISTING,
         ):
@@ -74,11 +82,24 @@ class CorporateActionEngine:
                 record=action,
                 resolution=CorporateActionResolution.MANUAL_REVIEW,
                 multiplier=Decimal("1.0"),
-                note=f"Complex action type '{action.action_type.value}' requires manual governance review.",
+                note=f"Action type '{canon_type.value}' is unsupported for automatic adjustment; routed to MANUAL_REVIEW pending approved policy.",
             )
 
-        # 1. Stock Split: numerator new shares for denominator old shares
-        if action.action_type == CorporateActionType.SPLIT:
+        # 3. Complex restructuring actions requiring manual review (RIGHTS, MERGER, DEMERGER)
+        if canon_type in (
+            CorporateActionType.RIGHTS,
+            CorporateActionType.MERGER,
+            CorporateActionType.DEMERGER,
+        ):
+            return NormalizedCorporateAction(
+                record=action,
+                resolution=CorporateActionResolution.MANUAL_REVIEW,
+                multiplier=Decimal("1.0"),
+                note=f"Complex action type '{canon_type.value}' requires manual governance review.",
+            )
+
+        # 4. Stock Split: numerator new shares for denominator old shares
+        if canon_type == CorporateActionType.SPLIT:
             num = action.adjustment_numerator
             den = action.adjustment_denominator
             if num is None or den is None or num <= Decimal("0") or den <= Decimal("0"):
@@ -97,8 +118,8 @@ class CorporateActionEngine:
                 note=f"Stock split factor: {factor} (new/old = {num}/{den})",
             )
 
-        # 2. Bonus Issue: numerator bonus shares issued for denominator held shares
-        if action.action_type == CorporateActionType.BONUS:
+        # 5. Bonus Issue: numerator bonus shares issued for denominator held shares
+        if canon_type == CorporateActionType.BONUS:
             num = action.adjustment_numerator
             den = action.adjustment_denominator
             if num is None or den is None or num <= Decimal("0") or den <= Decimal("0"):
@@ -118,8 +139,8 @@ class CorporateActionEngine:
                 note=f"Bonus issue factor: {factor} ((bonus+held)/held = ({num}+{den})/{den})",
             )
 
-        # 3. Cash Dividend: Total return reinvestment factor
-        if action.action_type == CorporateActionType.CASH_DIVIDEND:
+        # 6. Cash Dividend: Total return reinvestment factor
+        if canon_type == CorporateActionType.CASH_DIVIDEND:
             div_amount = action.cash_amount
             if div_amount is None or div_amount <= Decimal("0"):
                 return NormalizedCorporateAction(

@@ -17,12 +17,16 @@ from phase7.data.contracts import (
     ExclusionReason,
     PITCorporateAnnouncementRecord,
     PITFinancialStatementRecord,
+    PITMembershipEventRecord,
     PITMembershipRecord,
     PITSectorClassificationRecord,
     PITShareholdingRecord,
     PriceAdjustmentState,
     TradedValueStatus,
+    canonicalize_corporate_action_type,
+    convert_membership_events_to_intervals,
     compute_row_hash,
+    CORPORATE_ACTION_SOURCE_ALIASES,
 )
 from phase7.data.corporate_actions import (
     CorporateActionEngine,
@@ -40,6 +44,7 @@ from phase7.data.loaders import (
     JSONLinesDataLoader,
     LoadResult,
     RejectedRecord,
+    parse_membership_event_row,
 )
 from phase7.data.audit import DatasetAuditReport, audit_dataset_file
 
@@ -53,12 +58,16 @@ __all__ = [
     "ExclusionReason",
     "PITCorporateAnnouncementRecord",
     "PITFinancialStatementRecord",
+    "PITMembershipEventRecord",
     "PITMembershipRecord",
     "PITSectorClassificationRecord",
     "PITShareholdingRecord",
     "PriceAdjustmentState",
     "TradedValueStatus",
+    "canonicalize_corporate_action_type",
+    "convert_membership_events_to_intervals",
     "compute_row_hash",
+    "CORPORATE_ACTION_SOURCE_ALIASES",
     "CorporateActionEngine",
     "NormalizedCorporateAction",
     "adjust_price_series",
@@ -70,6 +79,7 @@ __all__ = [
     "JSONLinesDataLoader",
     "LoadResult",
     "RejectedRecord",
+    "parse_membership_event_row",
     "DatasetAuditReport",
     "audit_dataset_file",
 ]

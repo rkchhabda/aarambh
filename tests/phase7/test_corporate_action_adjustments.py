@@ -27,6 +27,8 @@ from phase7.data.contracts import (
     DailyPriceRecord,
     PriceAdjustmentState,
     TradedValueStatus,
+    canonicalize_corporate_action_type,
+    CORPORATE_ACTION_SOURCE_ALIASES,
 )
 from phase7.data.corporate_actions import (
     CorporateActionEngine,
@@ -237,6 +239,47 @@ class TestCorporateActionAdjustments(unittest.TestCase):
         )
         norm = CorporateActionEngine.normalize_action(complex_act)
         self.assertEqual(norm.resolution, CorporateActionResolution.MANUAL_REVIEW)
+
+    def test_corporate_action_canonical_aliases_mapping(self):
+        """Verify deterministic canonicalization of source action aliases."""
+        test_cases = [
+            ("RIGHTS_ISSUE", CorporateActionType.RIGHTS),
+            ("AMALGAMATION", CorporateActionType.MERGER),
+            ("SPINOFF", CorporateActionType.DEMERGER),
+            ("FACE_VALUE_SPLIT", CorporateActionType.SPLIT),
+            ("STOCK_SPLIT", CorporateActionType.SPLIT),
+            ("BONUS_ISSUE", CorporateActionType.BONUS),
+            ("DIVIDEND", CorporateActionType.CASH_DIVIDEND),
+            ("INTERIM_DIVIDEND", CorporateActionType.CASH_DIVIDEND),
+        ]
+        for raw_str, expected_canon in test_cases:
+            canon, res, _ = canonicalize_corporate_action_type(raw_str)
+            self.assertEqual(canon, expected_canon, f"Failed mapping for {raw_str}")
+            self.assertEqual(res, CorporateActionResolution.APPLIED)
+
+    def test_ambiguous_or_unknown_action_type_returns_manual_review(self):
+        """Ambiguous or unmapped action strings route to MANUAL_REVIEW."""
+        canon, res, note = canonicalize_corporate_action_type("UNKNOWN_SPECIAL_ACTION")
+        self.assertIsNone(canon)
+        self.assertEqual(res, CorporateActionResolution.MANUAL_REVIEW)
+        self.assertIn("routed to MANUAL_REVIEW", note)
+
+    def test_symbol_change_and_delisting_return_manual_review(self):
+        """SYMBOL_CHANGE and DELISTING return explicit MANUAL_REVIEW status."""
+        for act_type in (CorporateActionType.SYMBOL_CHANGE, CorporateActionType.DELISTING):
+            rec = CorporateActionRecord(
+                symbol="TEST_CO",
+                isin="INE123A01012",
+                action_type=act_type,
+                ex_date=date(2025, 6, 1),
+                effective_date=date(2025, 6, 1),
+                source_timestamp=self.t_src,
+                ingestion_timestamp=self.t_ing,
+                source_identifier="CIRC",
+            )
+            norm = CorporateActionEngine.normalize_action(rec)
+            self.assertEqual(norm.resolution, CorporateActionResolution.MANUAL_REVIEW)
+            self.assertIn("routed to MANUAL_REVIEW pending approved policy", norm.note)
 
 
 if __name__ == "__main__":

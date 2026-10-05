@@ -26,6 +26,7 @@ from phase7.data.contracts import (
     DailyPriceRecord,
     EligibilityStatus,
     EligibilitySuspensionRecord,
+    PITMembershipEventRecord,
     PITMembershipRecord,
     PITSectorClassificationRecord,
     PriceAdjustmentState,
@@ -136,6 +137,12 @@ def parse_daily_price_row(row: Dict[str, Any], source_id: str) -> DailyPriceReco
     if row.get("adjusted_close") is not None and str(row.get("adjusted_close")).strip():
         adj_close = parse_decimal_safe(row.get("adjusted_close"), "adjusted_close")
 
+    tv_deriv = row.get("traded_value_derivation_method")
+    if tv_deriv is not None:
+        tv_deriv = str(tv_deriv).strip()
+        if not tv_deriv:
+            tv_deriv = None
+
     supplied_hash = str(row.get("row_hash", "")).strip()
 
     return DailyPriceRecord(
@@ -154,6 +161,36 @@ def parse_daily_price_row(row: Dict[str, Any], source_id: str) -> DailyPriceReco
         ingestion_timestamp=ing_ts,
         source_identifier=source_id,
         adjusted_close=adj_close,
+        traded_value_derivation_method=tv_deriv,
+        row_hash=supplied_hash,
+    )
+
+
+def parse_membership_event_row(row: Dict[str, Any], source_id: str) -> PITMembershipEventRecord:
+    """Parse raw dictionary into a validated PITMembershipEventRecord."""
+    idx = str(row.get("index_code") or row.get("index", "")).strip().upper()
+    sym = str(row.get("symbol", "")).strip().upper()
+    isin_val = str(row.get("isin", "")).strip().upper()
+    eff_d = parse_iso_date(row.get("effective_date") or row.get("date"))
+    act = str(row.get("action", "")).strip().upper()
+    src_ts = parse_iso_datetime(row.get("source_timestamp"))
+    ing_ts = parse_iso_datetime(row.get("ingestion_timestamp"))
+    circ = row.get("circular_number")
+    if circ is not None:
+        circ = str(circ).strip()
+        if not circ:
+            circ = None
+    supplied_hash = str(row.get("row_hash", "")).strip()
+    return PITMembershipEventRecord(
+        index_code=idx,
+        symbol=sym,
+        isin=isin_val,
+        effective_date=eff_d,
+        action=act,
+        source_timestamp=src_ts,
+        ingestion_timestamp=ing_ts,
+        source_identifier=source_id,
+        circular_number=circ,
         row_hash=supplied_hash,
     )
 

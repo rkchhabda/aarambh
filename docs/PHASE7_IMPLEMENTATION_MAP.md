@@ -95,8 +95,8 @@ flowchart TD
 
 ### 2.2 Modules Requiring Complete Isolation or Quarantining
 1. **`features/universe.py`:**
-   - **Quarantine:** Strictly isolated in legacy/serving domain. Contains a static, survivorship-biased 138-ticker list.
-   - **Phase 7 Replacement:** `phase7/data/universe.py` will construct dynamic, point-in-time universes per date.
+   - **Status:** The static legacy universe is prohibited as a Phase 7 universe provider and protected by automated boundary tests.
+   - **Phase 7 Replacement:** `phase7/data/universe.py` constructs dynamic, point-in-time universes per date.
 2. **`features/indicators.py`:**
    - **Quarantine:** Contains 27 legacy technical indicators (RSI, MACD, Stochastics, Williams %R) which are not authorized in Phase 7 without an approved preregistered amendment.
 3. **`service/app.py` & `service/routes_*.py`:**
@@ -287,27 +287,53 @@ No quantitative models will be trained, and no market data will be ingested duri
 
 ---
 
-## 8. Milestone 2 Delivered Artifacts & Verification Status
+## 8. Milestone 2 Delivered Artifacts & Requirements-to-Tests Matrix
 
 Milestone 2 delivered canonical data contracts, point-in-time universe interfaces, corporate action adjustments, and fail-closed loaders under the status **`CONTRACT_READY_REAL_DATA_BLOCKED`**:
 
 ### Delivered Modules (`phase7/data/`):
 1. `phase7/data/__init__.py`: Package export initialization.
-2. `phase7/data/contracts.py`: Frozen dataclasses (`DailyPriceRecord`, `PITMembershipRecord`, `PITSectorClassificationRecord`, `CorporateActionRecord`, `EligibilitySuspensionRecord`, `PITFinancialStatementRecord`, `EligibleSecurityRecord`, `PITUniverseSnapshot`, `DatasetAuditSummary`), enums (`TradedValueStatus`, `PriceAdjustmentState`, `CorporateActionType`, `ExclusionReason`), and deterministic SHA-256 `compute_row_hash`.
-3. `phase7/data/corporate_actions.py`: `CorporateActionEngine` handling splits, bonuses, cash dividends, and total-return factor adjustments with rejection of double adjustment and fail-closed routing for complex actions.
-4. `phase7/data/universe.py`: `PointInTimeUniverseBuilder` implementing 252-day history, 60-day MDTV $\ge$ INR 10 crore, and price $\ge$ INR 20 filters, multi-reason exclusion codes, deterministic universe hash, and explicit `REAL_DATA_BLOCKED` output when real historical data is missing.
-5. `phase7/data/loaders.py`: Streaming fail-closed CSV and JSONL loaders (`CSVDataLoader`, `JSONLinesDataLoader`) tracking 1-based row numbers, rejection reasons, non-zero coercion of malformed values, and duplicate key detection.
+2. `phase7/data/contracts.py`: Frozen dataclasses (`DailyPriceRecord`, `PITMembershipRecord`, `PITMembershipEventRecord`, `PITSectorClassificationRecord`, `CorporateActionAdjustmentRecord`, `EligibilitySuspensionRecord`, `PITFinancialStatementRecord`, `PITCorporateAnnouncementRecord`, `PITShareholdingRecord`), enums (`TradedValueStatus`, `PriceAdjustmentState`, `CorporateActionType`, `ExclusionReason`), event-to-interval conversion (`convert_membership_events_to_intervals`), and deterministic SHA-256 `compute_row_hash`.
+3. `phase7/data/corporate_actions.py`: `CorporateActionEngine` handling splits, bonuses, cash dividends, total-return factor adjustments, canonical alias mapping, double-adjustment rejection, and fail-closed routing for complex actions (`MANUAL_REVIEW`).
+4. `phase7/data/universe.py`: `PointInTimeUniverseBuilder` implementing 252-day history, 60-day MDTV $\ge$ INR 10 crore, and price $\ge$ INR 20 filters, multi-reason exclusion codes, deterministic universe hash, and granular status outputs (`SUCCESS`, `BLOCKED_MISSING_MEMBERSHIP`, `BLOCKED_MISSING_PRICE_LIQUIDITY`, `BLOCKED_MISSING_SECTOR_HISTORY`, `VALID_EMPTY_UNIVERSE`).
+5. `phase7/data/loaders.py`: Streaming fail-closed CSV and JSONL loaders (`CSVDataLoader`, `JSONLinesDataLoader`, `parse_membership_event_row`) tracking 1-based row numbers, rejection reasons, non-zero coercion of malformed values, and duplicate key detection.
 6. `phase7/data/audit.py`: Dataset audit report generator capturing structural summary and explicitly prohibiting return or alpha reporting.
 
 ### Delivered Test Suites (`tests/phase7/`):
-1. `tests/phase7/test_point_in_time_integrity.py`: 13 tests verifying deterministic SHA-256 hashing, UTC normalization, open-ended intervals, point-in-time membership boundaries, and hash tampering detection.
+1. `tests/phase7/test_point_in_time_integrity.py`: 21 tests verifying deterministic SHA-256 hashing, UTC normalization, open-ended intervals, point-in-time membership boundaries, event-to-interval conversion edge cases, sector temporal intervals, gated interface timestamp distinctions, and hash tampering detection.
 2. `tests/phase7/test_no_future_features.py`: 4 tests verifying future price isolation, future sector backfill prevention, future source timestamp rejection, and quarterly period-end vs availability date separation.
-3. `tests/phase7/test_universe_survivorship.py`: 6 tests verifying survivorship filters, 252-day history, liquidity thresholding, multi-reason exclusion tracking, trading suspension handling, and explicit `REAL_DATA_BLOCKED` status.
-4. `tests/phase7/test_corporate_action_adjustments.py`: 5 tests verifying stock split ratios, bonus ratios, cash dividend total return adjustments, double-adjustment rejection, and fail-closed complex corporate action routing.
+3. `tests/phase7/test_universe_survivorship.py`: 12 tests verifying survivorship filters, 252-day history, liquidity thresholding, multi-reason exclusion tracking, trading suspension handling, turnover derivation rules, granular universe build statuses, and deterministic sorting/hashing.
+4. `tests/phase7/test_corporate_action_adjustments.py`: 8 tests verifying stock split ratios, bonus ratios, cash dividend total return adjustments, canonical alias mappings, double-adjustment rejection, and manual review routing for complex/restructuring actions.
 5. `tests/phase7/test_data_loaders.py`: 4 tests verifying 1-based CSV row tracking, rejection reason preservation, non-zero coercion, zero investment performance reporting in audit reports, and zero forbidden imports.
+6. `tests/phase7/test_phase6_boundary.py`: 6 tests verifying Phase 6 vault defense, static universe provider prohibition, and governance documentation integrity.
+7. `tests/phase7/test_config_schema.py`: 7 tests verifying configuration schema, basis points enforcement, negative cost prevention, and execution delay.
+8. `test_phase6_safeguards.py`: 4 tests verifying Phase 6 development cutoff and data access boundaries.
+
+### Requirements-to-Tests Traceability Matrix
+
+| Requirement Area | Detailed Specification | Test Module | Test Method(s) | Status |
+|---|---|---|---|---|
+| **Data Contracts & Hashing** | Frozen dataclasses, Decimal fields, ISO UTC timestamps, deterministic SHA-256 row hash | `tests/phase7/test_point_in_time_integrity.py` | `test_deterministic_row_hash_identical_records`, `test_equivalent_utc_instants_normalize_consistently`, `test_field_order_difference_does_not_change_hash`, `test_material_field_change_alters_hash`, `test_row_hash_field_itself_excluded`, `test_supplied_hash_mismatch_detected`, `test_timezone_naive_timestamp_rejected` | **VERIFIED** |
+| **ISIN Integrity** | Strict 12-char alphanumeric regex (`^[A-Z]{2}[A-Z0-9]{9}[0-9]$`) | `tests/phase7/test_point_in_time_integrity.py` | `test_missing_or_invalid_isin_raises_error` | **VERIFIED** |
+| **Membership Event Conversion** | Interval synthesis from ADD/REMOVE events, fail-closed on duplicate add, remove-without-add, conflicting timestamps | `tests/phase7/test_point_in_time_integrity.py` | `test_membership_conversion_normal_add_then_remove`, `test_membership_conversion_open_ended_addition`, `test_membership_conversion_re_addition_after_removal`, `test_membership_conversion_duplicate_addition_fails_closed`, `test_membership_conversion_removal_without_prior_addition_fails_closed`, `test_membership_conversion_same_time_conflicting_events`, `test_membership_conversion_future_events_ignored_at_prediction_time` | **VERIFIED** |
+| **Point-in-Time Intervals** | Half-open intervals $[t_{\text{from}}, t_{\text{to}})$, open-ended intervals, point-in-time cutoff | `tests/phase7/test_point_in_time_integrity.py` | `test_stock_added_in_2022_not_eligible_in_2021`, `test_stock_eligible_on_or_after_addition`, `test_stock_removed_in_2023_not_eligible_after_removal`, `test_open_ended_interval_works`, `test_invalid_interval_bounds_fail`, `test_sector_classification_pit_checks` | **VERIFIED** |
+| **Gated Interface Timestamps** | Segregation of announcement/filing timestamps from disclosure effective dates | `tests/phase7/test_point_in_time_integrity.py`, `tests/phase7/test_no_future_features.py` | `test_gated_interface_contracts_timestamp_distinction`, `test_period_end_date_not_treated_as_availability` | **VERIFIED** |
+| **Temporal Cutoff Enforcement** | Exclusion of future prices, sectors, and future source timestamps | `tests/phase7/test_no_future_features.py` | `test_future_price_does_not_enter_history`, `test_future_sector_cannot_backfill_earlier_date`, `test_future_source_timestamp_disqualifies_record` | **VERIFIED** |
+| **Corporate Actions Adjustment** | Split/bonus multipliers, cash dividend total-return factor, reference price validation | `tests/phase7/test_corporate_action_adjustments.py` | `test_stock_split_1_to_2_produces_factor_2`, `test_bonus_ratios`, `test_cash_dividend_total_return_factor` | **VERIFIED** |
+| **Corporate Action Aliases & Routing** | Canonical aliases (`RIGHTS_ISSUE`, `AMALGAMATION`, etc.), routing restructuring and delisting to `MANUAL_REVIEW` | `tests/phase7/test_corporate_action_adjustments.py` | `test_corporate_action_canonical_aliases_mapping`, `test_ambiguous_or_unknown_action_type_returns_manual_review`, `test_symbol_change_and_delisting_return_manual_review`, `test_unsupported_complex_actions_return_manual_review` | **VERIFIED** |
+| **Double-Adjustment Prevention** | Reject adjusting already adjusted series (`TOTAL_RETURN_ADJUSTED`), reject unknown adjustment state | `tests/phase7/test_corporate_action_adjustments.py` | `test_prevent_double_adjustment_and_unknown_state` | **VERIFIED** |
+| **Fail-Closed Loaders** | 1-based CSV/JSONL row tracking, error message capture, no silent zero coercion | `tests/phase7/test_data_loaders.py` | `test_csv_loader_returns_accepted_and_rejected_with_row_numbers`, `test_invalid_values_not_silently_coerced_to_zero` | **VERIFIED** |
+| **Audit Utility Integrity** | Structural report generation with strict prohibition of return or alpha reporting | `tests/phase7/test_data_loaders.py` | `test_audit_report_contains_zero_investment_performance_metrics` | **VERIFIED** |
+| **Static Boundary & Vault Defense** | Zero Phase 6 script imports, zero Phase 6 vault references, static universe provider prohibition | `tests/phase7/test_data_loaders.py`, `tests/phase7/test_phase6_boundary.py` | `test_active_phase7_modules_have_no_forbidden_imports`, `test_no_import_of_phase6_training_scripts_in_phase7`, `test_no_phase6_vault_archives_in_phase7_active_config`, `test_no_phase6_vault_paths_in_phase7_code`, `test_static_current_universe_cannot_be_provider` | **VERIFIED** |
+| **Universe Liquidity & History** | Minimum 252 valid observations, 60d MDTV $\ge$ INR 10 crore, minimum price $\ge$ INR 20.00 | `tests/phase7/test_universe_survivorship.py` | `test_duplicate_dates_do_not_increase_history_count`, `test_liquidity_threshold_evaluation` | **VERIFIED** |
+| **Turnover Derivation Safeguards** | Prohibit Close-alone derivation (`CLOSE_X_VOLUME`), prohibit method on exchange reported, require method on derived | `tests/phase7/test_universe_survivorship.py` | `test_traded_value_derivation_contract_safeguards` | **VERIFIED** |
+| **Granular Exclusion Reasons** | Preserve and report distinct reasons (`NOT_IN_PIT_UNIVERSE`, `MISSING_MEMBERSHIP_HISTORY`, `MISSING_PRICE_HISTORY`, `INSUFFICIENT_HISTORY`, etc.) | `tests/phase7/test_universe_survivorship.py` | `test_missing_membership_history_causes_exclusion`, `test_suspension_causes_exclusion`, `test_multiple_exclusion_reasons_preserved`, `test_distinction_not_in_pit_universe_vs_missing_membership_history`, `test_distinction_missing_price_history_vs_insufficient_history`, `test_distinction_missing_sector_vs_conflicting_sector`, `test_duplicate_security_record_exclusion`, `test_future_data_detected_exclusion` | **VERIFIED** |
+| **Universe Build Lifecycle** | Granular statuses (`SUCCESS`, `BLOCKED_MISSING_*`, `VALID_EMPTY_UNIVERSE`), `is_real_data_blocked` property | `tests/phase7/test_universe_survivorship.py` | `test_missing_blk01_or_blk02_produces_explicit_blocked_status`, `test_universe_build_status_full_lifecycle_and_empty_valid` | **VERIFIED** |
+| **Deterministic Sorting & Hash** | Output symbols sorted, reproducible SHA-256 universe snapshot hash | `tests/phase7/test_universe_survivorship.py` | `test_deterministic_ordering_and_hash_reproducibility` | **VERIFIED** |
+| **Configuration Schema Validation** | Enforce schema types, basis points integer format, negative cost rejection, execution delay | `tests/phase7/test_config_schema.py` | `test_canonical_config_passes_validation`, `test_forbidden_universe_provider_fails`, `test_forbidden_vault_reference_fails`, `test_missing_required_section_raises_error`, `test_negative_or_zero_cost_scenarios_fail`, `test_non_integer_basis_points_fail`, `test_same_day_execution_rejected` | **VERIFIED** |
 
 ### Verification Summary:
-- Phase 7 unit tests: **32 new tests, 45 total passing** (`pytest tests/phase7/ -v`).
+- Phase 7 unit tests: **65 passing** (`pytest tests/phase7/ -v`).
 - Phase 6 safeguard tests: **4 passing** (`pytest test_phase6_safeguards.py -v`).
-- Total passing tests: **49 of 49**.
+- Total passing tests: **69 of 69** (100% pass rate).
 - Real Data Readiness: **`CONTRACT_READY_REAL_DATA_BLOCKED`** (Gate 1 real-data evaluation blocked pending BLK-01 and BLK-02).

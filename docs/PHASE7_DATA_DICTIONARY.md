@@ -138,59 +138,87 @@ Verified quarterly financial statement disclosures.
 
 ---
 
-## 7. Python Canonical Data Contracts (`phase7.data.contracts`)
+## 7. Python Canonical Data Contracts (`phase7.data.contracts` & `phase7.data.universe`)
 
 Implemented as immutable, frozen dataclasses with strict type validation, `Decimal` precision for financial values, timezone-aware UTC `datetime` objects, and deterministic SHA-256 row hashing.
 
-### 7.1 Core Enumerations
+### 7.1 Core Governance Principles
+- **Legacy Universe Boundary:** The static legacy universe is prohibited as a Phase 7 universe provider and protected by automated boundary tests.
+- **Sector Classification Standard:** Static current sector mappings may be used only in explicitly labelled synthetic tests or non-historical display contexts. Historical sector-relative research fails closed without valid point-in-time sector classification.
+
+### 7.2 Core Enumerations
 
 1. **`TradedValueStatus`:**
-   - `REPORTED`: Exchange-reported turnover in INR.
-   - `ESTIMATED_CLOSE_X_VOLUME`: Estimated product of Close and Volume (prohibited for primary liquidity gate).
-   - `UNAVAILABLE`: Missing turnover.
-2. **`PriceAdjustmentState`:**
-   - `UNADJUSTED`: Raw exchange prices.
-   - `SPLIT_AND_BONUS_ADJUSTED`: Adjusted for stock splits and bonus issues.
-   - `TOTAL_RETURN_ADJUSTED`: Adjusted for splits, bonuses, and cash dividend reinvestment.
-3. **`CorporateActionType`:**
-   - `SPLIT`, `BONUS`, `CASH_DIVIDEND`, `SPECIAL_DIVIDEND`, `RIGHTS_ISSUE`, `SPINOFF`, `AMALGAMATION`, `FACE_VALUE_SPLIT`.
-4. **`ExclusionReason`:**
-   - `NOT_IN_PIT_UNIVERSE`: Security was not an active constituent of Nifty 500 on date $t$.
-   - `INSUFFICIENT_HISTORY`: Less than 252 trading sessions of verified history prior to date $t$.
-   - `BELOW_TURNOVER_THRESHOLD`: 60-day median daily traded value strictly below INR 10 crore.
-   - `BELOW_PRICE_THRESHOLD`: Previous close strictly below INR 20.00 (penny stock filter).
-   - `TRADING_SUSPENDED`: Security subject to regulatory, GSM/ASM, or exchange trading halt on date $t$.
-   - `MISSING_PRICE_DATA`: Required price observations absent on date $t$.
-   - `CIRCUIT_FILTER_LOCKED`: Security hit daily price band circuit filter preventing trading execution.
-   - `UNVERIFIED_CORPORATE_ACTION`: Unresolved corporate action lacking verified adjustment multiplier.
+   - `EXCHANGE_REPORTED`: Official exchange-reported turnover in INR. Derivation method must be empty.
+   - `DERIVED_FROM_PRICE_VOLUME`: Derived turnover with recorded derivation method. Deriving from Close alone is strictly prohibited.
+   - `MISSING`: Turnover missing from exchange feed (traded value must be zero).
+   - `INVALID`: Unparseable or corrupt turnover value (traded value must be zero).
 
-### 7.2 Dataclass Schema Specifications
+2. **`PriceAdjustmentState`:**
+   - `RAW`: Raw unadjusted exchange prices.
+   - `SPLIT_ADJUSTED`: Adjusted for splits and bonus shares.
+   - `TOTAL_RETURN_ADJUSTED`: Adjusted for splits, bonuses, and cash dividend reinvestment.
+   - `UNKNOWN`: Unverified adjustment state (fails closed).
+
+3. **`CorporateActionType`:**
+   - Canonical categories: `SPLIT`, `BONUS`, `CASH_DIVIDEND`, `RIGHTS`, `MERGER`, `DEMERGER`, `SYMBOL_CHANGE`, `DELISTING`.
+   - Source aliases normalized via `canonicalize_corporate_action_type()`:
+     - `RIGHTS_ISSUE` $\to$ `RIGHTS`
+     - `AMALGAMATION` $\to$ `MERGER`
+     - `SPINOFF` $\to$ `DEMERGER`
+     - `FACE_VALUE_SPLIT` $\to$ `SPLIT`
+   - Ambiguous actions (`RIGHTS`, `MERGER`, `DEMERGER`, `SYMBOL_CHANGE`, `DELISTING`) route to `MANUAL_REVIEW` pending explicit research policy.
+
+4. **`ExclusionReason`:**
+   - Canonical enumeration:
+     - `NOT_IN_PIT_UNIVERSE`: Security was not an active constituent of Nifty 500 on prediction date.
+     - `MISSING_MEMBERSHIP_HISTORY`: Security lacks point-in-time constituent membership records.
+     - `MISSING_ISIN`: Security record lacks valid 12-character ISIN.
+     - `BELOW_MIN_PRICE`: Closing price strictly below INR 20.00 minimum threshold.
+     - `INSUFFICIENT_HISTORY`: Less than 252 valid trading session observations prior to prediction date.
+     - `MISSING_PRICE_HISTORY`: No price records available for candidate security.
+     - `MISSING_LIQUIDITY_HISTORY`: Insufficient turnover observations (< 60 sessions) or missing values for MDTV.
+     - `BELOW_MIN_LIQUIDITY`: 60-day median daily traded value strictly below INR 10 crore.
+     - `MISSING_SECTOR_CLASSIFICATION`: Security lacks valid point-in-time AMFI/NSE sector mapping.
+     - `CONFLICTING_SECTOR_CLASSIFICATION`: Multiple conflicting sector classifications effective on prediction date.
+     - `SUSPENDED`: Security subject to active regulatory trading suspension on prediction date.
+     - `PROLONGED_NON_TRADING`: Trading suspended due to prolonged lack of trades / liquidity.
+     - `RESTRICTED_SECURITY`: Security on surveillance or restricted list (GSM/ASM stages).
+     - `INVALID_CORPORATE_ACTION_HISTORY`: Unresolved or inconsistent corporate action adjustments.
+     - `UNKNOWN_POINT_IN_TIME_STATUS`: Security status indeterminate at prediction timestamp.
+     - `DUPLICATE_SECURITY_RECORD`: Conflicting price/liquidity records on same trading date.
+     - `FUTURE_DATA_DETECTED`: Source timestamp is in the future relative to prediction timestamp.
+   - Compatibility aliases supported: `BELOW_TURNOVER_THRESHOLD`, `BELOW_PRICE_THRESHOLD`, `TRADING_SUSPENDED`, `MISSING_PRICE_DATA`, `UNVERIFIED_CORPORATE_ACTION`, `CIRCUIT_FILTER_LOCKED`.
+
+5. **`UniverseBuildStatus`:**
+   - `SUCCESS`: Investable universe constructed with $\ge 1$ eligible security.
+   - `BLOCKED_MISSING_MEMBERSHIP`: Missing historical constituent membership records (BLK-01).
+   - `BLOCKED_MISSING_PRICE_LIQUIDITY`: Missing historical OHLCV and traded value records (BLK-02).
+   - `BLOCKED_MISSING_SECTOR_HISTORY`: Missing historical point-in-time sector classifications (BLK-04).
+   - `VALID_EMPTY_UNIVERSE`: All datasets present, point-in-time validation succeeded, but 0 securities passed active eligibility filters.
+   - `DATA_VALIDATION_FAILURE`: Structural or schema data validation error occurred.
+   - `BLOCKED`: Documented compatibility alias mapping to `BLOCKED_MISSING_MEMBERSHIP`.
+   - Property `is_real_data_blocked`: Boolean flag returning `True` for all `BLOCKED_MISSING_*` states.
+
+### 7.3 Dataclass Schema Specifications
 
 1. **`DailyPriceRecord`:**
-   - Natural Key: `(symbol, date, adjustment_state)`
-   - Fields: `symbol` (str), `isin` (str, 12-char), `date` (date), `open` (Decimal), `high` (Decimal), `low` (Decimal), `close` (Decimal), `volume` (int), `traded_value` (Decimal), `traded_value_status` (TradedValueStatus), `split_adj_factor` (Decimal), `div_adj_factor` (Decimal), `adjustment_state` (PriceAdjustmentState), `vwap` (Optional[Decimal]), `source_timestamp` (datetime, UTC), `row_hash` (str).
+   - Fields: `trading_date` (date), `symbol` (str), `isin` (str, 12-char), `open` (Decimal), `high` (Decimal), `low` (Decimal), `close` (Decimal), `volume` (int), `traded_value_inr` (Decimal), `traded_value_status` (TradedValueStatus), `price_adjustment_state` (PriceAdjustmentState), `source_timestamp` (datetime, UTC), `ingestion_timestamp` (datetime, UTC), `source_identifier` (str), `adjusted_close` (Optional[Decimal]), `traded_value_derivation_method` (Optional[str]), `row_hash` (str).
 2. **`PITMembershipRecord`:**
-   - Natural Key: `(symbol, effective_date, action)`
-   - Fields: `symbol` (str), `isin` (str), `effective_date` (date), `action` (str: `ADD`/`REMOVE`), `circular_number` (Optional[str]), `source_timestamp` (datetime, UTC), `ingestion_timestamp` (datetime, UTC), `row_hash` (str).
-3. **`PITSectorClassificationRecord`:**
-   - Natural Key: `(symbol, valid_from)`
-   - Fields: `symbol` (str), `isin` (str), `sector` (str), `industry` (str), `valid_from` (date), `valid_to` (Optional[date]), `source_timestamp` (datetime, UTC), `row_hash` (str).
-4. **`CorporateActionRecord`:**
-   - Natural Key: `(symbol, ex_date, action_type)`
-   - Fields: `symbol` (str), `isin` (str), `ex_date` (date), `record_date` (Optional[date]), `action_type` (CorporateActionType), `multiplier` (Decimal), `cash_amount` (Decimal), `reference_price` (Optional[Decimal]), `source_timestamp` (datetime, UTC), `row_hash` (str).
-5. **`EligibilitySuspensionRecord`:**
-   - Natural Key: `(symbol, suspension_start)`
-   - Fields: `symbol` (str), `isin` (str), `suspension_start` (date), `suspension_end` (Optional[date]), `reason` (str), `source_timestamp` (datetime, UTC), `row_hash` (str).
-6. **`PITFinancialStatementRecord`:**
-   - Natural Key: `(symbol, period_end_date, nature)`
-   - Fields: `symbol` (str), `isin` (str), `period_end_date` (date), `broadcast_timestamp` (datetime, UTC), `effective_date` (date), `nature` (str: `STANDALONE`/`CONSOLIDATED`), `pat` (Decimal), `eps_nominal` (Decimal), `eps_adjusted` (Decimal), `row_hash` (str).
-7. **`EligibleSecurityRecord`:**
-   - Fields: `symbol` (str), `isin` (str), `sector` (str), `close` (Decimal), `median_daily_traded_value_60d` (Decimal), `history_days` (int).
-8. **`PITUniverseSnapshot`:**
-   - Fields: `as_of_date` (date), `eligible_securities` (Tuple[EligibleSecurityRecord, ...]), `excluded_securities` (Dict[str, Tuple[ExclusionReason, ...]]), `universe_hash` (str), `is_real_data_blocked` (bool), `source_row_count` (int).
+   - Fields: `index_code` (str), `symbol` (str), `isin` (str), `effective_from` (date), `effective_to` (Optional[date]), `source_timestamp` (datetime, UTC), `ingestion_timestamp` (datetime, UTC), `source_identifier` (str), `circular_reference` (Optional[str]), `row_hash` (str).
+3. **`PITMembershipEventRecord`:**
+   - Fields: `index_code` (str), `symbol` (str), `isin` (str), `event_type` (str: `ADD`/`REMOVE`), `effective_date` (date), `source_timestamp` (datetime, UTC), `ingestion_timestamp` (datetime, UTC), `source_identifier` (str), `circular_reference` (Optional[str]), `row_hash` (str).
+4. **`PITSectorClassificationRecord`:**
+   - Fields: `symbol` (str), `isin` (str), `sector_code` (str), `effective_from` (date), `effective_to` (Optional[date]), `source_timestamp` (datetime, UTC), `ingestion_timestamp` (datetime, UTC), `source_identifier` (str), `industry_code` (Optional[str]), `sub_industry_code` (Optional[str]), `row_hash` (str).
+5. **`CorporateActionAdjustmentRecord`:**
+   - Fields: `action_id` (str), `symbol` (str), `isin` (str), `action_type` (CorporateActionType), `ex_date` (date), `record_date` (Optional[date]), `split_factor` (Decimal), `bonus_ratio_numerator` (Decimal), `bonus_ratio_denominator` (Decimal), `dividend_amount_inr` (Decimal), `total_return_factor` (Decimal), `source_timestamp` (datetime, UTC), `ingestion_timestamp` (datetime, UTC), `source_identifier` (str), `row_hash` (str).
+6. **`EligibilitySuspensionRecord`:**
+   - Fields: `symbol` (str), `isin` (str), `status` (EligibilityStatus), `effective_from` (date), `effective_to` (Optional[date]), `source_timestamp` (datetime, UTC), `ingestion_timestamp` (datetime, UTC), `source_identifier` (str), `reason` (Optional[str]), `row_hash` (str).
+7. **`UniverseBuildResult`:**
+   - Fields: `prediction_timestamp` (datetime, UTC), `prediction_date` (date), `eligible_symbols` (List[str]), `eligible_isins` (List[str]), `exclusions` (Dict[str, List[ExclusionReason]]), `evidence` (Dict[str, Dict[str, Any]]), `universe_hash` (str), `status` (UniverseBuildStatus), `config_version` (str), `dataset_version` (str), `blockers` (List[str]), `warnings` (List[str]).
 
-### 7.3 Row Hash Determination
+### 7.4 Row Hash Determination
 
 The deterministic SHA-256 row hash is computed as:
-$$\text{row\_hash} = \text{SHA256}\left(\sum_{k \in \text{sorted}(\text{keys})} k + \text{"="} + \text{normalize}(v) + \text{";"}\right)$$
-where `row_hash` is excluded from the input dictionary, dates are formatted `YYYY-MM-DD`, UTC datetimes are formatted `YYYY-MM-DDTHH:MM:SSZ`, Decimals are string-normalized, and floats/integers are strictly represented.
+$$\text{row\_hash} = \text{SHA256}\left(\text{JSON}_{\text{canonical}}\left(\{\text{sorted\_keys}\} \setminus \{\text{"row\_hash"}\}\right)\right)$$
+where dates are formatted `YYYY-MM-DD`, UTC datetimes are formatted `YYYY-MM-DDTHH:MM:SSZ`, Decimals are string-normalized, symbols/ISINs are uppercased, and values are serialized with sort keys and compact separators.

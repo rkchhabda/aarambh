@@ -11,7 +11,8 @@ Enforces:
 3. 252-day valid trading history minimum.
 4. 60-day Median Daily Traded Value >= INR 10 crore (INR 100,000,000).
 5. Minimum closing price >= INR 20.00.
-6. Zero reliance on legacy features.universe or Phase 6 scripts.
+6. The static legacy universe is prohibited as a Phase 7 universe provider and protected by automated boundary tests.
+7. Static current sector mappings may be used only in explicitly labelled synthetic tests or non-historical display contexts. Historical sector-relative research fails closed without valid point-in-time sector classification.
 """
 
 from collections import defaultdict
@@ -37,8 +38,13 @@ from phase7.data.contracts import (
 class UniverseBuildStatus(str, Enum):
     """Execution outcome status for point-in-time universe construction."""
     SUCCESS = "SUCCESS"
-    BLOCKED = "BLOCKED"
-    FAILED = "FAILED"
+    BLOCKED_MISSING_MEMBERSHIP = "BLOCKED_MISSING_MEMBERSHIP"
+    BLOCKED_MISSING_PRICE_LIQUIDITY = "BLOCKED_MISSING_PRICE_LIQUIDITY"
+    BLOCKED_MISSING_SECTOR_HISTORY = "BLOCKED_MISSING_SECTOR_HISTORY"
+    VALID_EMPTY_UNIVERSE = "VALID_EMPTY_UNIVERSE"
+    DATA_VALIDATION_FAILURE = "DATA_VALIDATION_FAILURE"
+    # Documented compatibility alias
+    BLOCKED = "BLOCKED_MISSING_MEMBERSHIP"
 
 
 @dataclass(frozen=True)
@@ -56,6 +62,15 @@ class UniverseBuildResult:
     dataset_version: str
     blockers: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
+
+    @property
+    def is_real_data_blocked(self) -> bool:
+        return self.status in (
+            UniverseBuildStatus.BLOCKED_MISSING_MEMBERSHIP,
+            UniverseBuildStatus.BLOCKED_MISSING_PRICE_LIQUIDITY,
+            UniverseBuildStatus.BLOCKED_MISSING_SECTOR_HISTORY,
+            UniverseBuildStatus.DATA_VALIDATION_FAILURE,
+        )
 
 
 class PointInTimeUniverseBuilder:
@@ -107,7 +122,7 @@ class PointInTimeUniverseBuilder:
         blockers: List[str] = []
         warnings: List[str] = []
 
-        # If real datasets are empty and not a unit test fixture, fail closed under BLK-01 / BLK-02
+        # If real datasets are empty and not a unit test fixture, fail closed under BLK-01 / BLK-02 / BLK-04
         if not membership_records and not is_mock_test:
             blockers.append("BLK-01: Point-in-time historical Nifty 500 constituent membership is missing.")
             return UniverseBuildResult(
@@ -118,7 +133,7 @@ class PointInTimeUniverseBuilder:
                 exclusions={},
                 evidence={},
                 universe_hash=hashlib.sha256(b"BLOCKED_BLK01").hexdigest(),
-                status=UniverseBuildStatus.BLOCKED,
+                status=UniverseBuildStatus.BLOCKED_MISSING_MEMBERSHIP,
                 config_version=self.config_version,
                 dataset_version=dataset_version,
                 blockers=blockers,
@@ -134,15 +149,34 @@ class PointInTimeUniverseBuilder:
                 exclusions={},
                 evidence={},
                 universe_hash=hashlib.sha256(b"BLOCKED_BLK02").hexdigest(),
-                status=UniverseBuildStatus.BLOCKED,
+                status=UniverseBuildStatus.BLOCKED_MISSING_PRICE_LIQUIDITY,
+                config_version=self.config_version,
+                dataset_version=dataset_version,
+                blockers=blockers,
+            )
+
+        if not sector_records and not is_mock_test:
+            blockers.append(
+                "BLK-04: Static current sector mappings are prohibited as historical fallback. "
+                "Historical sector-relative research remains blocked without valid point-in-time classification."
+            )
+            return UniverseBuildResult(
+                prediction_timestamp=pred_utc,
+                prediction_date=pred_date,
+                eligible_symbols=[],
+                eligible_isins=[],
+                exclusions={},
+                evidence={},
+                universe_hash=hashlib.sha256(b"BLOCKED_BLK04").hexdigest(),
+                status=UniverseBuildStatus.BLOCKED_MISSING_SECTOR_HISTORY,
                 config_version=self.config_version,
                 dataset_version=dataset_version,
                 blockers=blockers,
             )
 
         # 1. Identify active constituents on pred_date
-        # Candidate pool: all symbols in membership records
-        all_symbols: Set[str] = {m.symbol for m in membership_records}
+        membership_symbols = {m.symbol for m in membership_records}
+        all_symbols: Set[str] = membership_symbols | {p.symbol for p in price_records}
         symbol_to_isin: Dict[str, str] = {m.symbol: m.isin for m in membership_records}
         active_constituents: Set[str] = set()
 
@@ -184,8 +218,22 @@ class PointInTimeUniverseBuilder:
             reasons: List[ExclusionReason] = []
             ev: Dict[str, Any] = {"symbol": sym, "isin": symbol_to_isin.get(sym, "")}
 
+            # Check for future data
+            sym_raw_prices = [p for p in price_records if p.symbol == sym]
+            sym_raw_memberships = [m for m in membership_records if m.symbol == sym]
+            sym_raw_sectors = [s for s in sector_records if s.symbol == sym]
+            if (
+                any(p.source_timestamp > pred_utc for p in sym_raw_prices)
+                or any(m.source_timestamp > pred_utc for m in sym_raw_memberships)
+                or any(s.source_timestamp > pred_utc for s in sym_raw_sectors)
+            ):
+                reasons.append(ExclusionReason.FUTURE_DATA_DETECTED)
+
             # Rule 1: Point-in-Time Membership
-            if sym not in active_constituents:
+            if sym not in membership_symbols:
+                reasons.append(ExclusionReason.MISSING_MEMBERSHIP_HISTORY)
+                ev["membership_status"] = "MISSING_MEMBERSHIP_HISTORY"
+            elif sym not in active_constituents:
                 reasons.append(ExclusionReason.NOT_IN_PIT_UNIVERSE)
                 ev["membership_status"] = "INACTIVE_OR_EXCLUDED"
             else:
@@ -198,6 +246,16 @@ class PointInTimeUniverseBuilder:
 
             # Rule 3: Trading History & Minimum Price
             sym_prices = prices_by_symbol.get(sym, [])
+
+            # Check for duplicate date records with conflicting close
+            date_counts: Dict[date, List[DailyPriceRecord]] = defaultdict(list)
+            for p in sym_prices:
+                date_counts[p.trading_date].append(p)
+            for d, plist in date_counts.items():
+                if len(plist) > 1 and len(set(x.close for x in plist)) > 1:
+                    reasons.append(ExclusionReason.DUPLICATE_SECURITY_RECORD)
+                    break
+
             # Deduplicate by trading date (keep latest)
             date_map: Dict[date, DailyPriceRecord] = {p.trading_date: p for p in sym_prices}
             sorted_dates = sorted(date_map.keys())
@@ -302,11 +360,19 @@ class PointInTimeUniverseBuilder:
             json.dumps(hash_payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
         ).hexdigest()
 
-        # Fail closed if universe is completely empty in production
-        status = UniverseBuildStatus.SUCCESS
-        if not eligible_symbols and not is_mock_test:
-            status = UniverseBuildStatus.BLOCKED
-            blockers.append("Universe is empty. Fail closed.")
+        # Determine final status
+        if eligible_symbols:
+            status = UniverseBuildStatus.SUCCESS
+        else:
+            if is_mock_test and not membership_records:
+                status = UniverseBuildStatus.BLOCKED_MISSING_MEMBERSHIP
+            elif is_mock_test and not price_records:
+                status = UniverseBuildStatus.BLOCKED_MISSING_PRICE_LIQUIDITY
+            elif is_mock_test and not sector_records:
+                status = UniverseBuildStatus.BLOCKED_MISSING_SECTOR_HISTORY
+            else:
+                status = UniverseBuildStatus.VALID_EMPTY_UNIVERSE
+                warnings.append("Universe is valid but empty under active filters.")
 
         return UniverseBuildResult(
             prediction_timestamp=pred_utc,

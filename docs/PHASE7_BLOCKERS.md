@@ -14,7 +14,7 @@
 | **BLK-01** | `CRITICAL` | Absence of Point-in-Time Historical Nifty 500 Constituent Membership | `phase7/data/universe.py` | **CONTRACT_READY_REAL_DATA_BLOCKED** | Contracts & builder implemented; awaiting real membership data |
 | **BLK-02** | `CRITICAL` | Missing OHLCV Prices and Daily Traded Value (Turnover) | `phase7/data/loaders.py`, `phase7/portfolio/costs.py` | **CONTRACT_READY_REAL_DATA_BLOCKED** | Contracts & loaders implemented; awaiting real OHLCV data |
 | **BLK-03** | `REQUIRED_BEFORE_MODELING` | Missing Comprehensive Point-in-Time Financial Statements (Balance Sheet, Cash Flow) | `phase7/features/quality.py`, `phase7/features/valuation.py` | **BLOCKED** | SUE feature is available; specify schemas and validators for balance-sheet ratios |
-| **BLK-04** | `REQUIRED_BEFORE_MODELING` | Static Sector Classification Lacks Historical Reclassification Timestamps | `phase7/data/contracts.py`, `phase7/targets/engine.py` | **BLOCKED** | Use frozen static mapping for interim tests; fail closed on missing dates |
+| **BLK-04** | `REQUIRED_BEFORE_MODELING` | Static Sector Classification Lacks Historical Reclassification Timestamps | `phase7/data/contracts.py`, `phase7/targets/engine.py` | **BLOCKED** | Static current sector mappings are prohibited as historical fallback. Historical sector-relative research remains blocked without valid point-in-time classification or an approved preregistration amendment. |
 | **BLK-05** | `REQUIRED_BEFORE_MODELING` | Absence of Historical Analyst Consensus Estimates & Revisions | `phase7/features/analyst.py` | **BLOCKED** | Formal exclusion of Family 4 in initial model iteration |
 | **BLK-06** | `REQUIRED_BEFORE_MODELING` | Python 3.14.4 Runtime C-Level Access Violation in Datetime Operations | `tests/phase7/`, CI runner | **Mitigation defined through Python 3.12 standardization; resolution pending creation and verification of .venv-phase7.** | Use standard Python library structures; run non-crashing tests |
 | **BLK-07** | `REQUIRED_BEFORE_HOLDOUT` | Phase 7 Physical Sealed Holdout Vault Specification & Encryption Protocol | `docs/PHASE7_HOLDOUT_PROTOCOL.md` | **PENDING GATE 4** | Draft protocol document; zero access to Phase 6 vault |
@@ -26,8 +26,7 @@
 
 ### BLK-01: Absence of Point-in-Time Historical Nifty 500 Constituent Membership
 - **Blocker ID:** `BLK-01`
-- **Severity:** `CRITICAL`
-- **Missing Input or Problem:** The repository possesses no machine-readable dataset recording historical Nifty 500 constituent additions, deletions, and effective dates across 2016–2026. Only a static 138-ticker list (`features/universe.py`) exists.
+- **Missing Input or Problem:** The repository possesses no machine-readable dataset recording historical Nifty 500 constituent additions, deletions, and effective dates across 2016–2026. The static legacy universe is prohibited as a Phase 7 universe provider and protected by automated boundary tests. Only a static 138-ticker list (`features/universe.py`) exists.
 - **Why It Matters:** Evaluating models using current or recent index members retrospectively introduces severe survivorship bias and retrospective membership leakage, violating Non-Negotiable Rule 5 and Gate 1 Data Integrity requirements.
 - **Evidence:** Comprehensive repository search for index membership history returned zero constituent change logs. `features/universe.py` explicitly states: *"Canonical tradable universe (Nifty 100, de-listed/invalid names removed)... 138 tickers"*.
 - **Files or Modules Affected:** `phase7/data/universe.py`, `phase7/validation/walk_forward.py`.
@@ -72,14 +71,14 @@
 ### BLK-04: Static Sector Classification Lacks Historical Reclassification Timestamps
 - **Blocker ID:** `BLK-04`
 - **Severity:** `REQUIRED_BEFORE_MODELING`
-- **Missing Input or Problem:** `data/multi/ticker_sectors.json` records single static sectors and industries for 138 tickers without effective start/end dates.
+- **Missing Input or Problem:** `data/multi/ticker_sectors.json` records single static sectors and industries for 138 tickers without effective start/end dates. Static current sector mappings are prohibited as historical fallback. Historical sector-relative research remains blocked without valid point-in-time classification or an approved preregistration amendment.
 - **Why It Matters:** Sector-relative return target calculation ($R_{i, 20d} - R_{\text{sector}, 20d}$) and sector concentration constraints ($\le 25\%$) rely on accurate sector classification. Reclassifications (e.g. index restructuring) must not be applied backwards.
 - **Evidence:** `ticker_sectors.json` has schema `{"TICKER": {"sector": "...", "industry": "..."}}` with no timestamps.
 - **Files or Modules Affected:** `phase7/data/contracts.py`, `phase7/targets/engine.py`, `phase7/portfolio/constraints.py`.
-- **Exact Information or Action Required from Owner:** Confirm whether NSE/AMFI historical sector classification master is available, or approve frozen baseline sector mapping with fail-closed exclusion for unmapped stocks.
-- **Safe Interim Work Possible:** Implement `SectorMappingRecord` contract supporting temporal validity ranges (`valid_from`, `valid_to`).
+- **Exact Information or Action Required from Owner:** Confirm whether NSE/AMFI historical sector classification master is available, or approve preregistration amendment.
+- **Safe Interim Work Possible:** Implement `PITSectorClassificationRecord` contract supporting temporal validity ranges (`effective_from`, `effective_to`).
 - **Resolution Test:** Unit test asserting that sector assignments query against `effective_date`.
-- **Current Status:** **BLOCKED** for temporal sector changes; fallback to static frozen mapping requires preregistered documentation.
+- **Current Status:** **BLOCKED.** Static current sector mappings are prohibited as historical fallback. Historical sector-relative research remains blocked without valid point-in-time classification or an approved preregistration amendment.
 
 ---
 

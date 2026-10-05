@@ -23,10 +23,16 @@ from phase7.data.contracts import (
     EligibilityStatus,
     EligibilitySuspensionRecord,
     ExclusionReason,
+    PITCorporateAnnouncementRecord,
+    PITFinancialStatementRecord,
+    PITMembershipEventRecord,
     PITMembershipRecord,
+    PITSectorClassificationRecord,
+    PITShareholdingRecord,
     PriceAdjustmentState,
     TradedValueStatus,
     compute_row_hash,
+    convert_membership_events_to_intervals,
 )
 from phase7.data.loaders import parse_iso_datetime
 
@@ -243,6 +249,272 @@ class TestPointInTimeIntegrity(unittest.TestCase):
                 row_hash="0000000000000000000000000000000000000000000000000000000000000000",
             )
         self.assertIn("Supplied row_hash mismatch", str(ctx.exception))
+
+    # --------------------------------------------------------------------------
+    # Membership ADD/REMOVE Event Conversion Tests
+    # --------------------------------------------------------------------------
+
+    def test_membership_conversion_normal_add_then_remove(self):
+        """Normal ADD then REMOVE creates validated half-open interval [from, to)."""
+        events = [
+            PITMembershipEventRecord(
+                index_code="NIFTY500",
+                symbol="WIPRO",
+                isin="INE075A01022",
+                effective_date=date(2020, 1, 1),
+                action="ADD",
+                source_timestamp=datetime(2019, 12, 15, 10, 0, tzinfo=timezone.utc),
+                ingestion_timestamp=datetime(2019, 12, 15, 11, 0, tzinfo=timezone.utc),
+                source_identifier="CIRC_ADD",
+            ),
+            PITMembershipEventRecord(
+                index_code="NIFTY500",
+                symbol="WIPRO",
+                isin="INE075A01022",
+                effective_date=date(2021, 6, 1),
+                action="REMOVE",
+                source_timestamp=datetime(2021, 5, 15, 10, 0, tzinfo=timezone.utc),
+                ingestion_timestamp=datetime(2021, 5, 15, 11, 0, tzinfo=timezone.utc),
+                source_identifier="CIRC_REM",
+            ),
+        ]
+        intervals, errors = convert_membership_events_to_intervals(events)
+        self.assertEqual(len(errors), 0)
+        self.assertEqual(len(intervals), 1)
+        iv = intervals[0]
+        self.assertEqual(iv.effective_from, date(2020, 1, 1))
+        self.assertEqual(iv.effective_to, date(2021, 6, 1))
+        self.assertTrue(iv.is_active_on(date(2020, 1, 1)))
+        self.assertTrue(iv.is_active_on(date(2021, 5, 31)))
+        self.assertFalse(iv.is_active_on(date(2021, 6, 1)))
+
+    def test_membership_conversion_open_ended_addition(self):
+        """Open-ended ADD produces interval with effective_to=None."""
+        events = [
+            PITMembershipEventRecord(
+                index_code="NIFTY500",
+                symbol="SBIN",
+                isin="INE062A01020",
+                effective_date=date(2018, 1, 1),
+                action="ADD",
+                source_timestamp=datetime(2017, 12, 1, 10, 0, tzinfo=timezone.utc),
+                ingestion_timestamp=datetime(2017, 12, 1, 11, 0, tzinfo=timezone.utc),
+                source_identifier="CIRC_ADD",
+            ),
+        ]
+        intervals, errors = convert_membership_events_to_intervals(events)
+        self.assertEqual(len(errors), 0)
+        self.assertEqual(len(intervals), 1)
+        self.assertIsNone(intervals[0].effective_to)
+        self.assertTrue(intervals[0].is_active_on(date(2026, 1, 1)))
+
+    def test_membership_conversion_removal_without_prior_addition_fails_closed(self):
+        """REMOVE without prior ADD fails closed with error and zero intervals."""
+        events = [
+            PITMembershipEventRecord(
+                index_code="NIFTY500",
+                symbol="UNLISTED",
+                isin="INE999A01099",
+                effective_date=date(2021, 1, 1),
+                action="REMOVE",
+                source_timestamp=datetime(2020, 12, 1, 10, 0, tzinfo=timezone.utc),
+                ingestion_timestamp=datetime(2020, 12, 1, 11, 0, tzinfo=timezone.utc),
+                source_identifier="CIRC_REM",
+            ),
+        ]
+        intervals, errors = convert_membership_events_to_intervals(events)
+        self.assertEqual(len(intervals), 0)
+        self.assertTrue(any("Removal without prior addition" in e for e in errors))
+
+    def test_membership_conversion_duplicate_addition_fails_closed(self):
+        """Duplicate ADD while already active fails closed."""
+        events = [
+            PITMembershipEventRecord(
+                index_code="NIFTY500",
+                symbol="AXISBANK",
+                isin="INE238A01034",
+                effective_date=date(2020, 1, 1),
+                action="ADD",
+                source_timestamp=datetime(2019, 12, 1, 10, 0, tzinfo=timezone.utc),
+                ingestion_timestamp=datetime(2019, 12, 1, 11, 0, tzinfo=timezone.utc),
+                source_identifier="CIRC_ADD1",
+            ),
+            PITMembershipEventRecord(
+                index_code="NIFTY500",
+                symbol="AXISBANK",
+                isin="INE238A01034",
+                effective_date=date(2020, 6, 1),
+                action="ADD",
+                source_timestamp=datetime(2020, 5, 1, 10, 0, tzinfo=timezone.utc),
+                ingestion_timestamp=datetime(2020, 5, 1, 11, 0, tzinfo=timezone.utc),
+                source_identifier="CIRC_ADD2",
+            ),
+        ]
+        intervals, errors = convert_membership_events_to_intervals(events)
+        self.assertEqual(len(intervals), 0)
+        self.assertTrue(any("Duplicate addition" in e for e in errors))
+
+    def test_membership_conversion_re_addition_after_removal(self):
+        """Re-addition after removal produces two non-overlapping intervals."""
+        events = [
+            PITMembershipEventRecord(
+                index_code="NIFTY500",
+                symbol="TATAMOTORS",
+                isin="INE155A01022",
+                effective_date=date(2020, 1, 1),
+                action="ADD",
+                source_timestamp=datetime(2019, 12, 1, 10, 0, tzinfo=timezone.utc),
+                ingestion_timestamp=datetime(2019, 12, 1, 11, 0, tzinfo=timezone.utc),
+                source_identifier="ADD1",
+            ),
+            PITMembershipEventRecord(
+                index_code="NIFTY500",
+                symbol="TATAMOTORS",
+                isin="INE155A01022",
+                effective_date=date(2021, 1, 1),
+                action="REMOVE",
+                source_timestamp=datetime(2020, 12, 1, 10, 0, tzinfo=timezone.utc),
+                ingestion_timestamp=datetime(2020, 12, 1, 11, 0, tzinfo=timezone.utc),
+                source_identifier="REM1",
+            ),
+            PITMembershipEventRecord(
+                index_code="NIFTY500",
+                symbol="TATAMOTORS",
+                isin="INE155A01022",
+                effective_date=date(2022, 1, 1),
+                action="ADD",
+                source_timestamp=datetime(2021, 12, 1, 10, 0, tzinfo=timezone.utc),
+                ingestion_timestamp=datetime(2021, 12, 1, 11, 0, tzinfo=timezone.utc),
+                source_identifier="ADD2",
+            ),
+        ]
+        intervals, errors = convert_membership_events_to_intervals(events)
+        self.assertEqual(len(errors), 0)
+        self.assertEqual(len(intervals), 2)
+        self.assertEqual(intervals[0].effective_from, date(2020, 1, 1))
+        self.assertEqual(intervals[0].effective_to, date(2021, 1, 1))
+        self.assertEqual(intervals[1].effective_from, date(2022, 1, 1))
+        self.assertIsNone(intervals[1].effective_to)
+
+    def test_membership_conversion_same_time_conflicting_events(self):
+        """Conflicting ADD and REMOVE on same effective date fails closed."""
+        events = [
+            PITMembershipEventRecord(
+                index_code="NIFTY500",
+                symbol="CONFLICT",
+                isin="INE888A01088",
+                effective_date=date(2021, 1, 1),
+                action="ADD",
+                source_timestamp=datetime(2020, 12, 1, 10, 0, tzinfo=timezone.utc),
+                ingestion_timestamp=datetime(2020, 12, 1, 11, 0, tzinfo=timezone.utc),
+                source_identifier="ADD_CONF",
+            ),
+            PITMembershipEventRecord(
+                index_code="NIFTY500",
+                symbol="CONFLICT",
+                isin="INE888A01088",
+                effective_date=date(2021, 1, 1),
+                action="REMOVE",
+                source_timestamp=datetime(2020, 12, 1, 10, 0, tzinfo=timezone.utc),
+                ingestion_timestamp=datetime(2020, 12, 1, 11, 0, tzinfo=timezone.utc),
+                source_identifier="REM_CONF",
+            ),
+        ]
+        intervals, errors = convert_membership_events_to_intervals(events)
+        self.assertEqual(len(intervals), 0)
+        self.assertTrue(any("Conflicting same-day events" in e for e in errors))
+
+    def test_membership_conversion_future_events_ignored_at_prediction_time(self):
+        """Events disseminated after prediction timestamp are excluded from interval conversion."""
+        events = [
+            PITMembershipEventRecord(
+                index_code="NIFTY500",
+                symbol="FUTURE_ADD",
+                isin="INE777A01077",
+                effective_date=date(2022, 1, 1),
+                action="ADD",
+                source_timestamp=datetime(2022, 1, 5, 10, 0, tzinfo=timezone.utc),  # Source after prediction
+                ingestion_timestamp=datetime(2022, 1, 5, 11, 0, tzinfo=timezone.utc),
+                source_identifier="FUTURE_CIRC",
+            ),
+        ]
+        pred_ts = datetime(2022, 1, 1, 9, 0, tzinfo=timezone.utc)
+        intervals, errors = convert_membership_events_to_intervals(events, prediction_timestamp=pred_ts)
+        self.assertEqual(len(intervals), 0)
+        self.assertTrue(any("Future source timestamp ignored" in e for e in errors))
+
+    # --------------------------------------------------------------------------
+    # Point-in-Time Sector Classification Tests
+    # --------------------------------------------------------------------------
+
+    def test_sector_classification_pit_checks(self):
+        """Point-in-time sector classification enforces interval boundaries with no current fallback."""
+        sec_rec = PITSectorClassificationRecord(
+            symbol="INFY",
+            isin="INE009A01021",
+            sector_code="Technology",
+            effective_from=date(2020, 1, 1),
+            effective_to=date(2024, 1, 1),
+            source_timestamp=datetime(2019, 12, 1, 10, 0, tzinfo=timezone.utc),
+            ingestion_timestamp=datetime(2019, 12, 1, 11, 0, tzinfo=timezone.utc),
+            source_identifier="AMFI_2020",
+        )
+        # Prior to effective_from -> False
+        self.assertFalse(sec_rec.is_active_on(date(2019, 12, 31)))
+        # Within interval -> True
+        self.assertTrue(sec_rec.is_active_on(date(2020, 1, 1)))
+        self.assertTrue(sec_rec.is_active_on(date(2023, 12, 31)))
+        # On or after effective_to -> False (no forward bleed)
+        self.assertFalse(sec_rec.is_active_on(date(2024, 1, 1)))
+
+        # Future classification source timestamp fails is_active_as_of
+        pred_early = datetime(2019, 11, 1, 10, 0, tzinfo=timezone.utc)
+        self.assertFalse(sec_rec.is_active_as_of(pred_early))
+
+    # --------------------------------------------------------------------------
+    # Gated Interface Contracts Tests
+    # --------------------------------------------------------------------------
+
+    def test_gated_interface_contracts_timestamp_distinction(self):
+        """Shareholding, Announcement, and Financial interfaces distinguish all required timestamps."""
+        t_pub = datetime(2024, 4, 15, 10, 0, tzinfo=timezone.utc)
+        t_first = datetime(2024, 4, 15, 10, 5, tzinfo=timezone.utc)
+        t_ing = datetime(2024, 4, 15, 11, 0, tzinfo=timezone.utc)
+        t_event = datetime(2024, 4, 14, 18, 0, tzinfo=timezone.utc)
+
+        # 1. Shareholding record
+        sh_rec = PITShareholdingRecord(
+            symbol="TCS",
+            isin="INE467B01029",
+            reporting_period_end=date(2024, 3, 31),
+            publication_timestamp=t_pub,
+            first_seen_timestamp=t_first,
+            ingestion_timestamp=t_ing,
+            source_identifier="BSE_SHP",
+            promoter_holding_percent=Decimal("72.05"),
+        )
+        self.assertEqual(sh_rec.reporting_period_end, date(2024, 3, 31))
+        self.assertEqual(sh_rec.publication_timestamp, t_pub)
+        self.assertEqual(sh_rec.first_seen_timestamp, t_first)
+        self.assertEqual(sh_rec.ingestion_timestamp, t_ing)
+
+        # 2. Corporate Announcement record
+        ann_rec = PITCorporateAnnouncementRecord(
+            symbol="TCS",
+            isin="INE467B01029",
+            event_timestamp=t_event,
+            exchange_dissemination_timestamp=t_pub,
+            first_seen_timestamp=t_first,
+            ingestion_timestamp=t_ing,
+            category="BOARD_MEETING",
+            source_identifier="NSE_ANN",
+            source_document_identifier="DOC_001",
+            source_document_hash="hash001",
+        )
+        self.assertEqual(ann_rec.event_timestamp, t_event)
+        self.assertEqual(ann_rec.exchange_dissemination_timestamp, t_pub)
+        self.assertEqual(ann_rec.first_seen_timestamp, t_first)
+        self.assertEqual(ann_rec.ingestion_timestamp, t_ing)
 
 
 if __name__ == "__main__":
