@@ -284,3 +284,30 @@ Upon receiving explicit owner approval (`APPROVE MILESTONE 1`), Milestone 1 will
 14. `tests/phase7/test_config_schema.py` (Automated CI test verifying validity of `config/phase7.yaml`).
 
 No quantitative models will be trained, and no market data will be ingested during Milestone 1.
+
+---
+
+## 8. Milestone 2 Delivered Artifacts & Verification Status
+
+Milestone 2 delivered canonical data contracts, point-in-time universe interfaces, corporate action adjustments, and fail-closed loaders under the status **`CONTRACT_READY_REAL_DATA_BLOCKED`**:
+
+### Delivered Modules (`phase7/data/`):
+1. `phase7/data/__init__.py`: Package export initialization.
+2. `phase7/data/contracts.py`: Frozen dataclasses (`DailyPriceRecord`, `PITMembershipRecord`, `PITSectorClassificationRecord`, `CorporateActionRecord`, `EligibilitySuspensionRecord`, `PITFinancialStatementRecord`, `EligibleSecurityRecord`, `PITUniverseSnapshot`, `DatasetAuditSummary`), enums (`TradedValueStatus`, `PriceAdjustmentState`, `CorporateActionType`, `ExclusionReason`), and deterministic SHA-256 `compute_row_hash`.
+3. `phase7/data/corporate_actions.py`: `CorporateActionEngine` handling splits, bonuses, cash dividends, and total-return factor adjustments with rejection of double adjustment and fail-closed routing for complex actions.
+4. `phase7/data/universe.py`: `PointInTimeUniverseBuilder` implementing 252-day history, 60-day MDTV $\ge$ INR 10 crore, and price $\ge$ INR 20 filters, multi-reason exclusion codes, deterministic universe hash, and explicit `REAL_DATA_BLOCKED` output when real historical data is missing.
+5. `phase7/data/loaders.py`: Streaming fail-closed CSV and JSONL loaders (`CSVDataLoader`, `JSONLinesDataLoader`) tracking 1-based row numbers, rejection reasons, non-zero coercion of malformed values, and duplicate key detection.
+6. `phase7/data/audit.py`: Dataset audit report generator capturing structural summary and explicitly prohibiting return or alpha reporting.
+
+### Delivered Test Suites (`tests/phase7/`):
+1. `tests/phase7/test_point_in_time_integrity.py`: 13 tests verifying deterministic SHA-256 hashing, UTC normalization, open-ended intervals, point-in-time membership boundaries, and hash tampering detection.
+2. `tests/phase7/test_no_future_features.py`: 4 tests verifying future price isolation, future sector backfill prevention, future source timestamp rejection, and quarterly period-end vs availability date separation.
+3. `tests/phase7/test_universe_survivorship.py`: 6 tests verifying survivorship filters, 252-day history, liquidity thresholding, multi-reason exclusion tracking, trading suspension handling, and explicit `REAL_DATA_BLOCKED` status.
+4. `tests/phase7/test_corporate_action_adjustments.py`: 5 tests verifying stock split ratios, bonus ratios, cash dividend total return adjustments, double-adjustment rejection, and fail-closed complex corporate action routing.
+5. `tests/phase7/test_data_loaders.py`: 4 tests verifying 1-based CSV row tracking, rejection reason preservation, non-zero coercion, zero investment performance reporting in audit reports, and zero forbidden imports.
+
+### Verification Summary:
+- Phase 7 unit tests: **32 new tests, 45 total passing** (`pytest tests/phase7/ -v`).
+- Phase 6 safeguard tests: **4 passing** (`pytest test_phase6_safeguards.py -v`).
+- Total passing tests: **49 of 49**.
+- Real Data Readiness: **`CONTRACT_READY_REAL_DATA_BLOCKED`** (Gate 1 real-data evaluation blocked pending BLK-01 and BLK-02).

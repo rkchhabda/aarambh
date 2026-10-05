@@ -135,3 +135,62 @@ Verified quarterly financial statement disclosures.
 | `mom_consistency` | Momentum | 252 days | Fraction of positive calendar months over trailing year | $\frac{1}{12}\sum_{m=1}^{12} \mathbb{I}(R_m > 0)$ |
 | `vol_confirmed_mom` | Momentum | 63 days | 63-day price return multiplied by volume trend ratio | $R_{63} \cdot \frac{\text{SMA}_{20}(V)}{\text{SMA}_{63}(V)}$ |
 | `sue_zscore` | Fundamentals | 8 quarters | Standardized unexpected earnings | $\frac{EPS_{\text{adj}, t} - EPS_{\text{adj}, t-4}}{\text{std}_{8}(\Delta EPS)}$ |
+
+---
+
+## 7. Python Canonical Data Contracts (`phase7.data.contracts`)
+
+Implemented as immutable, frozen dataclasses with strict type validation, `Decimal` precision for financial values, timezone-aware UTC `datetime` objects, and deterministic SHA-256 row hashing.
+
+### 7.1 Core Enumerations
+
+1. **`TradedValueStatus`:**
+   - `REPORTED`: Exchange-reported turnover in INR.
+   - `ESTIMATED_CLOSE_X_VOLUME`: Estimated product of Close and Volume (prohibited for primary liquidity gate).
+   - `UNAVAILABLE`: Missing turnover.
+2. **`PriceAdjustmentState`:**
+   - `UNADJUSTED`: Raw exchange prices.
+   - `SPLIT_AND_BONUS_ADJUSTED`: Adjusted for stock splits and bonus issues.
+   - `TOTAL_RETURN_ADJUSTED`: Adjusted for splits, bonuses, and cash dividend reinvestment.
+3. **`CorporateActionType`:**
+   - `SPLIT`, `BONUS`, `CASH_DIVIDEND`, `SPECIAL_DIVIDEND`, `RIGHTS_ISSUE`, `SPINOFF`, `AMALGAMATION`, `FACE_VALUE_SPLIT`.
+4. **`ExclusionReason`:**
+   - `NOT_IN_PIT_UNIVERSE`: Security was not an active constituent of Nifty 500 on date $t$.
+   - `INSUFFICIENT_HISTORY`: Less than 252 trading sessions of verified history prior to date $t$.
+   - `BELOW_TURNOVER_THRESHOLD`: 60-day median daily traded value strictly below INR 10 crore.
+   - `BELOW_PRICE_THRESHOLD`: Previous close strictly below INR 20.00 (penny stock filter).
+   - `TRADING_SUSPENDED`: Security subject to regulatory, GSM/ASM, or exchange trading halt on date $t$.
+   - `MISSING_PRICE_DATA`: Required price observations absent on date $t$.
+   - `CIRCUIT_FILTER_LOCKED`: Security hit daily price band circuit filter preventing trading execution.
+   - `UNVERIFIED_CORPORATE_ACTION`: Unresolved corporate action lacking verified adjustment multiplier.
+
+### 7.2 Dataclass Schema Specifications
+
+1. **`DailyPriceRecord`:**
+   - Natural Key: `(symbol, date, adjustment_state)`
+   - Fields: `symbol` (str), `isin` (str, 12-char), `date` (date), `open` (Decimal), `high` (Decimal), `low` (Decimal), `close` (Decimal), `volume` (int), `traded_value` (Decimal), `traded_value_status` (TradedValueStatus), `split_adj_factor` (Decimal), `div_adj_factor` (Decimal), `adjustment_state` (PriceAdjustmentState), `vwap` (Optional[Decimal]), `source_timestamp` (datetime, UTC), `row_hash` (str).
+2. **`PITMembershipRecord`:**
+   - Natural Key: `(symbol, effective_date, action)`
+   - Fields: `symbol` (str), `isin` (str), `effective_date` (date), `action` (str: `ADD`/`REMOVE`), `circular_number` (Optional[str]), `source_timestamp` (datetime, UTC), `ingestion_timestamp` (datetime, UTC), `row_hash` (str).
+3. **`PITSectorClassificationRecord`:**
+   - Natural Key: `(symbol, valid_from)`
+   - Fields: `symbol` (str), `isin` (str), `sector` (str), `industry` (str), `valid_from` (date), `valid_to` (Optional[date]), `source_timestamp` (datetime, UTC), `row_hash` (str).
+4. **`CorporateActionRecord`:**
+   - Natural Key: `(symbol, ex_date, action_type)`
+   - Fields: `symbol` (str), `isin` (str), `ex_date` (date), `record_date` (Optional[date]), `action_type` (CorporateActionType), `multiplier` (Decimal), `cash_amount` (Decimal), `reference_price` (Optional[Decimal]), `source_timestamp` (datetime, UTC), `row_hash` (str).
+5. **`EligibilitySuspensionRecord`:**
+   - Natural Key: `(symbol, suspension_start)`
+   - Fields: `symbol` (str), `isin` (str), `suspension_start` (date), `suspension_end` (Optional[date]), `reason` (str), `source_timestamp` (datetime, UTC), `row_hash` (str).
+6. **`PITFinancialStatementRecord`:**
+   - Natural Key: `(symbol, period_end_date, nature)`
+   - Fields: `symbol` (str), `isin` (str), `period_end_date` (date), `broadcast_timestamp` (datetime, UTC), `effective_date` (date), `nature` (str: `STANDALONE`/`CONSOLIDATED`), `pat` (Decimal), `eps_nominal` (Decimal), `eps_adjusted` (Decimal), `row_hash` (str).
+7. **`EligibleSecurityRecord`:**
+   - Fields: `symbol` (str), `isin` (str), `sector` (str), `close` (Decimal), `median_daily_traded_value_60d` (Decimal), `history_days` (int).
+8. **`PITUniverseSnapshot`:**
+   - Fields: `as_of_date` (date), `eligible_securities` (Tuple[EligibleSecurityRecord, ...]), `excluded_securities` (Dict[str, Tuple[ExclusionReason, ...]]), `universe_hash` (str), `is_real_data_blocked` (bool), `source_row_count` (int).
+
+### 7.3 Row Hash Determination
+
+The deterministic SHA-256 row hash is computed as:
+$$\text{row\_hash} = \text{SHA256}\left(\sum_{k \in \text{sorted}(\text{keys})} k + \text{"="} + \text{normalize}(v) + \text{";"}\right)$$
+where `row_hash` is excluded from the input dictionary, dates are formatted `YYYY-MM-DD`, UTC datetimes are formatted `YYYY-MM-DDTHH:MM:SSZ`, Decimals are string-normalized, and floats/integers are strictly represented.

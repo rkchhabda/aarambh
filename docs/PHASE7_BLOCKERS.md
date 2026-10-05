@@ -11,12 +11,12 @@
 
 | Blocker ID | Severity | Description | Modules Affected | Current Status | Safe Interim Work |
 |---|---|---|---|---|---|
-| **BLK-01** | `CRITICAL` | Absence of Point-in-Time Historical Nifty 500 Constituent Membership | `phase7/data/universe.py` | **BLOCKED** | Build interface, schema, mock unit fixtures, exclusion rules |
-| **BLK-02** | `CRITICAL` | Missing OHLCV Prices and Daily Traded Value (Turnover) | `phase7/data/loaders.py`, `phase7/portfolio/costs.py` | **BLOCKED** | Define schema, liquidity threshold logic, unit test fixtures |
+| **BLK-01** | `CRITICAL` | Absence of Point-in-Time Historical Nifty 500 Constituent Membership | `phase7/data/universe.py` | **CONTRACT_READY_REAL_DATA_BLOCKED** | Contracts & builder implemented; awaiting real membership data |
+| **BLK-02** | `CRITICAL` | Missing OHLCV Prices and Daily Traded Value (Turnover) | `phase7/data/loaders.py`, `phase7/portfolio/costs.py` | **CONTRACT_READY_REAL_DATA_BLOCKED** | Contracts & loaders implemented; awaiting real OHLCV data |
 | **BLK-03** | `REQUIRED_BEFORE_MODELING` | Missing Comprehensive Point-in-Time Financial Statements (Balance Sheet, Cash Flow) | `phase7/features/quality.py`, `phase7/features/valuation.py` | **BLOCKED** | SUE feature is available; specify schemas and validators for balance-sheet ratios |
 | **BLK-04** | `REQUIRED_BEFORE_MODELING` | Static Sector Classification Lacks Historical Reclassification Timestamps | `phase7/data/contracts.py`, `phase7/targets/engine.py` | **BLOCKED** | Use frozen static mapping for interim tests; fail closed on missing dates |
 | **BLK-05** | `REQUIRED_BEFORE_MODELING` | Absence of Historical Analyst Consensus Estimates & Revisions | `phase7/features/analyst.py` | **BLOCKED** | Formal exclusion of Family 4 in initial model iteration |
-| **BLK-06** | `REQUIRED_BEFORE_MODELING` | Python 3.14.4 Runtime C-Level Access Violation in Datetime Operations | `tests/phase7/`, CI runner | **ACTIVE RISK** | Pin Python 3.11/3.12 virtual environment for test and research execution |
+| **BLK-06** | `REQUIRED_BEFORE_MODELING` | Python 3.14.4 Runtime C-Level Access Violation in Datetime Operations | `tests/phase7/`, CI runner | **Mitigation defined through Python 3.12 standardization; resolution pending creation and verification of .venv-phase7.** | Use standard Python library structures; run non-crashing tests |
 | **BLK-07** | `REQUIRED_BEFORE_HOLDOUT` | Phase 7 Physical Sealed Holdout Vault Specification & Encryption Protocol | `docs/PHASE7_HOLDOUT_PROTOCOL.md` | **PENDING GATE 4** | Draft protocol document; zero access to Phase 6 vault |
 | **BLK-08** | `OPTIONAL_ENHANCEMENT` | Absence of Machine-Readable Corporate Announcement Feed with First-Seen Timestamps | `phase7/features/announcements.py` | **DEFERRED** | Document schema; mark feature family inactive in Milestone 1 |
 
@@ -32,9 +32,9 @@
 - **Evidence:** Comprehensive repository search for index membership history returned zero constituent change logs. `features/universe.py` explicitly states: *"Canonical tradable universe (Nifty 100, de-listed/invalid names removed)... 138 tickers"*.
 - **Files or Modules Affected:** `phase7/data/universe.py`, `phase7/validation/walk_forward.py`.
 - **Exact Information or Action Required from Owner:** Provide point-in-time Nifty 500 historical constituent membership table (columns: `effective_date`, `symbol`, `action` [ADD/REMOVE], `source_timestamp`) or authorize sourcing via official NSE historical index rebalancing circulars.
-- **Safe Interim Work Possible:** Implement canonical schema (`ConstituentMembershipRecord`), universe validator, exclusion reason codes (`NOT_IN_PIT_UNIVERSE`), and unit-test fixtures.
+- **Safe Interim Work Possible:** Implement canonical schema (`PITMembershipRecord`), universe validator, exclusion reason codes (`NOT_IN_PIT_UNIVERSE`), fail-closed builder (`PointInTimeUniverseBuilder`), and unit-test fixtures. (Completed in Milestone 2).
 - **Resolution Test:** Verification script testing that the universe for date $t$ excludes securities added to Nifty 500 at $t+k$ and includes securities active at $t$ even if later delisted.
-- **Current Status:** **BLOCKED.** Modeling cannot commence on actual data until PIT membership is supplied.
+- **Current Status:** **CONTRACT_READY_REAL_DATA_BLOCKED.** Canonical contract (`PITMembershipRecord`) and universe builder interface implemented. Real historical Nifty 500 constituent addition/deletion records are unavailable; Gate 1 real-data evaluation cannot proceed until genuine point-in-time data is ingested.
 
 ---
 
@@ -49,9 +49,9 @@
 - **Evidence:** `df.columns` in `data/multi/historical_10y_raw.csv` returns strictly `['date', 'ticker', 'Close']`.
 - **Files or Modules Affected:** `phase7/data/loaders.py`, `phase7/portfolio/costs.py`, `phase7/targets/engine.py`.
 - **Exact Information or Action Required from Owner:** Procure or authorize ingestion of official unadjusted and adjusted daily OHLCV + Turnover data for all historical Nifty 500 constituents from 2016-01-01 to present.
-- **Safe Interim Work Possible:** Build `MarketPriceRecord` data contract, volume-weighted liquidity filter interface, and synthetic unit-test fixtures.
+- **Safe Interim Work Possible:** Build `DailyPriceRecord` data contract, volume-weighted liquidity filter interface, fail-closed loaders (`CSVDataLoader`, `JSONLinesDataLoader`), and synthetic unit-test fixtures. (Completed in Milestone 2).
 - **Resolution Test:** Automated check asserting `Open`, `High`, `Low`, `Close`, `Volume`, and `TradedValue` are non-null for all active universe securities on trading days.
-- **Current Status:** **BLOCKED.**
+- **Current Status:** **CONTRACT_READY_REAL_DATA_BLOCKED.** Canonical contracts and streaming fail-closed loaders implemented. Real complete historical OHLCV and daily traded value remain unavailable.
 
 ---
 
@@ -104,10 +104,10 @@
 - **Why It Matters:** Test execution and numerical calculations will crash non-deterministically during walk-forward fold generation or time-series indexing.
 - **Evidence:** Fatal crash log captured during Milestone 0: `Windows fatal exception: access violation` in `datetimes.py:439`. Python 3.14 is a development/pre-release build.
 - **Files or Modules Affected:** All Python execution environments and CI scripts.
-- **Exact Information or Action Required from Owner:** Approve standardizing local environment execution on Python 3.11 (`C:\Users\r_chh\AppData\Local\Programs\Python\Python311\python.exe`) or Python 3.12 (matching `.github/workflows/deploy.yml`).
-- **Safe Interim Work Possible:** Non-crashing tests (such as `test_phase6_safeguards.py` and pure logic tests) can run cleanly.
-- **Resolution Test:** `pytest test_features.py` exits with code 0 without access violation.
-- **Current Status:** **ACTIVE RISK.**
+- **Exact Information or Action Required from Owner:** Standardize execution on Python 3.12 under `.venv-phase7`. Do not mark resolved until: (1) Python 3.12 is installed; (2) `.venv-phase7` is created; (3) dependencies install successfully; (4) applicable Phase 7 tests pass under Python 3.12; (5) legacy datetime tests run successfully without crash; (6) interpreter and dependency versions are recorded.
+- **Safe Interim Work Possible:** Implement modules using standard library primitives (`Decimal`, `datetime`, `dataclasses`, `hashlib`, `enum`); non-crashing tests run cleanly under host Python.
+- **Resolution Test:** `pytest test_features.py` and Phase 7 test suites exit with code 0 without access violation under Python 3.12.
+- **Current Status:** **Mitigation defined through Python 3.12 standardization; resolution pending creation and verification of .venv-phase7.**
 
 ---
 
