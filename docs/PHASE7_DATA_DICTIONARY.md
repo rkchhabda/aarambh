@@ -22,7 +22,7 @@
    - If `source_timestamp` occurs after NSE market close (15:30 IST), `effective_date` must advance to $T+1$.
 3. **Identifier Standards:**
    - NSE Equity Symbols: Uppercase string without exchange suffixes (e.g. `RELIANCE`, `TCS`, `INFY`).
-   - ISIN: 12-character alphanumeric code (e.g. `INE002A01018`).
+   - ISIN: 12-character alphanumeric code (e.g. `INE002A01018`). Enforced strictly as ISIN structural-format validation via regex `^[A-Z]{2}[A-Z0-9]{9}[0-9]$` (two-letter country code, nine alphanumeric characters, and one trailing numeric check character). Full ISO 6166 check-digit computation is not claimed or performed.
 
 ---
 
@@ -188,7 +188,9 @@ Implemented as immutable, frozen dataclasses with strict type validation, `Decim
      - `UNKNOWN_POINT_IN_TIME_STATUS`: Security status indeterminate at prediction timestamp.
      - `DUPLICATE_SECURITY_RECORD`: Conflicting price/liquidity records on same trading date.
      - `FUTURE_DATA_DETECTED`: Source timestamp is in the future relative to prediction timestamp.
+     - `DATA_VALIDATION_FAILURE`: Security-level input records failed structural or schema validation rules.
    - Compatibility aliases supported: `BELOW_TURNOVER_THRESHOLD`, `BELOW_PRICE_THRESHOLD`, `TRADING_SUSPENDED`, `MISSING_PRICE_DATA`, `UNVERIFIED_CORPORATE_ACTION`, `CIRCUIT_FILTER_LOCKED`.
+   - **Architectural Distinction:** `ExclusionReason.DATA_VALIDATION_FAILURE` operates strictly at the individual security level and is NOT aliased to `UNKNOWN_POINT_IN_TIME_STATUS`. In contrast, `UniverseBuildStatus.DATA_VALIDATION_FAILURE` operates at the dataset-wide build execution level.
 
 5. **`UniverseBuildStatus`:**
    - `SUCCESS`: Investable universe constructed with $\ge 1$ eligible security.
@@ -196,7 +198,7 @@ Implemented as immutable, frozen dataclasses with strict type validation, `Decim
    - `BLOCKED_MISSING_PRICE_LIQUIDITY`: Missing historical OHLCV and traded value records (BLK-02).
    - `BLOCKED_MISSING_SECTOR_HISTORY`: Missing historical point-in-time sector classifications (BLK-04).
    - `VALID_EMPTY_UNIVERSE`: All datasets present, point-in-time validation succeeded, but 0 securities passed active eligibility filters.
-   - `DATA_VALIDATION_FAILURE`: Structural or schema data validation error occurred.
+   - `DATA_VALIDATION_FAILURE`: Fatal dataset-wide or configuration-level validation error occurred during build execution. Distinct from security-level exclusion.
    - `BLOCKED`: Documented compatibility alias mapping to `BLOCKED_MISSING_MEMBERSHIP`.
    - Property `is_real_data_blocked`: Boolean flag returning `True` for all `BLOCKED_MISSING_*` states.
 

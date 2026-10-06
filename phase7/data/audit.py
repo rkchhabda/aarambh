@@ -39,6 +39,7 @@ class DatasetAuditReport:
     validation_status: str
     blockers: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
+    future_record_count: int = 0
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize audit report to plain dictionary."""
@@ -58,18 +59,24 @@ class DatasetAuditReport:
             "missing_field_counts": self.missing_field_counts,
             "traded_value_status_counts": self.traded_value_status_counts,
             "unknown_adjustment_state_count": self.unknown_adjustment_state_count,
+            "future_record_count": self.future_record_count,
             "validation_status": self.validation_status,
             "blockers": self.blockers,
             "warnings": self.warnings,
         }
 
 
-def audit_dataset_file(file_path: Path, loader: BaseDataLoader) -> DatasetAuditReport:
+def audit_dataset_file(
+    file_path: Path,
+    loader: BaseDataLoader,
+    as_of_timestamp: Optional[datetime] = None,
+) -> DatasetAuditReport:
     """Audit a local dataset file using a fail-closed loader.
 
     Args:
         file_path: Local path to the tabular data file.
         loader: Configured fail-closed data loader instance.
+        as_of_timestamp: Optional point-in-time timestamp to detect future records in accepted rows.
 
     Returns:
         DatasetAuditReport containing provenance checksums and quality counts.
@@ -112,6 +119,17 @@ def audit_dataset_file(file_path: Path, loader: BaseDataLoader) -> DatasetAuditR
         val_status = "PARTIAL" if load_res.accepted_count > 0 else "INVALID"
         warnings.append(f"{load_res.rejected_count} rows failed contract validation.")
 
+    future_count = sum(
+        1 for rej in load_res.rejected_records
+        if any("cutoff" in r.lower() or "future" in r.lower() for r in rej.reasons)
+    )
+    if as_of_timestamp is not None:
+        future_count += sum(
+            1 for rec in load_res.accepted_records
+            if getattr(rec, "source_timestamp", None) is not None
+            and getattr(rec, "source_timestamp") > as_of_timestamp
+        )
+
     return DatasetAuditReport(
         source_identifier=file_path.name,
         local_input_path=str(file_path),
@@ -131,4 +149,5 @@ def audit_dataset_file(file_path: Path, loader: BaseDataLoader) -> DatasetAuditR
         validation_status=val_status,
         blockers=blockers,
         warnings=warnings,
+        future_record_count=future_count,
     )

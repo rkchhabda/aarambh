@@ -106,6 +106,33 @@ class TestDataLoadersAndAudits(unittest.TestCase):
             for f in forbidden_keys:
                 self.assertNotIn(f, k.lower(), f"Forbidden performance key '{k}' found in audit report!")
 
+    def test_audit_report_tracks_future_records_and_traded_value_statuses(self):
+        """Audit report counts future records and separates MISSING, INVALID, and EXCHANGE_REPORTED statuses."""
+        from datetime import datetime, timezone
+        csv_file = self.tmp_path / "audit_tv_sample.csv"
+        content = (
+            "trading_date,symbol,isin,open,high,low,close,volume,traded_value_inr,traded_value_status,source_timestamp,ingestion_timestamp\n"
+            "2025-01-01,TCS,INE467B01029,3000.0,3050.0,2980.0,3020.0,1000,3000000.0,EXCHANGE_REPORTED,2025-01-01T16:00:00Z,2025-01-01T17:00:00Z\n"
+            "2025-01-01,INFY,INE009A01021,1500.0,1520.0,1490.0,1500.0,500,0.0,MISSING,2025-01-01T16:00:00Z,2025-01-01T17:00:00Z\n"
+            "2025-01-01,WIPRO,INE075A01022,400.0,410.0,395.0,405.0,800,0.0,INVALID,2025-01-01T16:00:00Z,2025-01-01T17:00:00Z\n"
+            "2025-01-02,HCLT,INE860A01027,1200.0,1220.0,1190.0,1210.0,300,363000.0,EXCHANGE_REPORTED,2025-01-02T16:00:00Z,2025-01-02T17:00:00Z\n"
+        )
+        csv_file.write_text(content, encoding="utf-8")
+
+        loader = CSVDataLoader[DailyPriceRecord](parse_daily_price_row)
+        as_of = datetime(2025, 1, 1, 23, 59, 59, tzinfo=timezone.utc)
+        audit = audit_dataset_file(csv_file, loader, as_of_timestamp=as_of)
+
+        report = audit.to_dict()
+        self.assertEqual(report["total_row_count"], 4)
+        self.assertEqual(report["accepted_row_count"], 4)
+        self.assertEqual(report["future_record_count"], 1)
+
+        tv_counts = report["traded_value_status_counts"]
+        self.assertEqual(tv_counts.get("EXCHANGE_REPORTED"), 2)
+        self.assertEqual(tv_counts.get("MISSING"), 1)
+        self.assertEqual(tv_counts.get("INVALID"), 1)
+
     def test_active_phase7_modules_have_no_forbidden_imports(self):
         """87, 88, 89, 90. Phase 7 active code must not import features.universe, scripts.phase6, or service."""
         phase7_src_dir = BASE_DIR / "phase7"

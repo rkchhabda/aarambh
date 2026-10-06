@@ -31,6 +31,7 @@ from phase7.data.contracts import (
     ExclusionReason,
     PITMembershipRecord,
     PITSectorClassificationRecord,
+    PriceAdjustmentState,
     TradedValueStatus,
 )
 
@@ -62,6 +63,7 @@ class UniverseBuildResult:
     dataset_version: str
     blockers: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
+    future_records_count: int = 0
 
     @property
     def is_real_data_blocked(self) -> bool:
@@ -122,6 +124,62 @@ class PointInTimeUniverseBuilder:
         blockers: List[str] = []
         warnings: List[str] = []
 
+        # Check dataset-wide structural validity
+        if not dataset_version or not isinstance(dataset_version, str) or dataset_version.strip() == "" or dataset_version.upper() == "INVALID":
+            blockers.append("FATAL: Dataset version is invalid or corrupted.")
+            return UniverseBuildResult(
+                prediction_timestamp=pred_utc,
+                prediction_date=pred_date,
+                eligible_symbols=[],
+                eligible_isins=[],
+                exclusions={},
+                evidence={},
+                universe_hash=hashlib.sha256(b"DATA_VALIDATION_FAILURE").hexdigest(),
+                status=UniverseBuildStatus.DATA_VALIDATION_FAILURE,
+                config_version=self.config_version,
+                dataset_version=dataset_version,
+                blockers=blockers,
+                warnings=warnings,
+                future_records_count=0,
+            )
+
+        if membership_records and any(m.index_code not in ("NIFTY500", "NIFTY_500") for m in membership_records):
+            blockers.append("FATAL: Dataset contains unsupported or corrupted index code.")
+            return UniverseBuildResult(
+                prediction_timestamp=pred_utc,
+                prediction_date=pred_date,
+                eligible_symbols=[],
+                eligible_isins=[],
+                exclusions={},
+                evidence={},
+                universe_hash=hashlib.sha256(b"DATA_VALIDATION_FAILURE").hexdigest(),
+                status=UniverseBuildStatus.DATA_VALIDATION_FAILURE,
+                config_version=self.config_version,
+                dataset_version=dataset_version,
+                blockers=blockers,
+                warnings=warnings,
+                future_records_count=0,
+            )
+
+        # Count future records across all input collections
+        future_records_count = 0
+        for p in price_records:
+            if p.source_timestamp > pred_utc or p.trading_date > pred_date:
+                future_records_count += 1
+        for m in membership_records:
+            if m.source_timestamp > pred_utc:
+                future_records_count += 1
+        for s in sector_records:
+            if s.source_timestamp > pred_utc:
+                future_records_count += 1
+        if suspension_records:
+            for susp in suspension_records:
+                if susp.source_timestamp > pred_utc:
+                    future_records_count += 1
+
+        if future_records_count > 0:
+            warnings.append(f"Audit: Detected {future_records_count} future record(s) relative to prediction instant.")
+
         # If real datasets are empty and not a unit test fixture, fail closed under BLK-01 / BLK-02 / BLK-04
         if not membership_records and not is_mock_test:
             blockers.append("BLK-01: Point-in-time historical Nifty 500 constituent membership is missing.")
@@ -137,6 +195,8 @@ class PointInTimeUniverseBuilder:
                 config_version=self.config_version,
                 dataset_version=dataset_version,
                 blockers=blockers,
+                warnings=warnings,
+                future_records_count=future_records_count,
             )
 
         if not price_records and not is_mock_test:
@@ -153,6 +213,8 @@ class PointInTimeUniverseBuilder:
                 config_version=self.config_version,
                 dataset_version=dataset_version,
                 blockers=blockers,
+                warnings=warnings,
+                future_records_count=future_records_count,
             )
 
         if not sector_records and not is_mock_test:
@@ -172,6 +234,8 @@ class PointInTimeUniverseBuilder:
                 config_version=self.config_version,
                 dataset_version=dataset_version,
                 blockers=blockers,
+                warnings=warnings,
+                future_records_count=future_records_count,
             )
 
         # 1. Identify active constituents on pred_date
@@ -222,12 +286,28 @@ class PointInTimeUniverseBuilder:
             sym_raw_prices = [p for p in price_records if p.symbol == sym]
             sym_raw_memberships = [m for m in membership_records if m.symbol == sym]
             sym_raw_sectors = [s for s in sector_records if s.symbol == sym]
-            if (
-                any(p.source_timestamp > pred_utc for p in sym_raw_prices)
-                or any(m.source_timestamp > pred_utc for m in sym_raw_memberships)
-                or any(s.source_timestamp > pred_utc for s in sym_raw_sectors)
-            ):
+            sym_future_count = (
+                sum(1 for p in sym_raw_prices if p.source_timestamp > pred_utc or p.trading_date > pred_date)
+                + sum(1 for m in sym_raw_memberships if m.source_timestamp > pred_utc)
+                + sum(1 for s in sym_raw_sectors if s.source_timestamp > pred_utc)
+            )
+            if sym_future_count > 0:
                 reasons.append(ExclusionReason.FUTURE_DATA_DETECTED)
+                ev["future_records_count"] = sym_future_count
+
+            # Security-level structural data validation failure checks
+            if any(
+                p.traded_value_status == TradedValueStatus.INVALID
+                or p.price_adjustment_state == PriceAdjustmentState.UNKNOWN
+                for p in sym_raw_prices
+            ):
+                reasons.append(ExclusionReason.DATA_VALIDATION_FAILURE)
+                ev["data_validation_error"] = "INVALID_PRICE_RECORD_OR_UNKNOWN_STATE"
+
+            sym_isins = {p.isin for p in sym_raw_prices if p.isin} | {m.isin for m in sym_raw_memberships if m.isin}
+            if len(sym_isins) > 1:
+                reasons.append(ExclusionReason.DATA_VALIDATION_FAILURE)
+                ev["data_validation_error"] = "CONFLICTING_ISINS"
 
             # Rule 1: Point-in-Time Membership
             if sym not in membership_symbols:
@@ -283,12 +363,21 @@ class PointInTimeUniverseBuilder:
             else:
                 # Take trailing 60 valid trading observations
                 trailing_60_dates = sorted_dates[-self.MIN_LIQUIDITY_LOOKBACK:]
-                trailing_60_turnovers = [date_map[d].traded_value_inr for d in trailing_60_dates]
+                trailing_60_records = [date_map[d] for d in trailing_60_dates]
+                trailing_60_turnovers = [p.traded_value_inr for p in trailing_60_records]
 
-                # Check for missing values
-                if any(t is None or t <= Decimal("0") for t in trailing_60_turnovers):
+                # Check for missing, invalid, or zero turnover
+                has_missing_status = any(p.traded_value_status == TradedValueStatus.MISSING for p in trailing_60_records)
+                has_invalid_status = any(p.traded_value_status == TradedValueStatus.INVALID for p in trailing_60_records)
+                has_zero_or_none = any(t is None or t <= Decimal("0") for t in trailing_60_turnovers)
+
+                if has_invalid_status:
+                    reasons.append(ExclusionReason.DATA_VALIDATION_FAILURE)
                     reasons.append(ExclusionReason.MISSING_LIQUIDITY_HISTORY)
-                    ev["mdtv_60d"] = "MISSING_VALUES"
+                    ev["mdtv_60d"] = "INVALID_TURNOVER_STATUS"
+                elif has_missing_status or has_zero_or_none:
+                    reasons.append(ExclusionReason.MISSING_LIQUIDITY_HISTORY)
+                    ev["mdtv_60d"] = "MISSING_OR_ZERO_TURNOVER"
                 else:
                     # Calculate median turnover
                     sorted_turnover = sorted(trailing_60_turnovers)
@@ -374,6 +463,11 @@ class PointInTimeUniverseBuilder:
                 status = UniverseBuildStatus.VALID_EMPTY_UNIVERSE
                 warnings.append("Universe is valid but empty under active filters.")
 
+        evidence["__audit__"] = {
+            "future_records_count": future_records_count,
+            "total_candidate_symbols": len(all_symbols),
+        }
+
         return UniverseBuildResult(
             prediction_timestamp=pred_utc,
             prediction_date=pred_date,
@@ -387,4 +481,5 @@ class PointInTimeUniverseBuilder:
             dataset_version=dataset_version,
             blockers=blockers,
             warnings=warnings,
+            future_records_count=future_records_count,
         )

@@ -129,6 +129,37 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261005-06: Final Milestone 2 Data Contract Conformance & Security/Build Status Separation
+- **Date:** 2026-10-05
+- **Decision Authority:** Project Owner & Lead Quantitative Research Engineer
+- **Context & Motivation:** Address final conformance findings on Milestone 2 data contracts, ensuring strict separation between security-level and build-level failure semantics, rigorous future-data accounting, explicit turnover status differentiation, ISIN structural-format precision, and blocker scope boundaries.
+- **Exact Decision:**
+  1. **Canonical Exclusion Reason `DATA_VALIDATION_FAILURE`:** Formally incorporate `ExclusionReason.DATA_VALIDATION_FAILURE = "DATA_VALIDATION_FAILURE"` into the canonical `ExclusionReason` enumeration for per-security structural input validation failures (e.g. malformed records or invalid price/turnover state).
+  2. **Security vs. Build Status Disambiguation:** Strictly preserve the architectural distinction between security-level exclusion (`ExclusionReason.DATA_VALIDATION_FAILURE`) and dataset/system-level failure (`UniverseBuildStatus.DATA_VALIDATION_FAILURE`). Neither status is aliased to `UNKNOWN_POINT_IN_TIME_STATUS` or treated as interchangeable.
+  3. **Future Data Tracking & Audit Auditing:** Mandate that future data records relative to prediction timestamp are never silently dropped; they must never qualify an earlier prediction, must increment the audit counter (`future_records_count`), and must be recorded under `FUTURE_DATA_DETECTED` and in audit evidence logs. Both universe builder and dataset auditor record future observation metrics.
+  4. **Turnover Status Differentiation:** Enforce explicit enumeration distinctions across `TradedValueStatus.EXCHANGE_REPORTED`, `DERIVED_FROM_PRICE_VOLUME`, `MISSING`, and `INVALID`. Require that zero turnover with `MISSING` status yields `MISSING_LIQUIDITY_HISTORY`, whereas zero turnover with `INVALID` status additionally records `DATA_VALIDATION_FAILURE`. Loader audits record status distributions separately.
+  5. **ISIN Structural Validation Scope:** Explicitly define and document ISIN validation as 12-character structural-format regex validation (`^[A-Z]{2}[A-Z0-9]{9}[0-9]$`). Disclaim full ISO 6166 modulus-10 check-digit computation to prevent false claims of international registration verification.
+  6. **BLK-03 Blocker Scope Clarification:** Restore BLK-03 with status `OPEN / DEFERRED FROM INITIAL MODEL SCOPE`. Explicitly document that existing quarterly SUE features do not resolve missing point-in-time comprehensive balance-sheet, cash-flow, and debt statements, and that comprehensive accounting feature families remain deferred from the initial model development cycle.
+  7. **Research Readiness Status:** Maintain research package readiness status strictly at `CONTRACT_READY_REAL_DATA_BLOCKED`.
+- **Impacted Modules:**
+  - `phase7/data/contracts.py`
+  - `phase7/data/universe.py`
+  - `phase7/data/audit.py`
+  - `tests/phase7/test_point_in_time_integrity.py`
+  - `tests/phase7/test_universe_survivorship.py`
+  - `tests/phase7/test_data_loaders.py`
+  - `docs/PHASE7_DATA_DICTIONARY.md`
+  - `docs/PHASE7_BLOCKERS.md`
+  - `docs/PHASE7_DECISION_LOG.md`
+  - `docs/PHASE7_IMPLEMENTATION_MAP.md`
+- **Verification Criteria:**
+  - Full automated test suite passes (70/70 Phase 7 unit tests, 4/4 Phase 6 safeguard tests; 74/74 total).
+  - Explicit tests prove `ExclusionReason.DATA_VALIDATION_FAILURE` vs `UniverseBuildStatus.DATA_VALIDATION_FAILURE` independence.
+  - Audit reports verify future record tracking and separate turnover status reporting.
+  - Zero Phase 6 vault access events and zero forbidden legacy imports.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:

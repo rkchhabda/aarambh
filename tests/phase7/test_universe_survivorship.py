@@ -735,6 +735,248 @@ class TestUniverseSurvivorship(unittest.TestCase):
         self.assertEqual(res2.eligible_symbols, ["STOCK_A", "STOCK_B"])
         self.assertEqual(res1.universe_hash, res2.universe_hash)
 
+    def test_data_validation_failure_security_vs_build_status(self):
+        """Prove distinction between security-level and build-level DATA_VALIDATION_FAILURE."""
+        # 1. Verify DATA_VALIDATION_FAILURE is not aliased to UNKNOWN_POINT_IN_TIME_STATUS
+        self.assertNotEqual(
+            ExclusionReason.DATA_VALIDATION_FAILURE,
+            ExclusionReason.UNKNOWN_POINT_IN_TIME_STATUS,
+            "DATA_VALIDATION_FAILURE must not be aliased to UNKNOWN_POINT_IN_TIME_STATUS",
+        )
+        self.assertEqual(ExclusionReason.DATA_VALIDATION_FAILURE.value, "DATA_VALIDATION_FAILURE")
+        self.assertEqual(ExclusionReason.UNKNOWN_POINT_IN_TIME_STATUS.value, "UNKNOWN_POINT_IN_TIME_STATUS")
+
+        # 2. Verify ExclusionReason.DATA_VALIDATION_FAILURE != UniverseBuildStatus.DATA_VALIDATION_FAILURE
+        self.assertIsNot(
+            ExclusionReason.DATA_VALIDATION_FAILURE,
+            UniverseBuildStatus.DATA_VALIDATION_FAILURE,
+            "Security-level ExclusionReason and build-level UniverseBuildStatus must be distinct types",
+        )
+        self.assertIsInstance(ExclusionReason.DATA_VALIDATION_FAILURE, ExclusionReason)
+        self.assertIsInstance(UniverseBuildStatus.DATA_VALIDATION_FAILURE, UniverseBuildStatus)
+
+        mem = PITMembershipRecord(
+            index_code="NIFTY500",
+            symbol="VAL_FAIL_STOCK",
+            isin="INE999X01099",
+            effective_from=date(2020, 1, 1),
+            source_timestamp=datetime(2020, 1, 1, 0, 0, tzinfo=timezone.utc),
+            ingestion_timestamp=datetime(2020, 1, 1, 1, 0, tzinfo=timezone.utc),
+            source_identifier="CIRC",
+        )
+        sec = PITSectorClassificationRecord(
+            symbol="VAL_FAIL_STOCK",
+            isin="INE999X01099",
+            sector_code="Financials",
+            effective_from=date(2020, 1, 1),
+            source_timestamp=datetime(2020, 1, 1, 0, 0, tzinfo=timezone.utc),
+            ingestion_timestamp=datetime(2020, 1, 1, 1, 0, tzinfo=timezone.utc),
+            source_identifier="SEC",
+        )
+        bad_price = DailyPriceRecord(
+            trading_date=date(2025, 9, 10),
+            symbol="VAL_FAIL_STOCK",
+            isin="INE999X01099",
+            open=Decimal("100.00"),
+            high=Decimal("105.00"),
+            low=Decimal("95.00"),
+            close=Decimal("100.00"),
+            volume=1000,
+            traded_value_inr=Decimal("100000.00"),
+            traded_value_status=TradedValueStatus.EXCHANGE_REPORTED,
+            price_adjustment_state=PriceAdjustmentState.UNKNOWN,
+            source_timestamp=datetime(2025, 9, 10, 16, 0, tzinfo=timezone.utc),
+            ingestion_timestamp=datetime(2025, 9, 10, 17, 0, tzinfo=timezone.utc),
+            source_identifier="FEED",
+        )
+        # 3. Security-specific validation failure produces ExclusionReason.DATA_VALIDATION_FAILURE
+        res_sec = self.builder.build_universe(
+            prediction_timestamp=self.pred_time,
+            membership_records=[mem],
+            price_records=[bad_price],
+            sector_records=[sec],
+            is_mock_test=True,
+        )
+        self.assertIn(ExclusionReason.DATA_VALIDATION_FAILURE, res_sec.exclusions.get("VAL_FAIL_STOCK", []))
+        self.assertNotIn(ExclusionReason.UNKNOWN_POINT_IN_TIME_STATUS, res_sec.exclusions.get("VAL_FAIL_STOCK", []))
+
+        # 4. Fatal dataset-wide validation failure produces UniverseBuildStatus.DATA_VALIDATION_FAILURE
+        res_build = self.builder.build_universe(
+            prediction_timestamp=self.pred_time,
+            membership_records=[mem],
+            price_records=[bad_price],
+            sector_records=[sec],
+            dataset_version="INVALID",
+            is_mock_test=True,
+        )
+        self.assertEqual(res_build.status, UniverseBuildStatus.DATA_VALIDATION_FAILURE)
+        self.assertTrue(res_build.is_real_data_blocked)
+
+    def test_future_data_handling_and_audit_counter(self):
+        """Verify future records never qualify earlier predictions, increment counters, and appear in audit metadata."""
+        mem = PITMembershipRecord(
+            index_code="NIFTY500",
+            symbol="FUTURE_TEST",
+            isin="INE888Y01088",
+            effective_from=date(2020, 1, 1),
+            source_timestamp=datetime(2020, 1, 1, 0, 0, tzinfo=timezone.utc),
+            ingestion_timestamp=datetime(2020, 1, 1, 1, 0, tzinfo=timezone.utc),
+            source_identifier="CIRC",
+        )
+        sec = PITSectorClassificationRecord(
+            symbol="FUTURE_TEST",
+            isin="INE888Y01088",
+            sector_code="Financials",
+            effective_from=date(2020, 1, 1),
+            source_timestamp=datetime(2020, 1, 1, 0, 0, tzinfo=timezone.utc),
+            ingestion_timestamp=datetime(2020, 1, 1, 1, 0, tzinfo=timezone.utc),
+            source_identifier="SEC",
+        )
+        valid_prices = self._generate_synthetic_prices(
+            symbol="FUTURE_TEST",
+            isin="INE888Y01088",
+            count=400,
+            start_date=date(2024, 1, 1),
+        )
+        future_record = DailyPriceRecord(
+            trading_date=date(2025, 9, 30),
+            symbol="FUTURE_TEST",
+            isin="INE888Y01088",
+            open=Decimal("100.00"),
+            high=Decimal("105.00"),
+            low=Decimal("95.00"),
+            close=Decimal("100.00"),
+            volume=1000,
+            traded_value_inr=Decimal("100000.00"),
+            traded_value_status=TradedValueStatus.EXCHANGE_REPORTED,
+            price_adjustment_state=PriceAdjustmentState.RAW,
+            source_timestamp=datetime(2025, 10, 5, 16, 0, tzinfo=timezone.utc),
+            ingestion_timestamp=datetime(2025, 10, 5, 17, 0, tzinfo=timezone.utc),
+            source_identifier="FEED",
+        )
+        all_prices = valid_prices + [future_record]
+
+        res = self.builder.build_universe(
+            prediction_timestamp=self.pred_time,
+            membership_records=[mem],
+            price_records=all_prices,
+            sector_records=[sec],
+            is_mock_test=True,
+        )
+        self.assertNotIn("FUTURE_TEST", res.eligible_symbols)
+        self.assertIn(ExclusionReason.FUTURE_DATA_DETECTED, res.exclusions.get("FUTURE_TEST", []))
+        self.assertGreaterEqual(res.future_records_count, 1)
+        self.assertIn("__audit__", res.evidence)
+        self.assertGreaterEqual(res.evidence["__audit__"]["future_records_count"], 1)
+        self.assertEqual(res.evidence["FUTURE_TEST"]["future_records_count"], 1)
+        self.assertTrue(any("future record" in w.lower() for w in res.warnings))
+
+    def test_missing_and_invalid_turnover_handling(self):
+        """Verify missing and invalid turnover: cannot qualify, distinguishable from zero reported, and status required."""
+        mem = PITMembershipRecord(
+            index_code="NIFTY500",
+            symbol="TURNOVER_TEST",
+            isin="INE777Z01077",
+            effective_from=date(2020, 1, 1),
+            source_timestamp=datetime(2020, 1, 1, 0, 0, tzinfo=timezone.utc),
+            ingestion_timestamp=datetime(2020, 1, 1, 1, 0, tzinfo=timezone.utc),
+            source_identifier="CIRC",
+        )
+        sec = PITSectorClassificationRecord(
+            symbol="TURNOVER_TEST",
+            isin="INE777Z01077",
+            sector_code="Financials",
+            effective_from=date(2020, 1, 1),
+            source_timestamp=datetime(2020, 1, 1, 0, 0, tzinfo=timezone.utc),
+            ingestion_timestamp=datetime(2020, 1, 1, 1, 0, tzinfo=timezone.utc),
+            source_identifier="SEC",
+        )
+        missing_prices = []
+        for i in range(400):
+            d = date(2024, 1, 1) + timedelta(days=i)
+            if d.weekday() >= 5:
+                continue
+            src_ts = datetime(d.year, d.month, d.day, 16, 0, tzinfo=timezone.utc)
+            ing_ts = datetime(d.year, d.month, d.day, 17, 0, tzinfo=timezone.utc)
+            missing_prices.append(
+                DailyPriceRecord(
+                    trading_date=d,
+                    symbol="TURNOVER_TEST",
+                    isin="INE777Z01077",
+                    open=Decimal("100.00"),
+                    high=Decimal("105.00"),
+                    low=Decimal("95.00"),
+                    close=Decimal("100.00"),
+                    volume=0,
+                    traded_value_inr=Decimal("0.00"),
+                    traded_value_status=TradedValueStatus.MISSING,
+                    price_adjustment_state=PriceAdjustmentState.RAW,
+                    source_timestamp=src_ts,
+                    ingestion_timestamp=ing_ts,
+                    source_identifier="SRC",
+                )
+            )
+        res_missing = self.builder.build_universe(
+            prediction_timestamp=self.pred_time,
+            membership_records=[mem],
+            price_records=missing_prices,
+            sector_records=[sec],
+            is_mock_test=True,
+        )
+        self.assertNotIn("TURNOVER_TEST", res_missing.eligible_symbols)
+        self.assertIn(ExclusionReason.MISSING_LIQUIDITY_HISTORY, res_missing.exclusions.get("TURNOVER_TEST", []))
+
+        invalid_prices = []
+        for p in missing_prices:
+            invalid_prices.append(
+                DailyPriceRecord(
+                    trading_date=p.trading_date,
+                    symbol=p.symbol,
+                    isin=p.isin,
+                    open=p.open,
+                    high=p.high,
+                    low=p.low,
+                    close=p.close,
+                    volume=0,
+                    traded_value_inr=Decimal("0.00"),
+                    traded_value_status=TradedValueStatus.INVALID,
+                    price_adjustment_state=PriceAdjustmentState.RAW,
+                    source_timestamp=p.source_timestamp,
+                    ingestion_timestamp=p.ingestion_timestamp,
+                    source_identifier="SRC",
+                )
+            )
+        res_invalid = self.builder.build_universe(
+            prediction_timestamp=self.pred_time,
+            membership_records=[mem],
+            price_records=invalid_prices,
+            sector_records=[sec],
+            is_mock_test=True,
+        )
+        self.assertNotIn("TURNOVER_TEST", res_invalid.eligible_symbols)
+        self.assertIn(ExclusionReason.DATA_VALIDATION_FAILURE, res_invalid.exclusions.get("TURNOVER_TEST", []))
+        self.assertIn(ExclusionReason.MISSING_LIQUIDITY_HISTORY, res_invalid.exclusions.get("TURNOVER_TEST", []))
+
+        zero_reported = DailyPriceRecord(
+            trading_date=date(2025, 9, 10),
+            symbol="TURNOVER_TEST",
+            isin="INE777Z01077",
+            open=Decimal("100.00"),
+            high=Decimal("105.00"),
+            low=Decimal("95.00"),
+            close=Decimal("100.00"),
+            volume=0,
+            traded_value_inr=Decimal("0.00"),
+            traded_value_status=TradedValueStatus.EXCHANGE_REPORTED,
+            price_adjustment_state=PriceAdjustmentState.RAW,
+            source_timestamp=datetime(2025, 9, 10, 16, 0, tzinfo=timezone.utc),
+            ingestion_timestamp=datetime(2025, 9, 10, 17, 0, tzinfo=timezone.utc),
+            source_identifier="EXCHANGE",
+        )
+        self.assertEqual(zero_reported.traded_value_status, TradedValueStatus.EXCHANGE_REPORTED)
+        self.assertNotEqual(zero_reported.traded_value_status, TradedValueStatus.MISSING)
+        self.assertNotEqual(zero_reported.traded_value_status, TradedValueStatus.INVALID)
+
 
 if __name__ == "__main__":
     unittest.main()

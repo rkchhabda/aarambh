@@ -162,6 +162,34 @@ class TestPointInTimeIntegrity(unittest.TestCase):
                 source_identifier="TEST",
             )
 
+    def test_isin_structural_format_validation(self):
+        """ISIN validation strictly enforces 12-char regex ^[A-Z]{2}[A-Z0-9]{9}[0-9]$ structural format.
+        Full ISO 6166 check-digit verification is not claimed or executed."""
+        # Valid structural format passes (and normalizes lowercase)
+        rec = PITMembershipRecord(
+            index_code="NIFTY500",
+            symbol="TCS",
+            isin="ine467b01029",
+            effective_from=date(2022, 1, 1),
+            source_timestamp=self.t_src,
+            ingestion_timestamp=self.t_ing,
+            source_identifier="TEST",
+        )
+        self.assertEqual(rec.isin, "INE467B01029")
+
+        # Invalid structure (e.g. non-digit check character, digit country code, invalid length, special chars) fails
+        for invalid_isin in ["INE467B0102A", "12E467B01029", "INE467B0102", "INE467B0102#", "INE467B010299"]:
+            with self.assertRaises(ValueError):
+                PITMembershipRecord(
+                    index_code="NIFTY500",
+                    symbol="TCS",
+                    isin=invalid_isin,
+                    effective_from=date(2022, 1, 1),
+                    source_timestamp=self.t_src,
+                    ingestion_timestamp=self.t_ing,
+                    source_identifier="TEST",
+                )
+
     # --------------------------------------------------------------------------
     # Timestamp & Future Data Tests (65-71)
     # --------------------------------------------------------------------------

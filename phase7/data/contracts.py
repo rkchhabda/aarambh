@@ -163,6 +163,7 @@ class ExclusionReason(str, Enum):
 # Deterministic Hashing Utilities
 # ------------------------------------------------------------------------------
 
+# ISIN structural-format validation (12-char alphanumeric format check; check-digit calculation not implemented)
 ISIN_REGEX = re.compile(r"^[A-Z]{2}[A-Z0-9]{9}[0-9]$")
 
 
