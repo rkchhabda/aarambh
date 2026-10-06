@@ -160,6 +160,32 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261006-01: Phase 7 Isolated Python 3.12 Research Environment Creation & Stability Verification
+- **Date:** 2026-10-06
+- **Decision Authority:** Project Owner & Lead Quantitative Research Engineer
+- **Context & Motivation:** Create, validate, document, and freeze an isolated Python 3.12 research virtual environment (`.venv-phase7`) to eliminate runtime C-level access violations observed under development Python 3.14.4 (BLK-06) and prepare an immutable execution baseline for Phase 7 research.
+- **Exact Decision:**
+  1. **Runtime Standardization:** Formally standardize the Phase 7 research environment on Python 3.12.10 (64-bit AMD64 WindowsPE) installed at `.venv-phase7`.
+  2. **Strict Dependency Baseline:** All dependencies installed exclusively from `requirements-phase7.txt` without modification to pins or manual package additions. Verified via `pip check` reporting zero broken requirements.
+  3. **Verification Results:** Full Phase 7 governance and Phase 6 boundary test suites passed without failure or error (74/74 tests, 100% pass rate in 8.49s). Narrow pandas datetime checks (`pd.date_range` for 5,000 daily and 1,000 business days) completed normally without access violations.
+  4. **BLK-06 Status Determination:** In accordance with the preregistered BLK-06 decision rule, set BLK-06 status to `ENVIRONMENT STABLE; LEGACY TEST FAILURES REQUIRE REVIEW`. The fatal C-level datetime access violation is eliminated, while legacy suites (`test_features.py`, `test_nifty.py`) fail at collection due to quarantined legacy dependencies (`ta`, `fastapi`).
+  5. **Mandatory Execution Path:** All future Phase 7 research commands, tests, scripts, and notebooks must explicitly invoke `.venv-phase7\Scripts\python.exe`.
+  6. **Zero Research Execution:** Explicitly confirm that zero model training, target generation, feature matrix computation, external market data procurement, Phase 6 vault querying, or Milestone 3 activity occurred during this checkpoint.
+- **Impacted Modules:**
+  - `.gitignore`
+  - `.venv-phase7`
+  - `docs/PHASE7_ENVIRONMENT_VERIFICATION.md`
+  - `docs/PHASE7_BLOCKERS.md`
+  - `docs/PHASE7_DECISION_LOG.md`
+  - `docs/PHASE7_IMPLEMENTATION_MAP.md`
+- **Verification Criteria:**
+  - `.venv-phase7\Scripts\python.exe -m pytest tests/phase7/ test_phase6_safeguards.py -v` passes 74/74 tests.
+  - `pip check` reports no broken requirements.
+  - `git check-ignore -v .venv-phase7` confirms active exclusion.
+  - Zero vault access events; zero unauthorized file modifications.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:

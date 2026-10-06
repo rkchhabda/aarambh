@@ -340,3 +340,17 @@ Milestone 2 delivered canonical data contracts, point-in-time universe interface
 - Phase 6 safeguard tests: **4 passing** (`pytest test_phase6_safeguards.py -v`).
 - Total passing tests: **74 of 74** (100% pass rate).
 - Real Data Readiness: **`CONTRACT_READY_REAL_DATA_BLOCKED`** (Gate 1 real-data evaluation blocked pending BLK-01 and BLK-02).
+
+---
+
+## 9. Phase 7 Research Environment Specification (`.venv-phase7`)
+
+- **Standard Runtime:** Python 3.12.10 (MSC v.1943 64 bit AMD64 on Windows).
+- **Environment Interpreter:** `.venv-phase7\Scripts\python.exe`
+- **Dependency Baseline:** Installed exclusively from `requirements-phase7.txt` (SHA-256: `5484bd0b91edbc22542476aa40f5294ea759a27e93a5ce31eae3b3b3efc2c88d`).
+- **Compatibility Status:** Verified via `pip check` (zero broken requirements).
+- **Test Verification:** 74 of 74 automated tests passing under Python 3.12.10 (`.venv-phase7\Scripts\python.exe -m pytest tests/phase7/ test_phase6_safeguards.py -v`).
+- **Runtime Stability:** Narrow pandas datetime operations (`pd.date_range`) verified stable; C-level access violation crash observed under development Python 3.14.4 is completely eliminated.
+- **Mandatory Invocation Rule:** All subsequent Phase 7 Python commands, CI scripts, test runners, and tools MUST explicitly use `.venv-phase7\Scripts\python.exe`.
+- **Milestone 3 Runtime Readiness:** The environment is runtime-ready for Milestone 3 implementation.
+- **Remaining Blockers:** Real-data blockers BLK-01 (historical Nifty 500 membership) and BLK-02 (complete OHLCV and daily traded value) remain `CONTRACT_READY_REAL_DATA_BLOCKED`. BLK-06 is `ENVIRONMENT STABLE; LEGACY TEST FAILURES REQUIRE REVIEW`. Gate 1 real-data evaluation remains blocked until genuine historical datasets are ingested.

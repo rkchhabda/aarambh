@@ -11,6 +11,13 @@ data/nse_cache/
 .env.*
 venv/
 .venv/
+.venv-phase7/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+pip-wheel-metadata/
+build/
+dist/
 *.log
 service/uvicorn.log
 service/uvicorn.err.log
