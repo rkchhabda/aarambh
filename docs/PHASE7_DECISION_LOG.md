@@ -186,6 +186,44 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261006-02: Milestone 3 Target Engine Delivery & Terminal Policy Standard
+- **Date:** 2026-10-06
+- **Decision Authority:** Project Owner & Lead Quantitative Research Engineer
+- **Context & Motivation:** Deliver canonical target contracts and calculation logic for Phase 7 (20-day sector-relative and 60-day beta-adjusted residual targets) using synthetic fixtures, establishing rigorous point-in-time temporal boundaries, terminal event handling, and audit quality invariants prior to feature engineering or model training.
+- **Exact Decision:**
+  1. **Canonical Immutable Contracts:** Author frozen dataclasses with deterministic SHA-256 row hashing (`TargetSpecificationRecord`, `PredictionEventRecord`, `ForwardPriceObservationRecord`, `SectorBenchmarkObservationRecord`, `BetaInputRecord`, `TargetResultRecord`, `TargetAuditRecord`) and strict enumerations (`TargetStatus`, `TargetReasonCode`).
+  2. **T+1 Alignment Engine:** Enforce strict execution lag ($\ge 1$ trading day); observation 1 is $t+1$ and observation $H$ is $t+H$. Prohibit same-day entry at prediction instant $t$ (`SAME_DAY_ENTRY_PROHIBITED`). Count forward trading sessions sequentially, skipping weekends and exchange holidays. Reject duplicate observation dates (`DUPLICATE_DATE_OBSERVATION`) and enforce symbol/ISIN identity matching (`DATA_VALIDATION_FAILURE`).
+  3. **20-Day Sector-Relative Target Engine:** Implement $y_{i, t}^{\text{20d\_sector\_rel}} = R_{\text{stock}, t+1 \to t+20} - R_{\text{sector}, t+1 \to t+20}$. Mandate identical trading dates for stock and sector benchmark. Resolve sector classification strictly point-in-time as of $t$ without static fallback; missing classifications return status `BLOCKED` (`MISSING_PIT_SECTOR`), overlapping conflicts return `CONFLICTING_PIT_SECTOR`, and future classifications return `FUTURE_SECTOR_DETECTED`.
+  4. **60-Day Beta-Adjusted Residual Target Engine:** Implement $y_{i, t}^{\text{60d\_residual}} = R_{\text{stock}, t+1 \to t+60} - (\beta_{i, \le t} \cdot R_{\text{market}, t+1 \to t+60})$. Preserve stock return, market return, and beta separately in `TargetResultRecord`. Enforce point-in-time beta provenance ($\text{estimation\_end\_timestamp} \le t$), rejecting future beta estimates (`FUTURE_BETA_DETECTED`) and benchmark identifier mismatches (`INVALID_BENCHMARK`).
+  5. **Terminal Observation Policies:** Mandate fail-closed invalidation for any terminal event occurring during the forward horizon $[t+1, t+H]$: regulatory suspensions return `SUSPENDED_DURING_HORIZON`, delisting returns `DELISTED_DURING_HORIZON`, complex corporate actions (mergers, demergers, rights) return `CORPORATE_ACTION_REVIEW_REQUIRED`, and incompatible price states return `INVALID_ADJUSTMENT_STATE`. Target values for invalidated records must be strictly `None` (preventing silent 0.0 fabrication or stale price carry-forward).
+  6. **Zero Performance Metrics Invariant:** TargetAuditRecord and audit routines must never compute or expose investment performance/alpha metrics (Sharpe, Sortino, Calmar, Alpha, Rank IC, Drawdown). Auditing is strictly confined to data quality, failure distributions, future record counts, and label overlap.
+  7. **Research Execution Guardrail:** Maintain research package readiness status strictly at `CONTRACT_READY_REAL_DATA_BLOCKED`. Real historical target generation on repository market data is prohibited pending formal resolution of BLK-01, BLK-02, and BLK-04. Milestone 4 (Feature Research) must not begin without explicit owner authorization.
+- **Impacted Modules:**
+  - `phase7/targets/__init__.py`
+  - `phase7/targets/contracts.py`
+  - `phase7/targets/returns.py`
+  - `phase7/targets/alignment.py`
+  - `phase7/targets/sector_relative.py`
+  - `phase7/targets/residual.py`
+  - `phase7/targets/audit.py`
+  - `tests/phase7/test_target_contracts.py`
+  - `tests/phase7/test_target_isolation.py`
+  - `tests/phase7/test_target_alignment.py`
+  - `tests/phase7/test_sector_relative_targets.py`
+  - `tests/phase7/test_residual_targets.py`
+  - `tests/phase7/test_target_terminal_handling.py`
+  - `docs/PHASE7_DATA_DICTIONARY.md`
+  - `docs/PHASE7_BLOCKERS.md`
+  - `docs/PHASE7_DECISION_LOG.md`
+  - `docs/PHASE7_IMPLEMENTATION_MAP.md`
+  - `docs/PHASE7_EXECUTION_PLAN.md`
+- **Verification Criteria:**
+  - 112/112 tests pass in `.venv-phase7` (108 Phase 7 tests, 4 Phase 6 safeguards).
+  - Target isolation test confirms zero imports of feature generation, models, backtests, or Phase 6 vaults.
+  - Zero repository data modified; zero real targets generated; zero external network requests.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:

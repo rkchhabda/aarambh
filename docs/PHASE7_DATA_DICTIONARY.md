@@ -224,3 +224,68 @@ Implemented as immutable, frozen dataclasses with strict type validation, `Decim
 The deterministic SHA-256 row hash is computed as:
 $$\text{row\_hash} = \text{SHA256}\left(\text{JSON}_{\text{canonical}}\left(\{\text{sorted\_keys}\} \setminus \{\text{"row\_hash"}\}\right)\right)$$
 where dates are formatted `YYYY-MM-DD`, UTC datetimes are formatted `YYYY-MM-DDTHH:MM:SSZ`, Decimals are string-normalized, symbols/ISINs are uppercased, and values are serialized with sort keys and compact separators.
+
+---
+
+## 8. Phase 7 Target Engine Contracts and Specifications (Milestone 3)
+
+### 8.1 Target Variable Formulas
+
+1. **20-Trading-Day Sector-Relative Forward Target (`target_20d_sector_relative`):**
+   $$R_{\text{stock}, t+1 \to t+20} = \frac{P_{\text{stock}, t+20}}{P_{\text{stock}, t+1}} - 1$$
+   $$R_{\text{sector}, t+1 \to t+20} = \frac{P_{\text{sector}, t+20}}{P_{\text{sector}, t+1}} - 1$$
+   $$y_{i, t}^{\text{20d\_sector\_rel}} = R_{\text{stock}, t+1 \to t+20} - R_{\text{sector}, t+1 \to t+20}$$
+   - Execution lag: $T+1$ trading day entry ($t+1$). Same-day entry at $t$ is strictly prohibited.
+   - Horizon: Exactly 20 trading sessions counted sequentially (exchange holidays and weekends skipped).
+   - Point-in-Time Sector: Sector benchmark must match the point-in-time sector code valid at prediction instant $t$ ($t \in [\text{effective\_from}, \text{effective\_to})$ with $\text{source\_timestamp} \le t$).
+
+2. **60-Trading-Day Beta-Adjusted Residual Forward Target (`target_60d_residual`):**
+   $$R_{\text{stock}, t+1 \to t+60} = \frac{P_{\text{stock}, t+60}}{P_{\text{stock}, t+1}} - 1$$
+   $$R_{\text{market}, t+1 \to t+60} = \frac{P_{\text{market}, t+60}}{P_{\text{market}, t+1}} - 1$$
+   $$y_{i, t}^{\text{60d\_residual}} = R_{\text{stock}, t+1 \to t+60} - \left(\beta_{i, \le t} \cdot R_{\text{market}, t+1 \to t+60}\right)$$
+   - Beta estimate provenance: Beta estimate must be pre-calculated using data strictly up to $t$ ($\text{estimation\_end\_timestamp} \le t$). Future beta leaks fail closed (`FUTURE_BETA_DETECTED`).
+   - Preservation: Stock return, benchmark return, beta, and residual target are stored separately in the target record.
+
+### 8.2 Enumerations
+
+1. **`TargetStatus` (`str, Enum`):**
+   - `VALID`: Successfully computed target satisfying all point-in-time and boundary requirements.
+   - `INVALID`: Excluded due to terminal event, data truncation, or integrity failure.
+   - `BLOCKED`: Blocked due to missing upstream point-in-time datasets (e.g. PIT sector classification).
+
+2. **`TargetReasonCode` (`str, Enum`):**
+   - `MISSING_ENTRY_PRICE`: Missing price observation on session $t+1$.
+   - `MISSING_EXIT_PRICE`: Missing price observation on session $t+H$.
+   - `INSUFFICIENT_FORWARD_OBSERVATIONS`: Dataset truncated before horizon session $t+H$ is reached.
+   - `SUSPENDED_DURING_HORIZON`: Active trading suspension or restriction during $[t+1, t+H]$.
+   - `DELISTED_DURING_HORIZON`: Delisting effective during $[t+1, t+H]$.
+   - `CORPORATE_ACTION_REVIEW_REQUIRED`: Complex restructuring (merger, demerger, rights) or invalid factor during horizon.
+   - `MISSING_PIT_SECTOR`: No point-in-time sector classification covering $t$.
+   - `CONFLICTING_PIT_SECTOR`: Conflicting overlapping sector classifications active at $t$.
+   - `FUTURE_SECTOR_DETECTED`: Sector classification record exists only after prediction instant $t$.
+   - `MISSING_BENCHMARK`: Missing benchmark price or return on stock entry or exit date.
+   - `INVALID_BENCHMARK`: Mismatched benchmark identifier or invalid return structure.
+   - `INVALID_BETA`: Missing, non-finite, or security-mismatched beta input record.
+   - `FUTURE_BETA_DETECTED`: Beta estimation window ends strictly after prediction instant $t$.
+   - `INVALID_ADJUSTMENT_STATE`: Price series does not satisfy required total-return adjustment state.
+   - `DATA_VALIDATION_FAILURE`: Structural validation or identity mismatch failure.
+   - `SAME_DAY_ENTRY_PROHIBITED`: Prohibited attempt to enter on prediction date $t$.
+   - `DUPLICATE_DATE_OBSERVATION`: Multiple observations for the same security on the same trading date.
+
+### 8.3 Dataclass Schema Specifications
+
+1. **`TargetSpecificationRecord`:**
+   - Fields: `target_name` (str), `target_version` (str), `horizon_trading_days` (int), `execution_lag_trading_days` (int), `entry_price_field` (str), `exit_price_field` (str), `return_type` (str), `benchmark_type` (str), `adjustment_state_requirement` (PriceAdjustmentState), `missing_terminal_policy` (str), `suspension_policy` (str), `delisting_policy` (str), `created_timestamp` (datetime, UTC), `specification_hash` (str).
+2. **`PredictionEventRecord`:**
+   - Fields: `prediction_timestamp` (datetime, UTC), `prediction_trading_date` (date), `symbol` (str), `isin` (str), `universe_hash` (str), `dataset_version` (str), `source_cutoff_timestamp` (datetime, UTC), `target_specification_hash` (str), `row_hash` (str).
+3. **`ForwardPriceObservationRecord`:**
+   - Fields: `trading_date` (date), `symbol` (str), `isin` (str), `price` (Decimal), `adjustment_state` (PriceAdjustmentState), `source_timestamp` (datetime, UTC), `source_identifier` (str), `row_hash` (str).
+4. **`SectorBenchmarkObservationRecord`:**
+   - Fields: `sector_code` (str), `trading_date` (date), `benchmark_identifier` (str), `price` (Optional[Decimal]), `return_value` (Optional[Decimal]), `adjustment_state` (PriceAdjustmentState), `source_timestamp` (datetime, UTC), `dataset_version` (str), `row_hash` (str).
+5. **`BetaInputRecord`:**
+   - Fields: `symbol` (str), `isin` (str), `beta` (Decimal), `estimation_end_timestamp` (datetime, UTC), `estimation_method` (str), `benchmark_identifier` (str), `dataset_version` (str), `row_hash` (str).
+6. **`TargetResultRecord`:**
+   - Fields: `target_name` (str), `target_version` (str), `prediction_timestamp` (datetime, UTC), `symbol` (str), `isin` (str), `horizon_trading_days` (int), `entry_date` (Optional[date]), `exit_date` (Optional[date]), `stock_total_return` (Optional[Decimal]), `benchmark_total_return` (Optional[Decimal]), `beta_used` (Optional[Decimal]), `target_value` (Optional[Decimal]), `target_status` (TargetStatus), `invalid_reason_codes` (List[TargetReasonCode]), `source_dataset_versions` (Dict[str, str]), `target_hash` (str).
+7. **`TargetAuditRecord`:**
+   - Fields: `input_record_count` (int), `accepted_target_count` (int), `rejected_target_count` (int), `blocked_target_count` (int), `future_data_count` (int), `missing_entry_count` (int), `missing_exit_count` (int), `adjustment_state_failure_count` (int), `suspension_count` (int), `delisting_count` (int), `invalid_beta_count` (int), `overlapping_label_count` (int), `target_specification_hash` (str), `dataset_version` (str), `failure_reasons_summary` (Dict[str, int]), `audit_notes` (List[str]).
+   - Governance invariant: Excludes all investment performance metrics (Sharpe, Sortino, Alpha, Rank IC, Drawdown). Strictly restricted to data quality, integrity, and temporal leakage verification.

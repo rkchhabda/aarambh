@@ -37,20 +37,20 @@ flowchart TD
 - **Output:** `docs/PHASE7_REPOSITORY_AUDIT.md`, `docs/PHASE7_BLOCKERS.md`, `docs/PHASE7_IMPLEMENTATION_MAP.md`.
 - **Verdict:** Clean working tree; identified BLK-01 (PIT Universe) and BLK-02 (OHLCV Turnover) as critical blockers.
 
-### Milestone 1: Preregistration and Configuration (CURRENT)
+### Milestone 1: Preregistration and Configuration (COMPLETED)
 - **Objective:** Author binding preregistration, machine-readable YAML configuration with integer basis points, governance schemas, and boundary test suites.
 - **Rules:** No model training; no synthetic data for economic metrics; no modification of Phase 6 files.
 - **Required Approval Phrase:** `APPROVE MILESTONE 1` (Received).
 
-### Milestone 2: Data Contracts and Point-in-Time Universe
-- **Objective:** Author canonical Pydantic data schemas, PIT constituent membership builder, liquidity filters, corporate action adjustments, and survivorship-bias verification suites.
-- **Handling Data Blockers:** If real PIT constituent data or volume data is still pending from the owner, implement interfaces, schemas, validators, and unit fixtures; mark capability `BLOCKED`. Never substitute invented financial records.
-- **Required Approval Phrase:** `APPROVE MILESTONE 2`.
+### Milestone 2: Data Contracts and Point-in-Time Universe (COMPLETED)
+- **Objective:** Author canonical data schemas, PIT constituent membership builder, liquidity filters, corporate action adjustments, and survivorship-bias verification suites.
+- **Handling Data Blockers:** Interfaces, schemas, validators, and unit fixtures implemented; research status marked `CONTRACT_READY_REAL_DATA_BLOCKED`. Real financial data not invented.
+- **Required Approval Phrase:** `APPROVE MILESTONE 2` (Received).
 
-### Milestone 3: Target Engine
-- **Objective:** Implement `phase7/targets/engine.py` for 20-day sector-relative return and 60-day beta-adjusted residual return.
-- **Mandatory Integrity:** Strict $t+1$ executable price alignment (next-session Open/VWAP); dividend adjustment; target columns completely isolated from feature matrix.
-- **Required Approval Phrase:** `APPROVE MILESTONE 3`.
+### Milestone 3: Target Engine (COMPLETED - CONTRACT_READY_REAL_DATA_BLOCKED)
+- **Objective:** Implement `phase7/targets/` modular engine for 20-day sector-relative return and 60-day beta-adjusted residual return, T+1 forward alignment, terminal policies, and zero-performance quality audit.
+- **Mandatory Integrity:** Strict $t+1$ executable price alignment (next-session entry); dividend adjustment; target columns completely isolated from feature matrix; zero performance metric calculation. Verified on synthetic fixtures; real historical target generation deferred pending BLK-01, BLK-02, BLK-04.
+- **Required Approval Phrase:** `APPROVE MILESTONE 3` (Received).
 
 ### Milestone 4: Walk-Forward Validation Framework
 - **Objective:** Build expanding walk-forward fold generator ($\ge 10$ windows) with 20-day purge gap and 5-day embargo.

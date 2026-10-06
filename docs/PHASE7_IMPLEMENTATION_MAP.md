@@ -124,7 +124,12 @@ GaurviDEEP/
 │   │   └── corporate_actions.py        # Corporate action split/bonus/dividend adjustment engine
 │   ├── targets/
 │   │   ├── __init__.py
-│   │   └── engine.py                   # 20d sector-relative and 60d residual return calculators
+│   │   ├── contracts.py                # TargetSpecificationRecord, PredictionEventRecord, observation records, enums
+│   │   ├── returns.py                  # Discrete return calculation, price adjustment compatibility validation
+│   │   ├── alignment.py                # T+1 forward trading date alignment engine, session counting, duplicate checks
+│   │   ├── sector_relative.py          # 20-day sector-relative forward target calculation engine, PIT sector resolution
+│   │   ├── residual.py                 # 60-day beta-adjusted residual target calculation engine, PIT beta validation
+│   │   └── audit.py                    # Target dataset quality audit, zero-performance invariant enforcement
 │   ├── features/
 │   │   ├── __init__.py
 │   │   ├── momentum.py                 # 12-1m, 6m sector-rel, 3m residual, 52w high distance
@@ -165,10 +170,16 @@ GaurviDEEP/
 │   ├── test_point_in_time_integrity.py
 │   ├── test_no_future_features.py
 │   ├── test_universe_survivorship.py
+│   ├── test_data_loaders.py
+│   ├── test_corporate_action_adjustments.py
+│   ├── test_target_contracts.py
 │   ├── test_target_isolation.py
+│   ├── test_target_alignment.py
+│   ├── test_sector_relative_targets.py
+│   ├── test_residual_targets.py
+│   ├── test_target_terminal_handling.py
 │   ├── test_purge_embargo.py
 │   ├── test_fold_local_preprocessing.py
-│   ├── test_corporate_action_adjustments.py
 │   ├── test_transaction_costs.py
 │   ├── test_portfolio_constraints.py
 │   ├── test_experiment_registry.py
@@ -187,7 +198,7 @@ GaurviDEEP/
 |---|---|---|---|
 | **M1: Preregistration & Config** | Preregistration document, execution plan, data dictionary, model card template, YAML config, boundary guard | `config/phase7.yaml`, `phase7/__init__.py`, `phase7/governance/__init__.py`, `phase7/governance/schemas.py` | `tests/phase7/test_phase6_boundary.py`, `tests/phase7/test_config_schema.py` |
 | **M2: Data Contracts & Universe** | Data contracts, PIT universe builder, exclusion codes, CA engine | `phase7/data/contracts.py`, `phase7/data/universe.py`, `phase7/data/loaders.py`, `phase7/data/corporate_actions.py` | `tests/phase7/test_point_in_time_integrity.py`, `tests/phase7/test_universe_survivorship.py`, `tests/phase7/test_corporate_action_adjustments.py` |
-| **M3: Target Engine** | 20d sector-relative target, 60d residual target, next-session execution | `phase7/targets/engine.py` | `tests/phase7/test_target_isolation.py`, `tests/phase7/test_execution_delay.py` |
+| **M3: Target Engine** | 20d sector-relative target, 60d residual target, T+1 forward alignment, terminal policies, audit engine | `phase7/targets/contracts.py`, `phase7/targets/returns.py`, `phase7/targets/alignment.py`, `phase7/targets/sector_relative.py`, `phase7/targets/residual.py`, `phase7/targets/audit.py` | `tests/phase7/test_target_contracts.py`, `tests/phase7/test_target_isolation.py`, `tests/phase7/test_target_alignment.py`, `tests/phase7/test_sector_relative_targets.py`, `tests/phase7/test_residual_targets.py`, `tests/phase7/test_target_terminal_handling.py` |
 | **M4: Walk-Forward Validation** | 10 expanding folds, purge ($\ge 20$d), embargo ($\ge 5$d), fold-local scaling | `phase7/validation/walk_forward.py`, `phase7/validation/purge_embargo.py` | `tests/phase7/test_purge_embargo.py`, `tests/phase7/test_fold_local_preprocessing.py` |
 | **M5: Non-ML Baselines** | EW universe, Sector-neutral EW, 12-1 Momentum, Multi-factor composite | `phase7/models/baselines.py`, `phase7/metrics/ranking.py`, `phase7/metrics/performance.py` | `tests/phase7/test_baselines_reproducibility.py` |
 | **M6: Linear Models** | Ridge regression, ElasticNet, append-only experiment logging | `phase7/models/linear.py`, `phase7/governance/registry.py` | `tests/phase7/test_linear_models.py`, `tests/phase7/test_experiment_registry.py` |
