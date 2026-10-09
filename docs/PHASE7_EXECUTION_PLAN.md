@@ -14,11 +14,12 @@ The Phase 7 research programme progresses through 13 sequential, tightly audited
 
 ```mermaid
 flowchart TD
-    M0["M0: Repository Audit<br/>(COMPLETED)"] --> M1["M1: Preregistration & Config<br/>(CURRENT)"]
-    M1 -->|APPROVE MILESTONE 2| M2["M2: Data Contracts & PIT Universe<br/>(Interface & Schema Only if Blocked)"]
-    M2 -->|APPROVE MILESTONE 3| M3["M3: Target Engine<br/>(20d Rel & 60d Res)"]
-    M3 -->|APPROVE MILESTONE 4| M4["M4: Walk-Forward CV<br/>(10 Expanding Folds)"]
-    M4 -->|APPROVE MILESTONE 5| M5["M5: Non-ML Baselines<br/>(Frozen Benchmark Board)"]
+    M0["M0: Repository Audit<br/>(COMPLETED)"] --> M1["M1: Preregistration & Config<br/>(COMPLETED)"]
+    M1 -->|APPROVE MILESTONE 2| M2["M2: Data Contracts & PIT Universe<br/>(CONTRACT_READY_REAL_DATA_BLOCKED)"]
+    M2 -->|APPROVE MILESTONE 3| M3["M3: Target Engine<br/>(TARGET_ENGINE_READY_REAL_DATA_BLOCKED)"]
+    M3 -->|APPROVE MILESTONE 4| M4["M4: Walk-Forward CV<br/>(VALIDATION_FRAMEWORK_READY_REAL_DATA_BLOCKED)"]
+    M4 -->|AUTHORIZE MILESTONE 4.5| M45["M4.5: Gate 1 Data Readiness Spec<br/>(SPECIFICATION_COMPLETE_GATE1_DATA_PROCUREMENT_PENDING)"]
+    M45 -->|APPROVE MILESTONE 5| M5["M5: Non-ML Baselines<br/>(Frozen Benchmark Board - BLOCKED)"]
     M5 -->|APPROVE MILESTONE 6| M6["M6: Linear Models<br/>(Ridge / ElasticNet)"]
     M6 -->|APPROVE MILESTONE 7| M7["M7: Tree & Ranking Models<br/>(LightGBM / XGBoost)"]
     M7 -->|APPROVE MILESTONE 8| M8["M8: Portfolio & Cost Engine<br/>(25, 50, 75 bps Staged Costs)"]
@@ -58,9 +59,16 @@ flowchart TD
 - **Boundary Verification:** Purge and embargo use ordered trading sessions (not calendar days); training-label outcome windows cannot overlap validation sessions; validation observations do not influence preprocessing fitting; all fold hashes include fold boundaries, configuration version, target specification, and dataset-version metadata; cross-sectional ranking is performed separately by session date; no real fold calendar is generated while BLK-01, BLK-02, and BLK-04 remain open. Research status explicitly set to `VALIDATION_FRAMEWORK_READY_REAL_DATA_BLOCKED`.
 - **Required Approval Phrase:** `APPROVE MILESTONE 4` (Received).
 
-### Milestone 5: Non-ML Baselines
+### Milestone 4.5: Gate 1 Data Readiness Specification (COMPLETED - SPECIFICATION_COMPLETE_GATE1_DATA_PROCUREMENT_PENDING)
+- **Objective:** Author comprehensive data acquisition specifications, vendor evaluation matrix, Gate 1 acceptance protocols, data source technical due diligence checklist, and legal licensing verification checklist.
+- **Scope & Dates:** Define requirements for resolving BLK-01 (PIT Nifty 500 Membership), BLK-02 (Historical Daily OHLCV & Traded Value), and BLK-04 (PIT Sector Classification) across 2014-01-01 to 2025-09-16.
+- **Strict Boundary:** No data downloaded or scraped; no vendors contacted; no model training; Milestone 5 remains strictly BLOCKED until real data passes Gate 1 acceptance.
+- **Required Authorization Phrase:** `AUTHORIZE MILESTONE 4.5: GATE 1 DATA READINESS SPECIFICATION` (Received).
+
+### Milestone 5: Non-ML Baselines (BLOCKED PENDING GATE 1 REAL DATA)
 - **Objective:** Evaluate Equal-Weight universe, Sector-Neutral Equal-Weight, 12-1 Momentum, and simple SUE composite across walk-forward folds.
 - **Leaderboard:** Record frozen baseline metrics (Rank IC, Sharpe, Drawdown, Monotonicity) at 25, 50, and 75 bps costs.
+- **Prerequisite:** Gate 1 acceptance (`GATE1_PASS` or authorized `GATE1_CONDITIONAL_PASS`) on real historical dataset resolving BLK-01, BLK-02, and BLK-04.
 - **Required Approval Phrase:** `APPROVE MILESTONE 5`.
 
 ### Milestone 6: Linear Models
@@ -105,7 +113,8 @@ flowchart TD
 | Milestone 2 | Milestone 1 Preregistration Committed | `APPROVE MILESTONE 2` |
 | Milestone 3 | Data Contracts & Universe Tests Passing | `APPROVE MILESTONE 3` |
 | Milestone 4 | Target Engine Verified | `APPROVE MILESTONE 4` |
-| Milestone 5 | Walk-Forward Fold Tests Passing | `APPROVE MILESTONE 5` |
+| Milestone 4.5 | Validation Framework Ready | `AUTHORIZE MILESTONE 4.5: GATE 1 DATA READINESS SPECIFICATION` |
+| Milestone 5 | Gate 1 Real Data Accepted | `APPROVE MILESTONE 5` |
 | Milestone 6 | Baseline Board Frozen | `APPROVE MILESTONE 6` |
 | Milestone 7 | Linear Models Registered | `APPROVE MILESTONE 7` |
 | Milestone 8 | Ranking Models Registered | `APPROVE MILESTONE 8` |

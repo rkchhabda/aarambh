@@ -312,6 +312,41 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261009-03: Milestone 4.5 Gate 1 Data Readiness Specification and Procurement Governance
+- **Date:** 2026-10-09
+- **Decision Authority:** Project Owner & Lead Quantitative Research Engineer (`AUTHORIZE MILESTONE 4.5: GATE 1 DATA READINESS SPECIFICATION`)
+- **Context & Motivation:** Prior to commencing Milestone 5 (Baselines & Modeling) or ingesting real market data, establish rigorous technical, legal, and operational specifications for resolving BLK-01 (PIT Nifty 500 Membership), BLK-02 (Daily OHLCV & Traded Value), and BLK-04 (PIT Sector Classification). Define explicit vendor evaluation standards, technical due diligence checklists, licensing verification criteria, and Gate 1 data acceptance protocols without downloading unverified data, contracting vendors, or training models.
+- **Exact Decision:**
+  1. **Historical Research Window Definition:** Specify active evaluation window as 2015-01-01 through 2025-09-16, with mandatory warm-up commencing on or before 2014-01-01 to support 252-session history filters, 12-minus-1 momentum, rolling beta, and 200-SMA calculations.
+  2. **Canonical Data Specification (`docs/PHASE7_DATA_ACQUISITION_SPECIFICATION.md`):** Formally define field schemas, primary keys, and event coverage for 5 core tables:
+     - Table A: Historical PIT Nifty 500 Index Membership (Additions, Deletions, Re-additions, Symbol/ISIN changes, Mergers, Delistings; backward projection of current constituents strictly prohibited).
+     - Table B: Historical Daily Market Data (OHLCV, exchange-reported turnover in INR, trades, deliverable quantity, suspension status; derived turnover must retain explicit `DERIVED_FROM_PRICE_VOLUME` provenance).
+     - Table C: Corporate Actions (Splits, bonuses, dividends, rights, mergers, spin-offs; complex restructurings subject to manual review).
+     - Table D: Historical PIT Sector & Industry Classification (Effective-dated intervals; static current fallback strictly prohibited; BLK-04 remains open if PIT sector history is unavailable).
+     - Table E: Security Identifier Master (Permanent internal security ID mapping NSE symbols, ISINs, and corporate action links across time).
+  3. **Vendor Evaluation Matrix (`docs/PHASE7_VENDOR_EVALUATION_MATRIX.md`):** Evaluate 8 candidate sources (NSE Indices, NSE Data & Analytics, Bloomberg, FactSet, LSEG/Refinitiv, S&P Capital IQ, CMIE Prowess, Approved Internal Warehouse) across 30 dimensions using exclusively `VERIFIED`, `UNVERIFIED`, `NOT AVAILABLE`, and `REQUIRES VENDOR CONFIRMATION`. Unverified sources prohibited from claiming verified status without documentary proof.
+  4. **Data Licensing Checklist (`docs/PHASE7_DATA_LICENSING_CHECKLIST.md`):** Mandate written confirmation of quantitative research rights, ML/AI model training rights, derived analytics IP ownership, application display rights, post-termination retention, cloud hosting, and regulatory reporting. Disclaimers rejected as substitutes for licensing.
+  5. **Gate 1 Acceptance Protocol (`docs/PHASE7_GATE1_ACCEPTANCE_PROTOCOL.md`):** Define quantitative acceptance thresholds ($\ge 99.5\%$ membership & session coverage, $100\%$ ISIN coverage for eligible records, zero duplicate natural keys, zero contradictory intervals, zero future timestamps, zero corporate action conflicts, $< 0.5\%$ missing sector classifications). Define required manifests (checksums, version, provenance, licensing, rejected records) and 5 distinct outcomes: `GATE1_PASS`, `GATE1_CONDITIONAL_PASS`, `GATE1_REMEDIATE`, `GATE1_FAIL`, `DATASET_REJECTED`.
+  6. **Technical Due Diligence Checklist (`docs/PHASE7_DATA_SOURCE_DUE_DILIGENCE_CHECKLIST.md`):** Standardize engineering requirements across sample files, schemas, keys, file naming, compression (Parquet/zstd/gzip), encoding (strict UTF-8 without BOM), ISO 8601 dates/timestamps, and append-only restatement policies.
+  7. **Strict Non-Commencement of Milestone 5:** Milestone 5 remains strictly BLOCKED. BLK-01, BLK-02, and BLK-04 remain OPEN. Zero market data downloaded or scraped; zero vendor accounts created; zero models trained.
+- **Impacted Modules:**
+  - `docs/PHASE7_DATA_ACQUISITION_SPECIFICATION.md`
+  - `docs/PHASE7_VENDOR_EVALUATION_MATRIX.md`
+  - `docs/PHASE7_GATE1_ACCEPTANCE_PROTOCOL.md`
+  - `docs/PHASE7_DATA_SOURCE_DUE_DILIGENCE_CHECKLIST.md`
+  - `docs/PHASE7_DATA_LICENSING_CHECKLIST.md`
+  - `docs/PHASE7_BLOCKERS.md`
+  - `docs/PHASE7_DECISION_LOG.md`
+  - `docs/PHASE7_EXECUTION_PLAN.md`
+  - `docs/PHASE7_IMPLEMENTATION_MAP.md`
+- **Verification Criteria:**
+  - Full test baseline preserved: 184/184 automated tests passing in `.venv-phase7`.
+  - Zero code modifications to `phase7/` or `tests/`.
+  - Zero changes to `config/phase7.yaml` or `requirements-phase7.txt`.
+  - Clean working-tree documentation commit.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:

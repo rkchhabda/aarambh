@@ -469,3 +469,23 @@ Milestone 3 delivered the comprehensive Target Engine (`phase7/targets/`), cover
 8. **Deterministic Fold Hashing:** All fold hashes include fold boundaries, configuration version, target specification, and dataset-version metadata.
 9. **Cross-Sectional Ranking:** Performed separately by session date without multi-session pooling.
 10. **Real Data Blocker Guardrail:** No real fold calendar or partition is generated while BLK-01, BLK-02, and BLK-04 remain open. Real-data walk-forward validation remains blocked.
+
+---
+
+## 12. Milestone 4.5 Delivered Documentation & Traceability Matrix
+
+### 12.1 Milestone 4.5 Delivered Documentation Artifacts
+
+| Document / Artifact | Scope & Core Purpose | Target Blockers | Key Standards & Constraints | Status |
+|---|---|---|---|---|
+| [`docs/PHASE7_DATA_ACQUISITION_SPECIFICATION.md`](file:///c:/Users/r_chh/OneDrive%20-%20optgbrc/Apps/GaurviDEEP/docs/PHASE7_DATA_ACQUISITION_SPECIFICATION.md) | Comprehensive schemas, natural keys, and event coverage for historical research dataset across 2014-01-01 to 2025-09-16 | `BLK-01`<br/>`BLK-02`<br/>`BLK-04` | Covers PIT Nifty 500 membership (Table A), daily OHLCV and turnover (Table B), corporate actions (Table C), PIT sectors (Table D), and identifier master (Table E). Backward constituent projection strictly prohibited. Explicit `DERIVED_FROM_PRICE_VOLUME` provenance required if turnover is derived. | **DELIVERED** |
+| [`docs/PHASE7_VENDOR_EVALUATION_MATRIX.md`](file:///c:/Users/r_chh/OneDrive%20-%20optgbrc/Apps/GaurviDEEP/docs/PHASE7_VENDOR_EVALUATION_MATRIX.md) | 30-dimension evaluation across 8 candidate data sources | `BLK-01`<br/>`BLK-02`<br/>`BLK-04` | Evaluates NSE Indices, NSE Data & Analytics, Bloomberg, FactSet, LSEG/Refinitiv, S&P Capital IQ, CMIE Prowess, Approved Internal Warehouse. Uses strictly `VERIFIED`, `UNVERIFIED`, `NOT AVAILABLE`, `REQUIRES VENDOR CONFIRMATION`. No invented ratings. | **DELIVERED** |
+| [`docs/PHASE7_GATE1_ACCEPTANCE_PROTOCOL.md`](file:///c:/Users/r_chh/OneDrive%20-%20optgbrc/Apps/GaurviDEEP/docs/PHASE7_GATE1_ACCEPTANCE_PROTOCOL.md) | Quantitative acceptance gates, verification manifests, automated test suites, and outcome definitions | Gate 1 Readiness | Enforces membership coverage $\ge 99.5\%$, session coverage $\ge 99.5\%$, ISIN coverage $100\%$, 0 duplicate keys, 0 contradictory intervals, 0 future timestamps, 0 corporate-action conflicts, missing sector $< 0.5\%$. Formalizes 5 outcomes: `GATE1_PASS`, `GATE1_CONDITIONAL_PASS`, `GATE1_REMEDIATE`, `GATE1_FAIL`, `DATASET_REJECTED`. | **DELIVERED** |
+| [`docs/PHASE7_DATA_SOURCE_DUE_DILIGENCE_CHECKLIST.md`](file:///c:/Users/r_chh/OneDrive%20-%20optgbrc/Apps/GaurviDEEP/docs/PHASE7_DATA_SOURCE_DUE_DILIGENCE_CHECKLIST.md) | Engineering inspection checklist for candidate data feeds | Data Pipeline Quality | 13 technical dimensions: sample depth, data dictionary, natural keys, deterministic file naming, compression (Parquet/zstd/gzip), encoding (strict UTF-8 without BOM), ISO 8601 dates/timestamps, null representations, numeric precision, and append-only restatement policies. | **DELIVERED** |
+| [`docs/PHASE7_DATA_LICENSING_CHECKLIST.md`](file:///c:/Users/r_chh/OneDrive%20-%20optgbrc/Apps/GaurviDEEP/docs/PHASE7_DATA_LICENSING_CHECKLIST.md) | Legal verification checklist for research and commercial terms | Legal & Compliance | Written verification of internal quant research, ML/AI model training, derived analytics IP ownership, application display, retention rights, audit terms, cloud hosting, and regulatory reporting. Disclaimers rejected as substitutes for licensing. | **DELIVERED** |
+
+### 12.2 Milestone 4.5 Governance & Blocker Invariants
+1. **Milestone 5 Strict Non-Commencement:** Milestone 5 remains strictly BLOCKED until real point-in-time data is procured, ingested, and passes Gate 1 acceptance.
+2. **Blockers BLK-01, BLK-02, BLK-04:** Remain formally **OPEN** and fail-closed.
+3. **Zero Real Target / Fold Generation:** Real historical targets, folds, and feature matrices are prohibited until Gate 1 clearance is attained.
+4. **Environment & Safeguard Stability:** Verified runtime Python 3.12.10 (`.venv-phase7`); 184/184 automated tests passing; Phase 6 vaults remain 100% quarantined and untouched.

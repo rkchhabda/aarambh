@@ -165,3 +165,18 @@
   8. **Deterministic Fold Hashing:** All fold hashes include fold boundaries, configuration version, target specification, and dataset-version metadata via Decimal-normalized canonical serialization.
   9. **Cross-Sectional Ranking:** Performed separately by session date without multi-session pooling.
   10. **Real Data Blocker Guardrail:** No real fold calendar or partition is generated while BLK-01, BLK-02, and BLK-04 remain open. Real historical walk-forward execution remains blocked.
+
+---
+
+## 6. Milestone 4.5 Gate 1 Data Readiness Specification Summary
+
+- **Status:** **DATA_READINESS_SPECIFICATION_READY_PROCUREMENT_PENDING**
+- **Purpose:** Formal preparation of the procurement, ingestion, verification, licensing, provenance, and Gate 1 acceptance requirements for the real point-in-time Phase 7 research dataset (2014-01-01 through 2025-09-16).
+- **Core Governance Invariant:** Milestone 5 remains strictly BLOCKED until real point-in-time data is procured, ingested, and verified through Gate 1. BLK-01, BLK-02, and BLK-04 remain **OPEN** and fail-closed.
+- **Milestone 4.5 Authorized Specification Artifacts:**
+  1. [`docs/PHASE7_DATA_ACQUISITION_SPECIFICATION.md`](file:///c:/Users/r_chh/OneDrive%20-%20optgbrc/Apps/GaurviDEEP/docs/PHASE7_DATA_ACQUISITION_SPECIFICATION.md): Comprehensive schema and interval requirements for PIT Nifty 500 membership (Table A), historical daily market data & turnover (Table B), corporate actions (Table C), PIT sector classification (Table D), and security identifier master (Table E).
+  2. [`docs/PHASE7_VENDOR_EVALUATION_MATRIX.md`](file:///c:/Users/r_chh/OneDrive%20-%20optgbrc/Apps/GaurviDEEP/docs/PHASE7_VENDOR_EVALUATION_MATRIX.md): 30-dimension comparative evaluation across 8 candidate data sources using strictly `VERIFIED`, `UNVERIFIED`, `NOT AVAILABLE`, and `REQUIRES VENDOR CONFIRMATION`.
+  3. [`docs/PHASE7_GATE1_ACCEPTANCE_PROTOCOL.md`](file:///c:/Users/r_chh/OneDrive%20-%20optgbrc/Apps/GaurviDEEP/docs/PHASE7_GATE1_ACCEPTANCE_PROTOCOL.md): Explicit quantitative acceptance thresholds ($\ge 99.5\%$ membership & session coverage, $100\%$ ISIN coverage, 0 duplicates/conflicts/leakages), signed verification manifests, automated test suites, and 5 discrete evaluation outcomes (`GATE1_PASS`, `GATE1_CONDITIONAL_PASS`, `GATE1_REMEDIATE`, `GATE1_FAIL`, `DATASET_REJECTED`).
+  4. [`docs/PHASE7_DATA_SOURCE_DUE_DILIGENCE_CHECKLIST.md`](file:///c:/Users/r_chh/OneDrive%20-%20optgbrc/Apps/GaurviDEEP/docs/PHASE7_DATA_SOURCE_DUE_DILIGENCE_CHECKLIST.md): Technical due diligence checklist covering sample files, data dictionary, natural keys, compression, encodings, ISO 8601 dates, timestamp causality, null representation, numeric precision, and revision policies.
+  5. [`docs/PHASE7_DATA_LICENSING_CHECKLIST.md`](file:///c:/Users/r_chh/OneDrive%20-%20optgbrc/Apps/GaurviDEEP/docs/PHASE7_DATA_LICENSING_CHECKLIST.md): Legal verification checklist covering quantitative research, ML/AI model training, derived analytics IP ownership, application display, retention rights, and regulatory reporting.
+- **Next Gating Action:** Owner review and authorization of vendor selection for real dataset procurement. No automated data download, scraping, model training, or Milestone 5 execution may occur.
