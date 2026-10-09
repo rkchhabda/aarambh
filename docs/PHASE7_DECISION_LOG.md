@@ -274,6 +274,39 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261009-02: Milestone 4 Expanding Walk-Forward Validation, Purge/Embargo Invariants & Fold-Local Preprocessing
+- **Date:** 2026-10-09
+- **Decision Authority:** Project Owner & Lead Quantitative Research Engineer
+- **Context & Motivation:** Establish the complete validation framework for Milestone 4 following explicit owner approval (`APPROVE MILESTONE 4`), ensuring minimum 10 expanding windows, strict trading session purge gap, post-test embargo, mathematical zero label leakage, fold-local preprocessing parameter isolation, and validation governance auditing.
+- **Exact Decision:**
+  1. **Expanding Walk-Forward Geometry (`phase7/validation/walk_forward.py`):** Enforce minimum 10 sequential expanding windows ($K \ge 10$) where initial training start date is invariant across all folds ($Train_0 \subset Train_1 \subset \dots \subset Train_{K-1}$). Test windows are sequential, out-of-sample ($Train_k \cap Test_k = \emptyset$), and pairwise disjoint ($Test_i \cap Test_j = \emptyset$).
+  2. **Purge Gap Enforcement (`phase7/validation/purge_embargo.py`):** Enforce discrete trading session purge gaps: $\ge 20$ trading sessions for primary 20d target and $\ge 60$ trading sessions for secondary 60d target. Calendar calculations advance strictly in trading sessions, skipping weekends and holidays.
+  3. **Embargo Interval Enforcement:** Enforce post-test embargo: $\ge 5$ trading sessions for primary 20d target and $\ge 10$ trading sessions for secondary 60d target to guard against autoregressive feature leakage and serial correlation.
+  4. **Zero Label Leakage Verification Theorem:** Mathematically verify for every training observation $t_{\text{train}}$ that its forward return outcome window $[t_{\text{train}}+1, t_{\text{train}}+H]$ never reaches or intersects any test date in the fold. Violations fail closed with `ValidationLeakageError`.
+  5. **Fold-Local Preprocessing Mandate (`phase7/validation/preprocessing.py`):** All scaling (StandardScaler, RobustScaler), winsorization (1st/99th percentiles), and imputation statistics must be fitted strictly inside training folds. Parameters are frozen upon fitting; test data is transformed without modifying fitted parameters. Mathematical proof demonstrates that global preprocessing leaks test distribution into training data, while fold-local preprocessing isolates training representations.
+  6. **Cross-Sectional Ranking:** Percentile ranking operations partition strictly by trading session date ($t$) without multi-session pooling.
+  7. **Canonical Hashing & Provenance:** Fitted transformer parameters and fold boundaries compute deterministic SHA-256 hashes using Decimal-normalized serialization (`PreprocessingParameterRecord`, `WalkForwardFold`, `PurgeEmbargoInterval`, `ValidationAuditRecord`).
+  8. **Strict Module Isolation:** `phase7/validation/` imports zero modules from `features`, `models`, `portfolio`, `service`, or `scripts.phase6`, references zero Phase 6 vaults, and performs zero write operations to `data/`.
+- **Impacted Modules:**
+  - `phase7/validation/__init__.py`
+  - `phase7/validation/contracts.py`
+  - `phase7/validation/purge_embargo.py`
+  - `phase7/validation/walk_forward.py`
+  - `phase7/validation/preprocessing.py`
+  - `tests/phase7/test_purge_embargo.py`
+  - `tests/phase7/test_fold_local_preprocessing.py`
+  - `tests/phase7/test_walk_forward.py`
+  - `tests/phase7/test_validation_isolation.py`
+  - `docs/PHASE7_DATA_DICTIONARY.md`
+  - `docs/PHASE7_DECISION_LOG.md`
+  - `docs/PHASE7_IMPLEMENTATION_MAP.md`
+  - `docs/PHASE7_EXECUTION_PLAN.md`
+- **Verification Criteria:**
+  - 184/184 automated tests passing in `.venv-phase7` (180 Phase 7 tests, 4 Phase 6 safeguards).
+  - Zero Phase 6 file changes; zero real target generation; zero model training; zero dependency changes.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:

@@ -321,3 +321,47 @@ where dates are formatted `YYYY-MM-DD`, UTC datetimes are formatted `YYYY-MM-DDT
 10. **`TargetAuditRecord`:**
     - Fields: `input_record_count` (int), `accepted_target_count` (int), `rejected_target_count` (int), `blocked_target_count` (int), `future_data_count` (int), `missing_entry_count` (int), `missing_exit_count` (int), `adjustment_state_failure_count` (int), `suspension_count` (int), `delisting_count` (int), `corporate_action_review_count` (int), `invalid_beta_count` (int), `missing_benchmark_count` (int), `overlap_count` (int), `overlapping_label_count` (int), `target_specification_hash` (str), `dataset_version` (str), `audit_hash` (str).
     - Governance invariant: Excludes all investment performance metrics (Sharpe, Sortino, Alpha, Rank IC, Drawdown). Strictly restricted to data quality, integrity, and temporal leakage verification.
+
+---
+
+## 9. Walk-Forward Validation Contracts and Preprocessing Specifications (Milestone 4)
+
+### 9.1 Validation Architecture & Interval Invariants
+
+1. **Expanding Walk-Forward Geometry:**
+   - Architecture: Minimum 10 expanding windows ($K \ge 10$).
+   - Train start date $t_0$ is invariant across all folds ($Train_0 \subset Train_1 \subset \dots \subset Train_{K-1}$).
+   - Test windows are sequential, pairwise disjoint ($Test_i \cap Test_j = \emptyset$), and strictly out-of-sample ($Train_k \cap Test_k = \emptyset$).
+2. **Purge Interval ($Purge \ge H$):**
+   - Primary target (20d): Minimum 20 trading sessions purge gap between train end and test start.
+   - Secondary target (60d): Minimum 60 trading sessions purge gap between train end and test start.
+   - Forward return label outcomes from training observations are completely sealed before test window commences.
+3. **Embargo Interval ($Embargo \ge E$):**
+   - Primary target (20d): Minimum 5 trading sessions post-test embargo.
+   - Secondary target (60d): Minimum 10 trading sessions post-test embargo.
+   - Guard against autoregressive feature leakage and serial correlation.
+4. **Calendar Stepping:**
+   - All intervals are calculated in discrete trading days (market sessions), strictly skipping weekends and exchange holidays.
+
+### 9.2 Dataclass Schema Specifications
+
+1. **`WalkForwardConfig`:**
+   - Fields: `min_expanding_windows` (int, $\ge 10$), `target_name` (str), `primary_target_purge_days` (int, $\ge 20$), `primary_target_embargo_days` (int, $\ge 5$), `secondary_target_purge_days` (int, $\ge 60$), `secondary_target_embargo_days` (int, $\ge 10$), `min_train_trading_days` (int, $\ge 20$), `test_trading_days` (Optional[int]), `fold_local_preprocessing` (bool, must be True), `fold_local_hyperparameter_selection` (bool), `deterministic_seed` (int), `config_hash` (str).
+2. **`WalkForwardFold`:**
+   - Fields: `fold_index` (int), `train_start_date` (date), `train_end_date` (date), `purge_start_date` (date), `purge_end_date` (date), `test_start_date` (date), `test_end_date` (date), `embargo_start_date` (Optional[date]), `embargo_end_date` (Optional[date]), `train_trading_days` (int), `purge_trading_days` (int), `test_trading_days` (int), `embargo_trading_days` (int), `target_name` (str), `dataset_version` (str), `fold_hash` (str).
+3. **`PurgeEmbargoInterval`:**
+   - Fields: `fold_index` (int), `train_end_date` (date), `purge_start_date` (date), `purge_end_date` (date), `purge_trading_days` (int), `test_start_date` (date), `test_end_date` (date), `test_trading_days` (int), `embargo_start_date` (Optional[date]), `embargo_end_date` (Optional[date]), `embargo_trading_days` (int), `purged_trading_dates` (Tuple[date, ...]), `embargoed_trading_dates` (Tuple[date, ...]), `interval_hash` (str).
+4. **`PreprocessingParameterRecord`:**
+   - Fields: `fold_index` (int), `transformer_name` (str), `feature_names` (Tuple[str, ...]), `parameters` (Dict[str, Any]), `fitted_row_count` (int), `fitted_timestamp` (datetime, UTC), `dataset_version` (str), `parameter_hash` (str).
+5. **`ValidationAuditRecord`:**
+   - Fields: `total_folds` (int, $\ge 10$), `target_name` (str), `min_expanding_windows` (int), `expanding_property_verified` (bool), `zero_label_leakage_verified` (bool), `fold_local_preprocessing_verified` (bool), `total_trading_days` (int), `total_test_trading_days` (int), `earliest_train_date` (date), `latest_test_date` (date), `dataset_version` (str), `audit_hash` (str).
+
+### 9.3 Preprocessing Leakage Controls
+
+1. **Fold-Local Parameter Fitting:**
+   - All transformations (winsorization, standardization, robust scaling, imputation) must fit parameters ($\mu, \sigma, Q_{01}, Q_{99}, \text{median}, \text{IQR}$) strictly on training fold rows.
+   - Outliers and distributions in validation or test folds do not influence fitted parameters.
+2. **Cross-Sectional Independence:**
+   - Cross-sectional ranking operations partition strictly by trading session date ($t$). No multi-session pooling is permitted.
+3. **Parameter Immutability & Provenance:**
+   - Fitted parameters are frozen and hashed into immutable `PreprocessingParameterRecord` instances using canonical Decimal-normalized serialization.

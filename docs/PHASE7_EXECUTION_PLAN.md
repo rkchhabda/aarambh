@@ -52,10 +52,10 @@ flowchart TD
 - **Mandatory Integrity:** Strict $t+1$ executable price alignment (next-session entry); dividend adjustment; target columns completely isolated from feature matrix; zero performance metric calculation. Verified on synthetic fixtures; real historical target generation deferred pending BLK-01, BLK-02, BLK-04. Research status explicitly set to `TARGET_ENGINE_READY_REAL_DATA_BLOCKED`.
 - **Required Approval Phrase:** `APPROVE MILESTONE 3` (Received).
 
-### Milestone 4: Walk-Forward Validation Framework
-- **Objective:** Build expanding walk-forward fold generator ($\ge 10$ windows) with 20-day purge gap and 5-day embargo.
+### Milestone 4: Walk-Forward Validation Framework (COMPLETED)
+- **Objective:** Build expanding walk-forward fold generator ($\ge 10$ windows) with 20-day purge gap and 5-day embargo (60d purge gap and 10d embargo for secondary target).
 - **Leakage Controls:** Fold-local preprocessing (scaling, winsorization, ranking fitted exclusively on training slices).
-- **Required Approval Phrase:** `APPROVE MILESTONE 4`.
+- **Required Approval Phrase:** `APPROVE MILESTONE 4` (Received).
 
 ### Milestone 5: Non-ML Baselines
 - **Objective:** Evaluate Equal-Weight universe, Sector-Neutral Equal-Weight, 12-1 Momentum, and simple SUE composite across walk-forward folds.
