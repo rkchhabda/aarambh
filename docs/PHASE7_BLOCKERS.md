@@ -147,3 +147,21 @@
   2. **BLK-02 (OHLCV Liquidity):** Required for forward entry and exit price observations.
   3. **BLK-04 (PIT Sector Classifications):** Required to resolve valid sector benchmark for 20-day sector-relative targets without static fallback.
 - **Guardrail:** No real historical target datasets will be generated or written until BLK-01, BLK-02, and BLK-04 are formally resolved and approved by the owner. Real-data readiness gate in `phase7/targets/readiness.py` enforces this fail-closed boundary.
+
+---
+
+## 5. Milestone 4 Walk-Forward Validation Dependency Summary
+
+- **Status:** **VALIDATION_FRAMEWORK_READY_REAL_DATA_BLOCKED**
+- **Validation Engine & Contracts:** Complete and passing 100% of synthetic unit tests (28 validation tests, 184 suite tests total).
+- **Validation Boundary Controls & Invariants:**
+  1. **Primary Target Purge:** At least 20 trading observations ($\ge 20$d).
+  2. **Primary Target Embargo:** At least 5 trading observations ($\ge 5$d).
+  3. **Secondary Target Purge:** At least 60 trading observations ($\ge 60$d).
+  4. **Secondary Target Embargo:** At least 10 trading observations ($\ge 10$d).
+  5. **Ordered Trading Sessions:** Purge and embargo intervals advance exclusively using chronologically ordered trading sessions, skipping weekends and exchange holidays. Calendar days are strictly prohibited.
+  6. **Zero Label Leakage:** Mathematical verification ensures training-label outcome windows $[t_{\text{train}}+1, t_{\text{train}}+H]$ cannot overlap validation sessions.
+  7. **Fold-Local Preprocessing:** Scaling (StandardScaler, RobustScaler), winsorization (1st/99th percentiles), and imputation statistics are fitted strictly on training fold rows. Validation/test observations have zero influence on fitted parameters.
+  8. **Deterministic Fold Hashing:** All fold hashes include fold boundaries, configuration version, target specification, and dataset-version metadata via Decimal-normalized canonical serialization.
+  9. **Cross-Sectional Ranking:** Performed separately by session date without multi-session pooling.
+  10. **Real Data Blocker Guardrail:** No real fold calendar or partition is generated while BLK-01, BLK-02, and BLK-04 remain open. Real historical walk-forward execution remains blocked.

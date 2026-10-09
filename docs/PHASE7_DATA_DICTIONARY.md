@@ -365,3 +365,20 @@ where dates are formatted `YYYY-MM-DD`, UTC datetimes are formatted `YYYY-MM-DDT
    - Cross-sectional ranking operations partition strictly by trading session date ($t$). No multi-session pooling is permitted.
 3. **Parameter Immutability & Provenance:**
    - Fitted parameters are frozen and hashed into immutable `PreprocessingParameterRecord` instances using canonical Decimal-normalized serialization.
+
+### 9.4 Validation Governance Status & Boundary Invariants
+
+- **Milestone 4 Readiness Status:** `VALIDATION_FRAMEWORK_READY_REAL_DATA_BLOCKED`.
+- **Historical Milestone 2 Status:** Preserved as `CONTRACT_READY_REAL_DATA_BLOCKED`.
+- **Historical Milestone 3 Status:** Preserved as `TARGET_ENGINE_READY_REAL_DATA_BLOCKED`.
+- **Validation Boundary Invariants:**
+  1. Primary purge is at least 20 trading observations ($\ge 20$d).
+  2. Primary embargo is at least 5 trading observations ($\ge 5$d).
+  3. Secondary purge is at least 60 trading observations ($\ge 60$d).
+  4. Secondary embargo is at least 10 trading observations ($\ge 10$d).
+  5. Purge and embargo use ordered trading sessions, not calendar days.
+  6. Training-label outcome windows cannot overlap validation sessions.
+  7. Validation observations do not influence preprocessing fitting.
+  8. All fold hashes include fold boundaries, configuration version, target specification, and dataset-version metadata.
+  9. Cross-sectional ranking is performed separately by session date.
+  10. No real fold calendar is generated while BLK-01, BLK-02, and BLK-04 remain open.

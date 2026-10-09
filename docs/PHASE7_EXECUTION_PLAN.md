@@ -52,9 +52,10 @@ flowchart TD
 - **Mandatory Integrity:** Strict $t+1$ executable price alignment (next-session entry); dividend adjustment; target columns completely isolated from feature matrix; zero performance metric calculation. Verified on synthetic fixtures; real historical target generation deferred pending BLK-01, BLK-02, BLK-04. Research status explicitly set to `TARGET_ENGINE_READY_REAL_DATA_BLOCKED`.
 - **Required Approval Phrase:** `APPROVE MILESTONE 3` (Received).
 
-### Milestone 4: Walk-Forward Validation Framework (COMPLETED)
+### Milestone 4: Walk-Forward Validation Framework (COMPLETED - VALIDATION_FRAMEWORK_READY_REAL_DATA_BLOCKED)
 - **Objective:** Build expanding walk-forward fold generator ($\ge 10$ windows) with 20-day purge gap and 5-day embargo (60d purge gap and 10d embargo for secondary target).
 - **Leakage Controls:** Fold-local preprocessing (scaling, winsorization, ranking fitted exclusively on training slices).
+- **Boundary Verification:** Purge and embargo use ordered trading sessions (not calendar days); training-label outcome windows cannot overlap validation sessions; validation observations do not influence preprocessing fitting; all fold hashes include fold boundaries, configuration version, target specification, and dataset-version metadata; cross-sectional ranking is performed separately by session date; no real fold calendar is generated while BLK-01, BLK-02, and BLK-04 remain open. Research status explicitly set to `VALIDATION_FRAMEWORK_READY_REAL_DATA_BLOCKED`.
 - **Required Approval Phrase:** `APPROVE MILESTONE 4` (Received).
 
 ### Milestone 5: Non-ML Baselines

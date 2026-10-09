@@ -454,4 +454,18 @@ Milestone 3 delivered the comprehensive Target Engine (`phase7/targets/`), cover
 - New Milestone 4 walk-forward and validation tests: **28 passing** across 4 new test modules.
 - Complete pytest suite: **184 of 184 passing** (`pytest tests/phase7/ test_phase6_safeguards.py -v`).
 - Conformance Verdict: **PASSED (100% CONFORMANT)**.
-- Research Status: **`TARGET_ENGINE_READY_REAL_DATA_BLOCKED`** / **`WALK_FORWARD_FRAMEWORK_VERIFIED`**.
+- Research Status: **`VALIDATION_FRAMEWORK_READY_REAL_DATA_BLOCKED`**.
+  - Historical Milestone 2 status preserved: `CONTRACT_READY_REAL_DATA_BLOCKED`.
+  - Historical Milestone 3 status preserved: `TARGET_ENGINE_READY_REAL_DATA_BLOCKED`.
+
+### 11.3 Validation Boundary Invariants Verification:
+1. **Primary Purge Threshold:** Enforced at $\ge 20$ trading observations.
+2. **Primary Embargo Threshold:** Enforced at $\ge 5$ trading observations.
+3. **Secondary Purge Threshold:** Enforced at $\ge 60$ trading observations.
+4. **Secondary Embargo Threshold:** Enforced at $\ge 10$ trading observations.
+5. **Ordered Trading Sessions:** Purge and embargo intervals advance strictly using ordered trading sessions (market calendar), skipping weekends and exchange holidays. Calendar days are strictly prohibited.
+6. **Zero Label Leakage:** Mathematical verification ensures training-label outcome windows $[t_{\text{train}}+1, t_{\text{train}}+H]$ cannot reach or overlap validation sessions.
+7. **Fold-Local Preprocessing:** Scaling (StandardScaler, RobustScaler), winsorization (1st/99th percentiles), and imputation statistics are fitted strictly on training fold rows. Validation observations have zero influence on fitted parameters.
+8. **Deterministic Fold Hashing:** All fold hashes include fold boundaries, configuration version, target specification, and dataset-version metadata.
+9. **Cross-Sectional Ranking:** Performed separately by session date without multi-session pooling.
+10. **Real Data Blocker Guardrail:** No real fold calendar or partition is generated while BLK-01, BLK-02, and BLK-04 remain open. Real-data walk-forward validation remains blocked.

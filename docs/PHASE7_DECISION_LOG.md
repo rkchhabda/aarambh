@@ -303,6 +303,11 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
   - `docs/PHASE7_EXECUTION_PLAN.md`
 - **Verification Criteria:**
   - 184/184 automated tests passing in `.venv-phase7` (180 Phase 7 tests, 4 Phase 6 safeguards).
+  - Milestone 4 readiness status verified as `VALIDATION_FRAMEWORK_READY_REAL_DATA_BLOCKED`.
+  - Historical Milestone 2 status preserved as `CONTRACT_READY_REAL_DATA_BLOCKED`.
+  - Historical Milestone 3 status preserved as `TARGET_ENGINE_READY_REAL_DATA_BLOCKED`.
+  - Validation boundary invariants verified: primary purge $\ge 20$d, primary embargo $\ge 5$d, secondary purge $\ge 60$d, secondary embargo $\ge 10$d, discrete ordered trading sessions, zero label leakage, fold-local preprocessing parameter isolation, deterministic fold hashing, and session-date cross-sectional ranking.
+  - Zero real fold calendar generated while BLK-01, BLK-02, and BLK-04 remain open.
   - Zero Phase 6 file changes; zero real target generation; zero model training; zero dependency changes.
 
 ---
