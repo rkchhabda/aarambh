@@ -139,6 +139,7 @@ def calculate_60d_residual_target(
             target_status=TargetStatus.INVALID,
             invalid_reason_codes=list(alignment.reason_codes),
             source_dataset_versions=source_dataset_versions,
+            universe_hash=prediction_event.universe_hash,
         )
 
     entry_rec = alignment.entry_record
@@ -172,6 +173,7 @@ def calculate_60d_residual_target(
             target_status=TargetStatus.INVALID,
             invalid_reason_codes=[adj_reason],
             source_dataset_versions=source_dataset_versions,
+            universe_hash=prediction_event.universe_hash,
         )
 
     # 3. Validate beta record
@@ -198,6 +200,7 @@ def calculate_60d_residual_target(
             target_status=TargetStatus.INVALID,
             invalid_reason_codes=[beta_reason],
             source_dataset_versions=source_dataset_versions,
+            universe_hash=prediction_event.universe_hash,
         )
 
     assert beta_record is not None
@@ -231,6 +234,7 @@ def calculate_60d_residual_target(
                     target_status=TargetStatus.INVALID,
                     invalid_reason_codes=[reason],
                     source_dataset_versions=source_dataset_versions,
+            universe_hash=prediction_event.universe_hash,
                 )
 
     # 5. Check for complex corporate actions requiring review or delisting during forward horizon
@@ -258,6 +262,7 @@ def calculate_60d_residual_target(
                         target_status=TargetStatus.INVALID,
                         invalid_reason_codes=[TargetReasonCode.DELISTED_DURING_HORIZON],
                         source_dataset_versions=source_dataset_versions,
+            universe_hash=prediction_event.universe_hash,
                     )
                 complex_types = (
                     CorporateActionType.RIGHTS,
@@ -290,6 +295,7 @@ def calculate_60d_residual_target(
                         target_status=TargetStatus.INVALID,
                         invalid_reason_codes=[TargetReasonCode.CORPORATE_ACTION_REVIEW_REQUIRED],
                         source_dataset_versions=source_dataset_versions,
+            universe_hash=prediction_event.universe_hash,
                     )
 
     # 6. Align market benchmark observations on exact same entry and exit dates
@@ -311,6 +317,7 @@ def calculate_60d_residual_target(
             target_status=TargetStatus.INVALID,
             invalid_reason_codes=[TargetReasonCode.MISSING_BENCHMARK],
             source_dataset_versions=source_dataset_versions,
+            universe_hash=prediction_event.universe_hash,
         )
 
     mkt_entry_obs = mkt_obs_by_date[entry_date]
@@ -340,6 +347,7 @@ def calculate_60d_residual_target(
             target_status=TargetStatus.INVALID,
             invalid_reason_codes=[mkt_adj_reason],
             source_dataset_versions=source_dataset_versions,
+            universe_hash=prediction_event.universe_hash,
         )
 
     # 7. Compute returns
@@ -363,6 +371,7 @@ def calculate_60d_residual_target(
             target_status=TargetStatus.INVALID,
             invalid_reason_codes=[TargetReasonCode.DATA_VALIDATION_FAILURE],
             source_dataset_versions=source_dataset_versions,
+            universe_hash=prediction_event.universe_hash,
         )
 
     # 8. Compute residual target: stock_return - (beta * market_return)

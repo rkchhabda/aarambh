@@ -140,10 +140,10 @@
 
 ## 4. Milestone 3 Target Engine Dependency Summary
 
-- **Status:** **CONTRACT_READY_REAL_DATA_BLOCKED**
-- **Contract & Calculation Engine:** Complete and passing 100% of synthetic unit tests (38 target tests, 112 suite tests total).
+- **Status:** **TARGET_ENGINE_READY_REAL_DATA_BLOCKED**
+- **Contract & Calculation Engine:** Complete and passing 100% of synthetic unit tests (43 target tests, 156 suite tests total).
 - **Real Historical Target Generation Dependencies:**
   1. **BLK-01 (PIT Membership):** Required to establish prediction event universe before target alignment.
-  2. **BLK-02 (PIT Sector Classifications):** Required to resolve valid sector benchmark for 20-day sector-relative targets without static fallback.
-  3. **BLK-04 (PIT Beta & Market Benchmark):** Required to resolve point-in-time beta estimates and market index return series for 60-day residual targets.
-- **Guardrail:** No real historical target datasets will be generated or written until BLK-01, BLK-02, and BLK-04 are formally resolved and approved by the owner.
+  2. **BLK-02 (OHLCV Liquidity):** Required for forward entry and exit price observations.
+  3. **BLK-04 (PIT Sector Classifications):** Required to resolve valid sector benchmark for 20-day sector-relative targets without static fallback.
+- **Guardrail:** No real historical target datasets will be generated or written until BLK-01, BLK-02, and BLK-04 are formally resolved and approved by the owner. Real-data readiness gate in `phase7/targets/readiness.py` enforces this fail-closed boundary.

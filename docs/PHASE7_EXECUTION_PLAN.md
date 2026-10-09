@@ -47,9 +47,9 @@ flowchart TD
 - **Handling Data Blockers:** Interfaces, schemas, validators, and unit fixtures implemented; research status marked `CONTRACT_READY_REAL_DATA_BLOCKED`. Real financial data not invented.
 - **Required Approval Phrase:** `APPROVE MILESTONE 2` (Received).
 
-### Milestone 3: Target Engine (COMPLETED - CONTRACT_READY_REAL_DATA_BLOCKED)
-- **Objective:** Implement `phase7/targets/` modular engine for 20-day sector-relative return and 60-day beta-adjusted residual return, T+1 forward alignment, terminal policies, and zero-performance quality audit.
-- **Mandatory Integrity:** Strict $t+1$ executable price alignment (next-session entry); dividend adjustment; target columns completely isolated from feature matrix; zero performance metric calculation. Verified on synthetic fixtures; real historical target generation deferred pending BLK-01, BLK-02, BLK-04.
+### Milestone 3: Target Engine (COMPLETED - TARGET_ENGINE_READY_REAL_DATA_BLOCKED)
+- **Objective:** Implement `phase7/targets/` modular engine for 20-day sector-relative return and 60-day beta-adjusted residual return, T+1 forward alignment, terminal policies, cutoff truncation, overlap detection, readiness gate, and zero-performance quality audit.
+- **Mandatory Integrity:** Strict $t+1$ executable price alignment (next-session entry); dividend adjustment; target columns completely isolated from feature matrix; zero performance metric calculation. Verified on synthetic fixtures; real historical target generation deferred pending BLK-01, BLK-02, BLK-04. Research status explicitly set to `TARGET_ENGINE_READY_REAL_DATA_BLOCKED`.
 - **Required Approval Phrase:** `APPROVE MILESTONE 3` (Received).
 
 ### Milestone 4: Walk-Forward Validation Framework

@@ -267,6 +267,51 @@ class TestTargetContracts(unittest.TestCase):
                 if f in ("sharpe", "sortino", "alpha", "drawdown", "calmar"):
                     self.assertNotIn(f, k.lower(), f"Forbidden performance substring '{f}' found in audit key '{k}'!")
 
+    def test_audit_target_results_counts_and_future_beta(self):
+        """audit_target_results correctly aggregates counts and tracks future beta detection."""
+        from phase7.targets.audit import audit_target_results
+        spec = TargetSpecificationRecord(
+            target_name="target_60d_residual",
+            target_version="1.0.0",
+            horizon_trading_days=60,
+            execution_lag_trading_days=1,
+            entry_price_field="open",
+            exit_price_field="close",
+            return_type="TOTAL_RETURN_ADJUSTED",
+            benchmark_type="MARKET",
+            adjustment_state_requirement=PriceAdjustmentState.TOTAL_RETURN_ADJUSTED,
+            missing_terminal_policy="FAIL_CLOSED",
+            suspension_policy="INVALIDATE_ON_SUSPENSION",
+            delisting_policy="INVALIDATE_ON_DELISTING",
+            created_timestamp=self.t_create,
+        )
+        res_future_beta = TargetResultRecord(
+            target_name="target_60d_residual",
+            target_version="1.0.0",
+            prediction_timestamp=self.t_pred,
+            symbol="INFY",
+            isin="INE009A01021",
+            horizon_trading_days=60,
+            entry_date=None,
+            exit_date=None,
+            stock_total_return=None,
+            benchmark_total_return=None,
+            beta_used=None,
+            target_value=None,
+            target_status=TargetStatus.INVALID,
+            invalid_reason_codes=(TargetReasonCode.FUTURE_BETA_DETECTED,),
+        )
+        audit = audit_target_results(
+            results=[res_future_beta],
+            specification=spec,
+            dataset_version="1.0.0",
+            input_record_count=1,
+        )
+        self.assertEqual(audit.input_record_count, 1)
+        self.assertEqual(audit.rejected_target_count, 1)
+        self.assertEqual(audit.future_data_count, 1)
+        self.assertEqual(audit.invalid_beta_count, 1)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -229,3 +229,61 @@ def test_invalid_horizon_or_lag_raises_value_error():
 
     with pytest.raises(ValueError, match="execution_lag_trading_days must be >= 1"):
         align_forward_observations(pred, obs_list, horizon_trading_days=20, execution_lag_trading_days=0)
+
+
+def test_frozen_endpoint_semantics_20d_and_60d():
+    """Verify frozen Phase 7 endpoint semantics:
+    - Horizon 20 selects observation 1 and observation 20; does NOT select observation 21.
+    - Horizon 20 forward_observations contains 20 observations (19 intervals).
+    - Horizon 60 selects observation 1 and observation 60; does NOT select observation 61.
+    - Horizon 60 forward_observations contains 60 observations (59 intervals).
+    - Same-day observation t is never selected.
+    - Entry and exit dates are strictly preserved.
+    """
+    pred = make_prediction_event()
+    same_day_obs = make_obs(PRED_DATE, price="99.00")
+
+    # Generate 70 distinct post-prediction sessions
+    forward_dates = [PRED_DATE + timedelta(days=i + 1) for i in range(70)]
+    forward_obs = [make_obs(d, price=f"{100 + i}.00") for i, d in enumerate(forward_dates)]
+
+    # Include same-day t observation in candidate pool to prove it is excluded
+    all_obs = [same_day_obs] + forward_obs
+
+    # --- Horizon 20 Evaluation ---
+    res_20 = align_forward_observations(pred, all_obs, horizon_trading_days=20)
+    assert res_20.status == TargetStatus.VALID
+    # Obs 1 is selected as entry (t+1)
+    assert res_20.entry_record.trading_date == forward_dates[0]
+    assert res_20.entry_record.price == Decimal("100.00")
+    # Obs 20 is selected as exit (t+20)
+    assert res_20.exit_record.trading_date == forward_dates[19]
+    assert res_20.exit_record.price == Decimal("119.00")
+    # Obs 21 is NOT selected
+    assert res_20.exit_record.trading_date != forward_dates[20]
+    assert forward_obs[20] not in res_20.forward_observations
+    # Count of observations in window is exactly 20, representing 19 intervals
+    assert len(res_20.forward_observations) == 20
+    assert len(res_20.forward_observations) - 1 == 19
+    # Same day t is excluded
+    assert same_day_obs not in res_20.forward_observations
+    assert res_20.entry_record.trading_date > PRED_DATE
+
+    # --- Horizon 60 Evaluation ---
+    res_60 = align_forward_observations(pred, all_obs, horizon_trading_days=60)
+    assert res_60.status == TargetStatus.VALID
+    # Obs 1 is selected as entry (t+1)
+    assert res_60.entry_record.trading_date == forward_dates[0]
+    assert res_60.entry_record.price == Decimal("100.00")
+    # Obs 60 is selected as exit (t+60)
+    assert res_60.exit_record.trading_date == forward_dates[59]
+    assert res_60.exit_record.price == Decimal("159.00")
+    # Obs 61 is NOT selected
+    assert res_60.exit_record.trading_date != forward_dates[60]
+    assert forward_obs[60] not in res_60.forward_observations
+    # Count of observations in window is exactly 60, representing 59 intervals
+    assert len(res_60.forward_observations) == 60
+    assert len(res_60.forward_observations) - 1 == 59
+    # Same day t is excluded
+    assert same_day_obs not in res_60.forward_observations
+    assert res_60.entry_record.trading_date > PRED_DATE

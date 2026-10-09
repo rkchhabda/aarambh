@@ -197,7 +197,7 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
   4. **60-Day Beta-Adjusted Residual Target Engine:** Implement $y_{i, t}^{\text{60d\_residual}} = R_{\text{stock}, t+1 \to t+60} - (\beta_{i, \le t} \cdot R_{\text{market}, t+1 \to t+60})$. Preserve stock return, market return, and beta separately in `TargetResultRecord`. Enforce point-in-time beta provenance ($\text{estimation\_end\_timestamp} \le t$), rejecting future beta estimates (`FUTURE_BETA_DETECTED`) and benchmark identifier mismatches (`INVALID_BENCHMARK`).
   5. **Terminal Observation Policies:** Mandate fail-closed invalidation for any terminal event occurring during the forward horizon $[t+1, t+H]$: regulatory suspensions return `SUSPENDED_DURING_HORIZON`, delisting returns `DELISTED_DURING_HORIZON`, complex corporate actions (mergers, demergers, rights) return `CORPORATE_ACTION_REVIEW_REQUIRED`, and incompatible price states return `INVALID_ADJUSTMENT_STATE`. Target values for invalidated records must be strictly `None` (preventing silent 0.0 fabrication or stale price carry-forward).
   6. **Zero Performance Metrics Invariant:** TargetAuditRecord and audit routines must never compute or expose investment performance/alpha metrics (Sharpe, Sortino, Calmar, Alpha, Rank IC, Drawdown). Auditing is strictly confined to data quality, failure distributions, future record counts, and label overlap.
-  7. **Research Execution Guardrail:** Maintain research package readiness status strictly at `CONTRACT_READY_REAL_DATA_BLOCKED`. Real historical target generation on repository market data is prohibited pending formal resolution of BLK-01, BLK-02, and BLK-04. Milestone 4 (Feature Research) must not begin without explicit owner authorization.
+  7. **Research Execution Guardrail:** Maintain target engine readiness status strictly at `TARGET_ENGINE_READY_REAL_DATA_BLOCKED`. Real historical target generation on repository market data is prohibited pending formal resolution of BLK-01, BLK-02, and BLK-04. Milestone 4 (Feature Research) must not begin without explicit owner authorization.
 - **Impacted Modules:**
   - `phase7/targets/__init__.py`
   - `phase7/targets/contracts.py`
@@ -221,6 +221,56 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
   - 112/112 tests pass in `.venv-phase7` (108 Phase 7 tests, 4 Phase 6 safeguards).
   - Target isolation test confirms zero imports of feature generation, models, backtests, or Phase 6 vaults.
   - Zero repository data modified; zero real targets generated; zero external network requests.
+
+---
+
+### DEC-20261009-01: Milestone 3 Target Engine Governance, Truncation, Overlap & Readiness Gate Finalization
+- **Date:** 2026-10-09
+- **Decision Authority:** Project Owner & Lead Quantitative Research Engineer
+- **Context & Motivation:** Complete the full conformance audit and corrective controls for Milestone 3, establishing formal cutoff truncation, forward window overlap tracking, real-data readiness gating, provenance hashing, and explicit endpoint semantics before initiating Milestone 4 walk-forward framework.
+- **Exact Decision:**
+  1. **Readiness Status Standard:** Formally establish `TARGET_ENGINE_READY_REAL_DATA_BLOCKED` as the canonical readiness status for Milestone 3. Preserve `CONTRACT_READY_REAL_DATA_BLOCKED` for historical Milestone 2 data contract records.
+  2. **Frozen Endpoint Semantics:** Formally document and lock the forward endpoint convention:
+     - $t+1$ is the first post-prediction observation session.
+     - $t+20$ is the twentieth post-prediction observation session.
+     - $t+60$ is the sixtieth post-prediction observation session.
+     - The window $[t+1, t+20]$ contains 20 discrete observations and 19 close-to-close intervals.
+     - The window $[t+1, t+60]$ contains 60 discrete observations and 59 close-to-close intervals.
+     - `horizon_trading_days` identifies the numbered forward endpoint under the frozen Phase 7 convention. Same-day observation $t$ is strictly excluded.
+  3. **Cutoff Truncation Engine (`phase7/targets/truncation.py`):** Author immutable `CutoffTruncationResult` enforcing discrete session counting without forward-filling or calendar extrapolation. Block outcomes extending past the authorized cutoff (`OUTCOME_EXCEEDS_AUTHORIZED_CUTOFF`) and fail closed on insufficient forward observations (`INSUFFICIENT_FORWARD_OBSERVATIONS`). Preserve blocked events in audit metrics.
+  4. **Overlap Detection Engine (`phase7/targets/overlap.py`):** Author immutable `TargetOverlapMetadata` and `detect_target_overlaps`. Retain all target records without premature purging or embargoing. Enforce security isolation (never group distinct securities). Under the closed holding window convention $[entry, exit]$, boundary-touching windows where $entry_B = exit_A$ are classified as overlapping. Connected components of chained overlaps are grouped into deterministic, order-independent group identifiers. Zero statistical or model metrics are computed.
+  5. **Real-Data Readiness Gate (`phase7/targets/readiness.py`):** Author immutable `TargetReadinessResult` and `evaluate_target_readiness`. Simultaneously preserve individual and compound blocker statuses (`BLOCKED_BLK_01_MEMBERSHIP`, `BLOCKED_BLK_02_OHLCV_LIQUIDITY`, `BLOCKED_BLK_04_SECTOR_HISTORY`). Fail closed if dataset version is missing (`DATA_VALIDATION_FAILURE`). Strictly prohibit reporting an empty generated real-data output as success.
+  6. **Comprehensive Target Hashing:** Incorporate `universe_hash` into `TargetResultRecord` provenance. Assert hash sensitivity to values, statuses, reason codes, dataset versions, universe hashes, and dates. Verify target hash self-exclusion and canonical dictionary ordering.
+  7. **Complete Quality Audit Record:** Expand `TargetAuditRecord` and `audit_target_results` to track `corporate_action_review_count`, `missing_benchmark_count`, and `overlap_count` alongside conservation of inputs across accepted, rejected, and blocked totals. Re-verify strict absence of investment performance or alpha fields.
+  8. **Comprehensive Target Isolation:** Expand static analysis and behavioral tests asserting zero imports of `phase7.features`, `scripts.phase6`, `service`, `models`, `portfolio`, and `backtest`, zero mutation of inputs, zero writes to `data/`, zero vault references, and strict separation of feature cutoff timestamps from target outcomes.
+- **Impacted Modules:**
+  - `phase7/targets/__init__.py`
+  - `phase7/targets/contracts.py`
+  - `phase7/targets/alignment.py`
+  - `phase7/targets/audit.py`
+  - `phase7/targets/truncation.py`
+  - `phase7/targets/overlap.py`
+  - `phase7/targets/readiness.py`
+  - `phase7/targets/sector_relative.py`
+  - `phase7/targets/residual.py`
+  - `tests/phase7/test_target_cutoff_truncation.py`
+  - `tests/phase7/test_target_overlap.py`
+  - `tests/phase7/test_target_readiness.py`
+  - `tests/phase7/test_target_audit.py`
+  - `tests/phase7/test_target_hashing.py`
+  - `tests/phase7/test_target_alignment.py`
+  - `tests/phase7/test_target_isolation.py`
+  - `tests/phase7/test_target_contracts.py`
+  - `tests/phase7/test_target_terminal_handling.py`
+  - `docs/PHASE7_DATA_DICTIONARY.md`
+  - `docs/PHASE7_BLOCKERS.md`
+  - `docs/PHASE7_DECISION_LOG.md`
+  - `docs/PHASE7_IMPLEMENTATION_MAP.md`
+  - `docs/PHASE7_EXECUTION_PLAN.md`
+- **Verification Criteria:**
+  - 156/156 automated tests passing in `.venv-phase7` (152 Phase 7 tests, 4 Phase 6 safeguards).
+  - Target readiness status verified as `TARGET_ENGINE_READY_REAL_DATA_BLOCKED`.
+  - Zero Phase 6 file changes; zero real target generation; zero model training; zero dependency changes.
 
 ---
 

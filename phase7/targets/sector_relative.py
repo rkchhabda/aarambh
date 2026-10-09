@@ -132,6 +132,7 @@ def calculate_20d_sector_relative_target(
             target_status=TargetStatus.INVALID,
             invalid_reason_codes=list(alignment.reason_codes),
             source_dataset_versions=source_dataset_versions,
+            universe_hash=prediction_event.universe_hash,
         )
 
     entry_rec = alignment.entry_record
@@ -165,6 +166,7 @@ def calculate_20d_sector_relative_target(
             target_status=TargetStatus.INVALID,
             invalid_reason_codes=[adj_reason],
             source_dataset_versions=source_dataset_versions,
+            universe_hash=prediction_event.universe_hash,
         )
 
     # 3. Check for terminal events: regulatory suspension during forward horizon
@@ -196,6 +198,7 @@ def calculate_20d_sector_relative_target(
                     target_status=TargetStatus.INVALID,
                     invalid_reason_codes=[reason],
                     source_dataset_versions=source_dataset_versions,
+            universe_hash=prediction_event.universe_hash,
                 )
 
     # 4. Check for corporate actions requiring manual review or delisting during forward horizon
@@ -223,6 +226,7 @@ def calculate_20d_sector_relative_target(
                         target_status=TargetStatus.INVALID,
                         invalid_reason_codes=[TargetReasonCode.DELISTED_DURING_HORIZON],
                         source_dataset_versions=source_dataset_versions,
+            universe_hash=prediction_event.universe_hash,
                     )
                 complex_types = (
                     CorporateActionType.RIGHTS,
@@ -255,6 +259,7 @@ def calculate_20d_sector_relative_target(
                         target_status=TargetStatus.INVALID,
                         invalid_reason_codes=[TargetReasonCode.CORPORATE_ACTION_REVIEW_REQUIRED],
                         source_dataset_versions=source_dataset_versions,
+            universe_hash=prediction_event.universe_hash,
                     )
 
     # 5. Resolve point-in-time sector classification as of t
@@ -280,6 +285,7 @@ def calculate_20d_sector_relative_target(
             target_status=TargetStatus.BLOCKED if sector_reason == TargetReasonCode.MISSING_PIT_SECTOR else TargetStatus.INVALID,
             invalid_reason_codes=[sector_reason],
             source_dataset_versions=source_dataset_versions,
+            universe_hash=prediction_event.universe_hash,
         )
 
     # 6. Align sector benchmark observations on the exact same entry and exit dates
@@ -301,6 +307,7 @@ def calculate_20d_sector_relative_target(
             target_status=TargetStatus.INVALID,
             invalid_reason_codes=[TargetReasonCode.MISSING_BENCHMARK],
             source_dataset_versions=source_dataset_versions,
+            universe_hash=prediction_event.universe_hash,
         )
 
     sec_entry_obs = sec_obs_by_date[entry_date]
@@ -330,6 +337,7 @@ def calculate_20d_sector_relative_target(
             target_status=TargetStatus.INVALID,
             invalid_reason_codes=[sec_adj_reason],
             source_dataset_versions=source_dataset_versions,
+            universe_hash=prediction_event.universe_hash,
         )
 
     # 7. Compute returns
@@ -352,6 +360,7 @@ def calculate_20d_sector_relative_target(
             target_status=TargetStatus.INVALID,
             invalid_reason_codes=[TargetReasonCode.DATA_VALIDATION_FAILURE],
             source_dataset_versions=source_dataset_versions,
+            universe_hash=prediction_event.universe_hash,
         )
 
     # Benchmark discrete return calculation
@@ -376,6 +385,7 @@ def calculate_20d_sector_relative_target(
             target_status=TargetStatus.INVALID,
             invalid_reason_codes=[TargetReasonCode.INVALID_BENCHMARK],
             source_dataset_versions=source_dataset_versions,
+            universe_hash=prediction_event.universe_hash,
         )
 
     # 8. Compute sector-relative target

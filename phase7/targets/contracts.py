@@ -270,6 +270,7 @@ class TargetResultRecord:
     target_status: TargetStatus
     invalid_reason_codes: List[TargetReasonCode] = field(default_factory=list)
     source_dataset_versions: Dict[str, str] = field(default_factory=dict)
+    universe_hash: str = ""
     target_hash: str = ""
 
     def __post_init__(self) -> None:
@@ -310,12 +311,20 @@ class TargetAuditRecord:
     suspension_count: int
     delisting_count: int
     invalid_beta_count: int
-    overlapping_label_count: int
     target_specification_hash: str
     dataset_version: str
+    corporate_action_review_count: int = 0
+    missing_benchmark_count: int = 0
+    overlap_count: int = 0
+    overlapping_label_count: int = 0
     audit_hash: str = ""
 
     def __post_init__(self) -> None:
+        if self.overlapping_label_count == 0 and self.overlap_count != 0:
+            object.__setattr__(self, "overlapping_label_count", self.overlap_count)
+        elif self.overlap_count == 0 and self.overlapping_label_count != 0:
+            object.__setattr__(self, "overlap_count", self.overlapping_label_count)
+
         clean_dict = {k: v for k, v in self.__dict__.items() if k != "audit_hash"}
         computed = compute_row_hash(clean_dict)
         if self.audit_hash and self.audit_hash != computed:
@@ -336,7 +345,10 @@ class TargetAuditRecord:
             "adjustment_state_failure_count": self.adjustment_state_failure_count,
             "suspension_count": self.suspension_count,
             "delisting_count": self.delisting_count,
+            "corporate_action_review_count": self.corporate_action_review_count,
             "invalid_beta_count": self.invalid_beta_count,
+            "missing_benchmark_count": self.missing_benchmark_count,
+            "overlap_count": self.overlap_count,
             "overlapping_label_count": self.overlapping_label_count,
             "target_specification_hash": self.target_specification_hash,
             "dataset_version": self.dataset_version,

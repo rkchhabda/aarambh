@@ -47,6 +47,8 @@ def audit_target_results(
     suspensions = 0
     delistings = 0
     invalid_betas = 0
+    corp_action_reviews = 0
+    missing_benchmarks = 0
 
     # Overlapping forward window tracking per symbol
     intervals_by_sym = defaultdict(list)
@@ -56,7 +58,7 @@ def audit_target_results(
             accepted += 1
             if r.entry_date and r.exit_date:
                 intervals_by_sym[r.symbol].append((r.entry_date, r.exit_date))
-        elif r.target_status == TargetStatus.BLOCKED:
+        elif r.target_status in (TargetStatus.BLOCKED, TargetStatus.BLOCKED_REAL_DATA_UNAVAILABLE):
             blocked += 1
         else:
             rejected += 1
@@ -74,7 +76,16 @@ def audit_target_results(
                 suspensions += 1
             elif code == TargetReasonCode.DELISTED_DURING_HORIZON:
                 delistings += 1
-            elif code in (TargetReasonCode.INVALID_BETA, TargetReasonCode.FUTURE_BETA_DETECTED):
+            elif code == TargetReasonCode.CORPORATE_ACTION_REVIEW_REQUIRED:
+                corp_action_reviews += 1
+            elif code in (TargetReasonCode.MISSING_BENCHMARK, TargetReasonCode.INVALID_BENCHMARK, TargetReasonCode.MISSING_PIT_SECTOR, TargetReasonCode.CONFLICTING_PIT_SECTOR):
+                missing_benchmarks += 1
+            elif code == TargetReasonCode.INVALID_BETA:
+                invalid_betas += 1
+
+            # Non-exclusive: FUTURE_BETA_DETECTED is both a future-data violation
+            # (counted above) AND an invalid beta input. Count it in both buckets.
+            if code == TargetReasonCode.FUTURE_BETA_DETECTED:
                 invalid_betas += 1
 
     # Count overlapping intervals per symbol
@@ -98,7 +109,10 @@ def audit_target_results(
         adjustment_state_failure_count=adjustment_failures,
         suspension_count=suspensions,
         delisting_count=delistings,
+        corporate_action_review_count=corp_action_reviews,
         invalid_beta_count=invalid_betas,
+        missing_benchmark_count=missing_benchmarks,
+        overlap_count=overlapping_count,
         overlapping_label_count=overlapping_count,
         target_specification_hash=specification.specification_hash,
         dataset_version=dataset_version,

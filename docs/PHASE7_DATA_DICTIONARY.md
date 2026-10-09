@@ -246,14 +246,40 @@ where dates are formatted `YYYY-MM-DD`, UTC datetimes are formatted `YYYY-MM-DDT
    - Beta estimate provenance: Beta estimate must be pre-calculated using data strictly up to $t$ ($\text{estimation\_end\_timestamp} \le t$). Future beta leaks fail closed (`FUTURE_BETA_DETECTED`).
    - Preservation: Stock return, benchmark return, beta, and residual target are stored separately in the target record.
 
+3. **Frozen Endpoint Semantics & Interval Convention:**
+   - $t+1$ is the first post-prediction observation session (execution lag $\ge 1$ trading day; same-day $t$ execution strictly prohibited).
+   - $t+20$ is the twentieth post-prediction observation session.
+   - $t+60$ is the sixtieth post-prediction observation session.
+   - Forward holding window $[t+1, t+20]$ contains exactly 20 discrete observations and 19 close-to-close intervals.
+   - Forward holding window $[t+1, t+60]$ contains exactly 60 discrete observations and 59 close-to-close intervals.
+   - `horizon_trading_days` identifies the numbered forward endpoint under the frozen Phase 7 convention.
+   - Boundary-touching overlap convention: Forward holding windows are evaluated as closed intervals $[entry\_date, exit\_date]$. Two windows $A$ and $B$ for the same security overlap if $\max(entry_A, entry_B) \le \min(exit_A, exit_B)$. Touching on the boundary session ($entry_B = exit_A$) is defined as overlapping because both holding positions share that trading day. If $entry_B > exit_A$, windows are non-overlapping.
+
 ### 8.2 Enumerations
 
 1. **`TargetStatus` (`str, Enum`):**
    - `VALID`: Successfully computed target satisfying all point-in-time and boundary requirements.
    - `INVALID`: Excluded due to terminal event, data truncation, or integrity failure.
    - `BLOCKED`: Blocked due to missing upstream point-in-time datasets (e.g. PIT sector classification).
+   - `BLOCKED_REAL_DATA_UNAVAILABLE`: Blocked pending resolution of real historical data blockers (BLK-01, BLK-02, BLK-04).
 
-2. **`TargetReasonCode` (`str, Enum`):**
+2. **`TruncationStatus` (`str, Enum`):**
+   - `COMPLETE`: Forward observations completely span the required horizon within authorized cutoff.
+   - `INSUFFICIENT_FORWARD_OBSERVATIONS`: Trading history ends before reaching horizon endpoint.
+   - `OUTCOME_EXCEEDS_AUTHORIZED_CUTOFF`: Forward window sessions extend beyond authorized cutoff datetime.
+   - `MISSING_ENTRY`: Zero forward observations available strictly after prediction date $t$.
+   - `MISSING_EXIT`: Forward entry exists but exit observation is missing.
+   - `DATA_VALIDATION_FAILURE`: Structural validation or security identity mismatch failure.
+
+3. **`TargetReadinessStatus` (`str, Enum`):**
+   - `READY_FOR_SYNTHETIC_TESTING`: Synthetic test fixtures pass and interfaces are verified.
+   - `TARGET_ENGINE_READY_REAL_DATA_BLOCKED`: Canonical status indicating engine is ready but real-data execution is blocked pending upstream blockers.
+   - `BLOCKED_BLK_01_MEMBERSHIP`: Blocked by absence of PIT Nifty 500 membership history.
+   - `BLOCKED_BLK_02_OHLCV_LIQUIDITY`: Blocked by absence of complete OHLCV and traded value history.
+   - `BLOCKED_BLK_04_SECTOR_HISTORY`: Blocked by absence of PIT sector classification history.
+   - `DATA_VALIDATION_FAILURE`: Missing dataset version or empty real-data generated output failure.
+
+4. **`TargetReasonCode` (`str, Enum`):**
    - `MISSING_ENTRY_PRICE`: Missing price observation on session $t+1$.
    - `MISSING_EXIT_PRICE`: Missing price observation on session $t+H$.
    - `INSUFFICIENT_FORWARD_OBSERVATIONS`: Dataset truncated before horizon session $t+H$ is reached.
@@ -285,7 +311,13 @@ where dates are formatted `YYYY-MM-DD`, UTC datetimes are formatted `YYYY-MM-DDT
 5. **`BetaInputRecord`:**
    - Fields: `symbol` (str), `isin` (str), `beta` (Decimal), `estimation_end_timestamp` (datetime, UTC), `estimation_method` (str), `benchmark_identifier` (str), `dataset_version` (str), `row_hash` (str).
 6. **`TargetResultRecord`:**
-   - Fields: `target_name` (str), `target_version` (str), `prediction_timestamp` (datetime, UTC), `symbol` (str), `isin` (str), `horizon_trading_days` (int), `entry_date` (Optional[date]), `exit_date` (Optional[date]), `stock_total_return` (Optional[Decimal]), `benchmark_total_return` (Optional[Decimal]), `beta_used` (Optional[Decimal]), `target_value` (Optional[Decimal]), `target_status` (TargetStatus), `invalid_reason_codes` (List[TargetReasonCode]), `source_dataset_versions` (Dict[str, str]), `target_hash` (str).
-7. **`TargetAuditRecord`:**
-   - Fields: `input_record_count` (int), `accepted_target_count` (int), `rejected_target_count` (int), `blocked_target_count` (int), `future_data_count` (int), `missing_entry_count` (int), `missing_exit_count` (int), `adjustment_state_failure_count` (int), `suspension_count` (int), `delisting_count` (int), `invalid_beta_count` (int), `overlapping_label_count` (int), `target_specification_hash` (str), `dataset_version` (str), `failure_reasons_summary` (Dict[str, int]), `audit_notes` (List[str]).
-   - Governance invariant: Excludes all investment performance metrics (Sharpe, Sortino, Alpha, Rank IC, Drawdown). Strictly restricted to data quality, integrity, and temporal leakage verification.
+   - Fields: `target_name` (str), `target_version` (str), `prediction_timestamp` (datetime, UTC), `symbol` (str), `isin` (str), `horizon_trading_days` (int), `entry_date` (Optional[date]), `exit_date` (Optional[date]), `stock_total_return` (Optional[Decimal]), `benchmark_total_return` (Optional[Decimal]), `beta_used` (Optional[Decimal]), `target_value` (Optional[Decimal]), `target_status` (TargetStatus), `invalid_reason_codes` (List[TargetReasonCode]), `source_dataset_versions` (Dict[str, str]), `universe_hash` (str), `target_hash` (str).
+7. **`CutoffTruncationResult`:**
+   - Fields: `prediction_timestamp` (datetime, UTC), `symbol` (str), `isin` (str), `target_name` (str), `horizon_endpoint` (int), `required_outcome_start` (Optional[date]), `required_outcome_end` (Optional[date]), `authorized_cutoff` (datetime, UTC), `available_observation_count` (int), `required_observation_count` (int), `truncation_status` (TruncationStatus), `reason_codes` (Tuple[str, ...]), `removed_event_count` (int), `dataset_version` (str), `result_hash` (str).
+8. **`TargetOverlapMetadata`:**
+   - Fields: `symbol` (str), `isin` (str), `target_name` (str), `target_specification_hash` (str), `prediction_timestamp` (datetime, UTC), `outcome_start` (Optional[date]), `outcome_end` (Optional[date]), `overlap_count` (int), `overlap_group_id` (str), `overlapping_target_identifiers` (Tuple[str, ...]), `target_identifier` (str).
+9. **`TargetReadinessResult`:**
+   - Fields: `overall_status` (TargetReadinessStatus), `is_synthetic_ready` (bool), `is_real_data_blocked` (bool), `active_blockers` (Tuple[str, ...]), `blocker_statuses` (Tuple[TargetReadinessStatus, ...]), `target_name` (str), `dataset_version` (Optional[str]), `evaluated_records_count` (int), `audit_notes` (Tuple[str, ...]), `readiness_hash` (str).
+10. **`TargetAuditRecord`:**
+    - Fields: `input_record_count` (int), `accepted_target_count` (int), `rejected_target_count` (int), `blocked_target_count` (int), `future_data_count` (int), `missing_entry_count` (int), `missing_exit_count` (int), `adjustment_state_failure_count` (int), `suspension_count` (int), `delisting_count` (int), `corporate_action_review_count` (int), `invalid_beta_count` (int), `missing_benchmark_count` (int), `overlap_count` (int), `overlapping_label_count` (int), `target_specification_hash` (str), `dataset_version` (str), `audit_hash` (str).
+    - Governance invariant: Excludes all investment performance metrics (Sharpe, Sortino, Alpha, Rank IC, Drawdown). Strictly restricted to data quality, integrity, and temporal leakage verification.
