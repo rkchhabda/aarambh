@@ -963,6 +963,37 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261010-36: Defer External NSE/SEBI Evidence Acquisition & Formal Licensing Review Posture
+- **Date:** 2026-10-10
+- **Decision Authority:** Project Owner (`OWNER DECISION: DEFER EXTERNAL NSE/SEBI EVIDENCE ACQUISITION`)
+- **Context & Motivation:** Following the completion and verification of canonical exact-host validation under Milestone 4.10C-3, the project owner formally decided to defer any live evidence acquisition, historical price batch execution, full-panel constituent downloads, or external source expansion. Formal NSE/SEBI permission and commercial licensing review will be pursued when the project reaches the owner's required technical and commercial readiness stage.
+- **Exact Decision:**
+  1. **External Acquisition Deferred:** No live evidence acquisition pilot (Milestone 4.10C-2), no historical price batch execution/resumption (Milestone 4.10C), no full NIFTY 500 panel downloads, and no new external source expansions are authorized at this time.
+  2. **Reliance on Preserved Staging Only:** The project will continue operating exclusively with data and evidence already acquired, verified, and preserved in external staging:
+     - 5-stock January 2024 OHLCV evidence (`RELIANCE`, `TCS`, `HDFCBANK`, `INFY`, `ICICIBANK`)
+     - Frozen current NIFTY 500 constituent snapshot (`CURRENT_NIFTY500_09Oct2026_8F4C439F`)
+     - Frozen 20-symbol deterministic operational sample (`60dd0358...` / `26e4be7c...`)
+     - Preserved halted batch run `BATCH_4_10C_HISTORICAL_20STOCK_2024Q1_20261010T112814Z`
+     - Preserved consumed authorization markers
+  3. **Licensing Review Timeline:** Formal NSE and SEBI permission and licensing reviews will be pursued when the project reaches the owner's required technical and commercial readiness stage.
+  4. **Internal Non-Distributed Posture:** All ongoing development and analysis remain strictly internal and non-distributed.
+  5. **Evidence Immutability:** Existing external staging evidence, contracts, selection checksums, and consumed markers remain strictly immutable.
+  6. **Unresolved Listing Dates:** `PREMIERENE` remains `LISTING_DATE_UNVERIFIED` and retrospective outcome remains `EMPTY_RESPONSE_UNEXPLAINED`.
+  7. **Gate 1 Blockers Open:** `BLK-01` (Point-in-Time Constituents), `BLK-02` (Historical OHLCV + Turnover), and `BLK-04` (Point-in-Time Sectors) remain strictly open.
+  8. **Quarantine Invariants:** Quantitative target generation, model training, and investment performance calculation remain strictly prohibited. Milestone 5 remains quarantined.
+- **Impacted Modules:**
+  - `docs/PHASE7_DECISION_LOG.md`
+  - `docs/PHASE7_BLOCKERS.md`
+  - `docs/PHASE7_IMPLEMENTATION_MAP.md`
+  - `docs/PHASE7_PREMIERENE_PRELISTING_CLASSIFICATION.md`
+- **Verification Criteria:**
+  - Zero live network requests dispatched.
+  - Zero active authorization markers created.
+  - All test suites passing (544 passing tests).
+  - External staging datasets intact and immutable.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:

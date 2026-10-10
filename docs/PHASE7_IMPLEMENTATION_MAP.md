@@ -808,3 +808,26 @@ Milestone 3 delivered the comprehensive Target Engine (`phase7/targets/`), cover
   - `BLK-04` (Point-in-Time Sector Classification History): **`STILL_BLOCKED`**
 - **Recommended Next Decision Phrase:** **`RE-AUTHORIZE MILESTONE 4.10C-2 AFTER DOMAIN VALIDATION FIX`**.
 - **Milestone 5 Quarantine:** Strictly **BLOCKED**.
+
+---
+
+## 25. Owner Decision: Defer External NSE/SEBI Evidence Acquisition & Licensing Review Posture
+
+### 25.1 Executive Directives
+- **Effective Date:** 2026-10-10
+- **Governing Directives:**
+  1. The project will continue operating strictly with NSE data and evidence already acquired, verified, and preserved in external staging.
+  2. No additional NSE or SEBI evidence acquisition, historical batch execution, full-panel download, or external-source expansion is authorized at this time.
+  3. Formal NSE/SEBI permission and commercial licensing review will be pursued when the project reaches the owner's required technical and commercial readiness stage.
+  4. Ongoing development remains internal and non-distributed.
+  5. Existing external staging evidence, contracts, checksums, and consumed markers remain immutable.
+  6. Unresolved listing dates (specifically `PREMIERENE`) remain `LISTING_DATE_UNVERIFIED` and retrospective outcome remains `EMPTY_RESPONSE_UNEXPLAINED`.
+  7. Gate 1 Blockers (`BLK-01`, `BLK-02`, and `BLK-04`) remain strictly open and fail-closed.
+  8. Quantitative target generation, model training, and performance metrics calculation remain strictly prohibited. Milestone 5 remains quarantined.
+
+### 25.2 Preserved Staging Assets Under Active Invariant
+- **Five-Stock Live OHLCV Evidence:** `RELIANCE`, `TCS`, `HDFCBANK`, `INFY`, `ICICIBANK` (January 2024; 110 raw/normalized rows; 0 rejected rows).
+- **Frozen Current Snapshot:** `CURRENT_NIFTY500_09Oct2026_8F4C439F` (500 unique valid equities).
+- **Frozen 20-Symbol Deterministic Sample:** Checksum `60dd0358...`, ordered-symbol hash `26e4be7c...`.
+- **Halted Batch Run:** `BATCH_4_10C_HISTORICAL_20STOCK_2024Q1_20261010T112814Z` (halted fail-closed on Symbol 0 `PREMIERENE`).
+- **Consumed Authorization Tokens:** Permanently consumed and non-reusable.

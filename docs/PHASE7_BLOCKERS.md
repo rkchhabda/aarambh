@@ -218,3 +218,19 @@
 - **Safety Compliance:** In strict adherence to owner instructions, zero network calls were made and no code was modified.
 - **Blockers Status:** BLK-01, BLK-02, and BLK-04 remain completely **OPEN** and fail-closed.
 - **Milestone 5 Status:** Strictly **BLOCKED**. Zero model training, target generation, or backtesting authorized.
+
+---
+
+## 9. Owner Decision: Defer External NSE/SEBI Evidence Acquisition & Licensing Review Posture
+
+- **Effective Date:** 2026-10-10
+- **Governing Status:** **EXTERNAL_EVIDENCE_ACQUISITION_DEFERRED_BY_OWNER**
+- **Decision Directives:**
+  1. The project will continue operating strictly with NSE data and evidence already acquired, verified, and preserved in external staging.
+  2. No additional NSE or SEBI evidence acquisition, historical batch execution, full-panel download, or external-source expansion is authorized at this time.
+  3. Formal NSE/SEBI permission and commercial licensing review will be pursued when the project reaches the owner's required technical and commercial readiness stage.
+  4. Ongoing development remains strictly internal and non-distributed.
+  5. Existing external staging evidence, checksums, contracts, and consumed tokens remain immutable.
+  6. Unresolved listing dates (specifically `PREMIERENE`) remain `LISTING_DATE_UNVERIFIED` and retrospective outcome remains `EMPTY_RESPONSE_UNEXPLAINED`.
+  7. Gate 1 Blockers (`BLK-01`, `BLK-02`, and `BLK-04`) remain strictly open and fail-closed.
+  8. Quantitative target generation, model training, and performance metrics calculation remain strictly prohibited. Milestone 5 remains quarantined.

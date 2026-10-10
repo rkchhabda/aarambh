@@ -23,7 +23,8 @@ Under Phase 7 governance rules:
    - **Listing Date Status:** `LISTING_DATE_UNVERIFIED`
    - **Verification Status:** `UNVERIFIED`
    - **Retrospective Outcome:** `EMPTY_RESPONSE_UNEXPLAINED`
-5. **Domain Validation Correction (Milestone 4.10C-3):** Canonical exact-host validation was corrected and regression-tested to recognize `www.sebi.gov.in` alongside `nsearchives.nseindia.com`. Candidate URLs verified statically as `ACCEPTED`. Awaiting owner re-authorization (`RE-AUTHORIZE MILESTONE 4.10C-2 AFTER DOMAIN VALIDATION FIX`) with a new single-use marker.
+5. **Domain Validation Correction (Milestone 4.10C-3):** Canonical exact-host validation was corrected and regression-tested to recognize `www.sebi.gov.in` alongside `nsearchives.nseindia.com`. Candidate URLs verified statically as `ACCEPTED`.
+6. **Owner Decision Posture (2026-10-10):** The owner formally deferred external evidence acquisition pending formal commercial and technical licensing readiness. In accordance with this directive, no live evidence acquisition attempt will be dispatched. `PREMIERENE` remains strictly `LISTING_DATE_UNVERIFIED` with retrospective outcome `EMPTY_RESPONSE_UNEXPLAINED`.
 
 ---
 
