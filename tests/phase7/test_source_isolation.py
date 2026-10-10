@@ -66,3 +66,43 @@ def test_no_top_level_nse_import():
                     assert alias.name != "nse", f"Top-level import 'nse' found in {py_file}"
             elif isinstance(node, ast.ImportFrom):
                 assert node.module != "nse", f"Top-level 'from nse' found in {py_file}"
+
+
+def test_no_target_generation_or_model_training_in_sources():
+    """Verify phase7.sources contains no model training, target generation, or financial metric logic."""
+    sources_dir = Path(__file__).resolve().parent.parent.parent / "phase7" / "sources"
+    forbidden_terms = [
+        "target_engine",
+        "rank_ic",
+        "sharpe",
+        "sortino",
+        "drawdown",
+        "train_model",
+        "fit(",
+        "cross_val",
+        "lightgbm",
+        "xgboost",
+        "catboost",
+        "sklearn",
+    ]
+    for py_file in sources_dir.glob("*.py"):
+        content = py_file.read_text(encoding="utf-8").lower()
+        for term in forbidden_terms:
+            assert term not in content, f"Forbidden modeling/performance term '{term}' found in {py_file}"
+
+
+def test_no_repository_data_writes_in_sources():
+    """Verify phase7.sources never hardcodes writes to repository data/ directory."""
+    sources_dir = Path(__file__).resolve().parent.parent.parent / "phase7" / "sources"
+    forbidden_patterns = [
+        'Path("data/")',
+        "Path('data/')",
+        'Path("data")',
+        "Path('data')",
+        '"./data"',
+        "'./data'",
+    ]
+    for py_file in sources_dir.glob("*.py"):
+        content = py_file.read_text(encoding="utf-8")
+        for pat in forbidden_patterns:
+            assert pat not in content, f"Forbidden repository data path pattern '{pat}' found in {py_file}"

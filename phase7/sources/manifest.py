@@ -38,6 +38,7 @@ def build_manifest(
     failure_reason: Optional[str] = None,
     retry_count: int = 0,
     is_partial: bool = False,
+    row_count: Optional[int] = None,
 ) -> RequestManifest:
     """Build an immutable RequestManifest instance with cryptographic checksums."""
     raw_bytes = json.dumps(raw_payload, sort_keys=True, default=str).encode("utf-8")

@@ -85,3 +85,16 @@ If the owner chooses to build an in-house connector to ingest raw NSE public arc
    - Automatic SHA-256 checksum and rejected-record manifest generation.
 3. **Download Full Official Bhavcopy Archives:** Rather than querying individual stock quote APIs, download daily official Bhavcopy archives (`cmDDMMMYYYYbhav.csv.zip` and `sec_bhavdata_full_DDMMYYYY.csv`) from `archives.nseindia.com`. This yields official traded value turnover and deliverable quantities for all listed stocks (including removed/delisted names) in a single daily archive.
 4. **Acquire Historical Index Circulars:** Download official semi-annual NIFTY 500 reconstitution circulars from `niftyindices.com` to reconstruct historical constituent addition and deletion intervals.
+
+---
+
+## 4. Milestone 4.8 Existing NSEDataFetcher Remediation Update
+
+Following the owner's authorization of Milestone 4.8, the authoritative `NSEDataFetcher` (`connector_review/nse_data_service.py`) was audited and adapted:
+1. **Explicit Historical Range Confirmed:** `NSEDataFetcher.get_historical_data(symbol, start_date, end_date)` implements explicit calendar boundaries, resolving Gap 3 for single-stock history.
+2. **Turnover & Volume Reporting:** Upstream payloads report `CH_TOT_TRADED_VAL` and `CH_TOT_TRADED_QTY`. The Phase 7 normalizer strictly avoids deriving turnover from Close.
+3. **Safety Remediation Complete:** Built isolated `phase7/sources/` package enforcing sequential locking, minimum 2.0s delay, HTTP denial detection, and zero-retry invariants.
+4. **Remaining Unresolved Gaps:**
+   - **Gap 1 (Constituents):** `NSEDataFetcher` has no constituent method. `phase7.sources.nse_constituents` returns `SOURCE_UNAVAILABLE`. BLK-01 remains open.
+   - **BLK-04 (Sector History):** Point-in-time sector reclassifications are not available.
+   - **Live Pilot:** Prepared under `phase7.sources.pilot`, but blocked pending Milestone 4.9 authorization. Status: `NSE_DATA_FETCHER_ADAPTED_LIVE_PILOT_NOT_AUTHORIZED`.

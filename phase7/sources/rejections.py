@@ -31,6 +31,9 @@ class RejectionLedger:
         self.rejected_symbols.append(record)
         return record
 
+    def record_symbol_rejection(self, record: RejectedSymbolRecord) -> None:
+        self.rejected_symbols.append(record)
+
     def record_rejected_row(
         self,
         symbol: str,
@@ -46,6 +49,9 @@ class RejectionLedger:
         )
         self.rejected_rows.append(record)
         return record
+
+    def record_row_rejection(self, record: RejectedRowRecord) -> None:
+        self.rejected_rows.append(record)
 
     def persist(self) -> Dict[str, Path]:
         """Write rejected symbol and row ledgers to disk."""

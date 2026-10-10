@@ -46,9 +46,11 @@ def _parse_int(val: Any) -> Optional[int]:
 def normalize_historical_row(
     raw_row: Dict[str, Any],
     symbol: str,
-    ingestion_ts: str,
+    ingestion_ts: Optional[str] = None,
     source_identifier: str = "NSE_DATA_FETCHER_EOD",
+    ingestion_timestamp: Optional[str] = None,
 ) -> HistoricalEODRecord:
+    ts = ingestion_ts or ingestion_timestamp or datetime.now(timezone.utc).isoformat()
     """Normalize a raw historical EOD dictionary into a validated canonical HistoricalEODRecord.
 
     Raises:
@@ -180,7 +182,7 @@ def normalize_historical_row(
         adjustment_state=AdjustmentState.UNADJUSTED,
         traded_value_status=traded_value_status,
         source_timestamp=src_ts,
-        ingestion_timestamp=ingestion_ts,
+        ingestion_timestamp=ts,
         source_identifier=source_identifier,
         row_hash=row_hash,
     )

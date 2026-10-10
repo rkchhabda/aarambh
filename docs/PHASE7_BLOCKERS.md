@@ -183,3 +183,16 @@
   4. [`docs/PHASE7_DATA_SOURCE_DUE_DILIGENCE_CHECKLIST.md`](file:///c:/Users/r_chh/OneDrive%20-%20optgbrc/Apps/GaurviDEEP/docs/PHASE7_DATA_SOURCE_DUE_DILIGENCE_CHECKLIST.md): Technical due diligence checklist covering sample files, data dictionary, natural keys, compression, encodings, ISO 8601 dates, timestamp causality, null representation, numeric precision, and revision policies.
   5. [`docs/PHASE7_DATA_LICENSING_CHECKLIST.md`](file:///c:/Users/r_chh/OneDrive%20-%20optgbrc/Apps/GaurviDEEP/docs/PHASE7_DATA_LICENSING_CHECKLIST.md): Legal verification checklist covering quantitative research, ML/AI model training, derived analytics IP ownership, application display, retention rights, and regulatory reporting.
 - **Next Gating Action:** Owner review and authorization of vendor selection for real dataset procurement. No automated data download, scraping, model training, or Milestone 5 execution may occur.
+
+---
+
+## 7. Milestone 4.8 NSEDataFetcher Integration & Safety Audit Summary
+
+- **Status:** **NSE_DATA_FETCHER_ADAPTED_LIVE_PILOT_NOT_AUTHORIZED**
+- **Inspection Object:** Authoritative `NSEDataFetcher` in `connector_review/nse_data_service.py` (powered by `nse==4.0.1` under Python 3.12.10).
+- **Core Findings on Blockers:**
+  1. **BLK-01 (PIT Index Constituents):** **STILL BLOCKED.** `NSEDataFetcher` has no method for index constituents or historical additions/deletions. `phase7.sources.nse_constituents` strictly returns `SOURCE_UNAVAILABLE`.
+  2. **BLK-02 (Historical OHLCV + Turnover):** **STILL BLOCKED.** `NSEDataFetcher.get_historical_data` proves support for explicit `start_date` and `end_date` without today() override. However, live network calls remain unauthorized during Milestone 4.8, upstream error handling encapsulates HTTP status codes, and a verified live pilot has not yet executed.
+  3. **BLK-04 (PIT Sector Classifications):** **STILL BLOCKED.** `NSEDataFetcher` provides only snapshot industry metadata via live quote; historical reclassification timestamps are absent.
+- **Safety Status:** Marked **`UNSAFE_FOR_LIVE_PILOT`** due to upstream transport encapsulation and local directory write behavior. Live pilot is prepared under `phase7.sources.pilot` but blocked pending explicit owner authorization in Milestone 4.9.
+- **Milestone 5 Status:** Strictly **BLOCKED**. Zero model training, target generation, or backtesting authorized.

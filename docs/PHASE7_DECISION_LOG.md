@@ -396,6 +396,39 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261010-18: Safe Adapter Architecture for NSEDataFetcher (Milestone 4.8)
+- **Date:** 2026-10-10
+- **Decision Authority:** Project Owner & Lead Quantitative Research Engineer
+- **Context & Motivation:** Implementation of the isolated, fail-closed Phase 7 adapter wrapping `NSEDataFetcher` (`phase7/sources/`) following the static source audit.
+- **Exact Decision:**
+  1. **Isolated Package (`phase7/sources/`):** Primary adapter implemented in `NSEDataFetcherAdapter` wrapping `NSEDataFetcherProtocol` with dependency injection.
+  2. **Fail-Closed Safety Status:** Adapter marked `UNSAFE_FOR_LIVE_PILOT` due to upstream HTTP status code encapsulation in `nse==4.0.1`.
+  3. **Constituent Handling:** `phase7.sources.nse_constituents` strictly returns `SOURCE_UNAVAILABLE` when fetcher lacks constituent method; zero fallback to `features.universe` or legacy 138-stock lists.
+  4. **Output Normalization:** Canonical conversion to `HistoricalEODRecord` with turnover never inferred from Close, ISIN never inferred, adjustment state never invented, and deterministic SHA-256 row hashes.
+  5. **Live Pilot Preparation:** Prepared dedicated CLI `phase7.sources.pilot` requiring exact authorization phrase `'AUTHORIZE MILESTONE 4.9: FIVE-STOCK NSE LIVE PILOT'`. Live execution not performed in Milestone 4.8.
+  6. **Completion Status:** `NSE_DATA_FETCHER_ADAPTED_LIVE_PILOT_NOT_AUTHORIZED`.
+- **Impacted Modules:**
+  - `phase7/sources/__init__.py`
+  - `phase7/sources/contracts.py`
+  - `phase7/sources/http_client.py`
+  - `phase7/sources/nse_data_fetcher_adapter.py`
+  - `phase7/sources/nse_constituents.py`
+  - `phase7/sources/nse_eod.py`
+  - `phase7/sources/nse_corporate_actions.py`
+  - `phase7/sources/normalization.py`
+  - `phase7/sources/manifest.py`
+  - `phase7/sources/pilot.py`
+  - `phase7/sources/audit.py`
+  - `docs/PHASE7_NSE_DATA_FETCHER_AUDIT.md`
+  - `docs/PHASE7_NSE_DATA_FETCHER_ADAPTER.md`
+  - `docs/PHASE7_NSE_LIVE_PILOT_PROTOCOL.md`
+  - `docs/PHASE7_FASTAPI_NSE_WRAPPER_SECURITY_REVIEW.md`
+- **Verification Criteria:**
+  - All 248 automated tests pass offline in `.venv-phase7`.
+  - Zero live network requests executed; zero market data written to repository.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:

@@ -18,6 +18,7 @@ PILOT_ALLOWED_SYMBOLS: Set[str] = {
 }
 PILOT_START_DATE = "2024-01-01"
 PILOT_END_DATE = "2024-01-31"
+APPROVED_PILOT_SYMBOLS = PILOT_ALLOWED_SYMBOLS
 
 SYMBOL_REGEX = re.compile(r"^[A-Z0-9_\-\.&]+$")
 
@@ -48,7 +49,7 @@ def validate_symbol(symbol: str) -> str:
     return cleaned
 
 
-def validate_date_range(start_date: str, end_date: str) -> None:
+def validate_date_range(start_date: str, end_date: str) -> tuple[str, str]:
     """Validate ISO YYYY-MM-DD date range against Phase 7 boundaries.
 
     Raises:
@@ -69,6 +70,8 @@ def validate_date_range(start_date: str, end_date: str) -> None:
             f"End date '{end_date}' exceeds Phase 7 development cutoff '{DEVELOPMENT_CUTOFF_DATE}'."
         )
 
+    return start_date, end_date
+
 
 def validate_staging_path(staging_root: Path, repo_root: Path) -> Path:
     """Ensure staging root is non-empty, exists or is creatable, and is outside repository tree."""
@@ -77,7 +80,7 @@ def validate_staging_path(staging_root: Path, repo_root: Path) -> Path:
 
     if s_path == r_path or r_path in s_path.parents:
         raise ValueError(
-            f"Staging path '{s_path}' cannot be located within the Git repository '{r_path}'."
+            f"Staging path '{s_path}' must be strictly external and cannot be located within the Git repository '{r_path}'."
         )
 
     return s_path
@@ -112,3 +115,12 @@ class PilotGuard:
                 f"Pilot date range must be exactly '{PILOT_START_DATE}' to '{PILOT_END_DATE}', "
                 f"got '{start_date}' to '{end_date}'."
             )
+
+
+def validate_pilot_parameters(symbols: list[str], start_date: str, end_date: str) -> None:
+    """Validate a list of symbols and date range for the 5-stock pilot."""
+    guard = PilotGuard()
+    if not symbols:
+        raise ValueError("Pilot symbol list cannot be empty.")
+    for s in symbols:
+        guard.validate_pilot_request(s, start_date, end_date)

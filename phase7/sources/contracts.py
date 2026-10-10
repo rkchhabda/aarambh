@@ -5,7 +5,16 @@ Strictly governs schemas, natural keys, field statuses, and immutability invaria
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
+
+
+class CapabilityStatus(str, Enum):
+    AVAILABLE = "AVAILABLE"
+    UNAVAILABLE = "UNAVAILABLE"
+    PARTIAL = "PARTIAL"
+    UNVERIFIED = "UNVERIFIED"
+    UNSAFE = "UNSAFE"
+    NOT_IMPLEMENTED = "NOT_IMPLEMENTED"
 
 
 class FieldStatus(str, Enum):
@@ -35,6 +44,20 @@ class RequestStatus(str, Enum):
     FAILED = "FAILED"
     REJECTED = "REJECTED"
     EMPTY = "EMPTY"
+
+
+@runtime_checkable
+class NSEDataFetcherProtocol(Protocol):
+    """Protocol matching the authoritative NSEDataFetcher interface."""
+
+    def get_live_quote(self, symbol: str) -> Dict[str, Any]:
+        ...
+
+    def get_market_status(self) -> Dict[str, Any]:
+        ...
+
+    def get_historical_data(self, symbol: str, start: str, end: str) -> List[Dict[str, Any]]:
+        ...
 
 
 @dataclass(frozen=True)

@@ -120,6 +120,8 @@ flowchart TD
 | Milestone 3 | Data Contracts & Universe Tests Passing | `APPROVE MILESTONE 3` |
 | Milestone 4 | Target Engine Verified | `APPROVE MILESTONE 4` |
 | Milestone 4.5 | Validation Framework Ready | `AUTHORIZE MILESTONE 4.5: GATE 1 DATA READINESS SPECIFICATION` |
+| Milestone 4.8 | Static Audit & Safe Adapter Built | `AUTHORIZE MILESTONE 4.8: EXISTING NSE DATA FETCHER INTEGRATION AND SAFETY REMEDIATION` |
+| Milestone 4.9 | Five-Stock Live Pilot | `AUTHORIZE MILESTONE 4.9: FIVE-STOCK NSE LIVE PILOT` |
 | Milestone 5 | Gate 1 Real Data Accepted | `APPROVE MILESTONE 5` |
 | Milestone 6 | Baseline Board Frozen | `APPROVE MILESTONE 6` |
 | Milestone 7 | Linear Models Registered | `APPROVE MILESTONE 7` |
