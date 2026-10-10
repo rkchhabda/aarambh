@@ -16,6 +16,7 @@ from phase7.sources.contracts import (
     FieldStatus,
     HistoricalEODRecord,
     NSEDataFetcherProtocol,
+    PilotAuthorizationRecord,
     RejectedRowRecord,
     RejectedSymbolRecord,
     RequestManifest,
@@ -60,10 +61,22 @@ __all__ = [
     "NSEDataFetcherAdapter",
     "NSEDataFetcherProtocol",
     "NSEDataSourceAdapter",
+    "PilotAuthorizationRecord",
     "PilotGuard",
     "PILOT_ALLOWED_SYMBOLS",
+    "PILOT_APPROVED_SYMBOLS",
     "PILOT_START_DATE",
     "PILOT_END_DATE",
+    "PILOT_INTERVAL",
+    "PILOT_MILESTONE",
+    "PILOT_SCOPE",
+    "ACTIVE_MARKER_FILENAME",
+    "compute_authorization_hash",
+    "compute_staging_root_hash",
+    "consume_authorization",
+    "create_pilot_authorization",
+    "load_and_validate_authorization",
+    "validate_authorization_marker_path",
     "DEVELOPMENT_CUTOFF_DATE",
     "RejectionLedger",
     "RejectedRowRecord",
@@ -80,6 +93,29 @@ __all__ = [
     "normalize_historical_row",
     "validate_date_range",
     "validate_staging_path",
+    "validate_staging_root",
     "validate_symbol",
     "write_manifest",
 ]
+
+
+def __getattr__(name: str):
+    """Lazy-load authorization functions and constants to prevent CLI runner warnings."""
+    _auth_attrs = {
+        "ACTIVE_MARKER_FILENAME",
+        "PILOT_APPROVED_SYMBOLS",
+        "PILOT_INTERVAL",
+        "PILOT_MILESTONE",
+        "PILOT_SCOPE",
+        "compute_authorization_hash",
+        "compute_staging_root_hash",
+        "consume_authorization",
+        "create_pilot_authorization",
+        "load_and_validate_authorization",
+        "validate_authorization_marker_path",
+        "validate_staging_root",
+    }
+    if name in _auth_attrs:
+        import phase7.sources.authorization as auth_mod
+        return getattr(auth_mod, name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

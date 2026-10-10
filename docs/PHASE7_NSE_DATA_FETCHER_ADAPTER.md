@@ -32,8 +32,9 @@ graph TD
 | `normalization.py` | Row normalization & hash computation | Validates OHLC relationships, positive prices, non-negative volume; turnover never inferred from Close; ISIN never inferred |
 | `manifest.py` | Request manifest construction | Generates immutable `RequestManifest` with cryptographic SHA-256 checksums |
 | `rejections.py` | Malformed symbol/row recording | Logs rejected symbols and invalid rows with reasons and raw payloads |
+| `authorization.py` | Single-use authorization marker | Generates and validates immutable markers outside Git; binds staging hash; enforces single-use; atomic consumption |
 | `pilot_guard.py` | Pilot pre-flight boundaries | Validates approved 5 symbols (`RELIANCE, TCS, HDFCBANK, INFY, ICICIBANK`), date window (`2024-01-01`..`2024-01-31`), external staging |
-| `pilot.py` | Dedicated CLI entry point | Live execution blocked without exact phrase `'AUTHORIZE MILESTONE 4.9: FIVE-STOCK NSE LIVE PILOT'` |
+| `pilot.py` | Dedicated CLI entry point | Requires `--execute-live` and valid single-use authorization marker; atomic consumption before client creation |
 | `audit.py` | Structural quality audit | Audits coverage, nullity, duplicates, and natural key uniqueness |
 
 ---

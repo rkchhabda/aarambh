@@ -10,8 +10,8 @@ from phase7.sources.pilot_guard import (
 
 
 def test_pilot_unauthorized_execution_blocked():
-    """Verify that pilot execution raises PermissionError without exact authorization phrase."""
-    guard = PilotGuard(authorized_phrase="AUTHORIZE FIVE STOCK PILOT")
+    """Verify that pilot execution raises PermissionError when not authorized."""
+    guard = PilotGuard(is_authorized=False)
     assert not guard.is_authorized
 
     with pytest.raises(PermissionError, match="Live pilot execution is strictly PROHIBITED"):
@@ -23,9 +23,8 @@ def test_pilot_unauthorized_execution_blocked():
 
 
 def test_pilot_authorized_execution_allows_valid_params():
-    """Verify that exact phrase validates pilot boundaries."""
-    exact_phrase = "AUTHORIZE MILESTONE 4.9: FIVE-STOCK NSE LIVE PILOT"
-    guard = PilotGuard(authorized_phrase=exact_phrase)
+    """Verify that authorized guard validates pilot boundaries."""
+    guard = PilotGuard(is_authorized=True)
     assert guard.is_authorized
     guard.verify_execution_permitted()  # Succeeded without exception
 
@@ -36,7 +35,7 @@ def test_pilot_authorized_execution_allows_valid_params():
 
 def test_pilot_rejects_unapproved_symbols():
     """Verify that any symbol outside the 5 approved tickers is rejected."""
-    guard = PilotGuard(authorized_phrase="AUTHORIZE MILESTONE 4.9: FIVE-STOCK NSE LIVE PILOT")
+    guard = PilotGuard(is_authorized=True)
 
     with pytest.raises(ValueError, match="not in approved pilot allowlist"):
         guard.validate_pilot_request("SBIN", PILOT_START_DATE, PILOT_END_DATE)
@@ -47,7 +46,7 @@ def test_pilot_rejects_unapproved_symbols():
 
 def test_pilot_rejects_non_frozen_dates():
     """Verify that dates outside Jan 2024 (2024-01-01 to 2024-01-31) are rejected."""
-    guard = PilotGuard(authorized_phrase="AUTHORIZE MILESTONE 4.9: FIVE-STOCK NSE LIVE PILOT")
+    guard = PilotGuard(is_authorized=True)
 
     with pytest.raises(ValueError, match="Pilot date range must be exactly"):
         guard.validate_pilot_request("RELIANCE", "2024-01-01", "2024-02-15")

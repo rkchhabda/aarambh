@@ -89,16 +89,13 @@ def validate_staging_path(staging_root: Path, repo_root: Path) -> Path:
 class PilotGuard:
     """Enforces pre-flight boundaries for the 5-security pilot."""
 
-    REQUIRED_AUTHORIZATION_PHRASE = "AUTHORIZE MILESTONE 4.9: FIVE-STOCK NSE LIVE PILOT"
-
-    def __init__(self, authorized_phrase: str = ""):
-        self.is_authorized = (authorized_phrase.strip() == self.REQUIRED_AUTHORIZATION_PHRASE)
+    def __init__(self, is_authorized: bool = False):
+        self.is_authorized = bool(is_authorized)
 
     def verify_execution_permitted(self) -> None:
         if not self.is_authorized:
             raise PermissionError(
-                "Live pilot execution is strictly PROHIBITED without explicit owner authorization phrase: "
-                f"'{self.REQUIRED_AUTHORIZATION_PHRASE}'."
+                "Live pilot execution is strictly PROHIBITED without a valid single-use authorization marker."
             )
 
     def validate_pilot_request(self, symbol: str, start_date: str, end_date: str) -> None:

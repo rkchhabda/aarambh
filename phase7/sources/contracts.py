@@ -152,3 +152,20 @@ class RequestManifest:
     failure_reason: Optional[str] = None
     retry_count: int = 0
     is_partial: bool = False
+
+
+@dataclass(frozen=True)
+class PilotAuthorizationRecord:
+    authorization_version: str
+    milestone: str
+    scope: str
+    approved_symbols: List[str]
+    start_date: str
+    end_date: str
+    interval: str
+    staging_root_hash: str
+    issued_timestamp: str
+    expires_timestamp: str
+    single_use: bool
+    nonce: str
+    authorization_hash: str

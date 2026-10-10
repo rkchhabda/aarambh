@@ -44,18 +44,19 @@ flowchart TD
   ```
 - **Problem:** This design required the owner authorization phrase to be stored as a CLI argument string (`--owner-authorization "..."`), functioning as a reusable token.
 - **Milestone 4.9 Instruction:** The owner explicitly directed that the phrase must not be supplied on the command line, and that the agent must halt if the code still mandates it.
-- **Remediation Required:** A dedicated maintenance patch must update `phase7/sources/pilot.py` to decouple live execution from command-line string matching, allowing authorized command execution via explicit execution context.
+- **Remediation Completed in Milestone 4.9A:** `phase7/sources/pilot.py` and `phase7/sources/pilot_guard.py` completely removed `--owner-authorization` and all secret phrase comparisons. Implemented single-use scope-bound authorization marker management (`phase7.sources.authorization`) storing markers strictly outside Git and enforcing atomic consumption prior to client instantiation.
+
+### 2.2 Single-Use Authorization Security Architecture
+- **No Reusable Secrets:** The marker contains zero passwords, bearer tokens, cookies, or owner phrases.
+- **Strict Scope Binding:** Binds milestone 4.9, FIVE_STOCK_NSE_LIVE_PILOT scope, approved 5 symbols in governed order, Jan 2024 dates, 1d interval, and external staging root hash.
+- **Atomic Pre-Client Consumption:** Consumed via `os.replace` to `pilot_authorization.consumed.<timestamp>.json` before client initialization. Zero network requests occur if validation or consumption fails.
+- **Fail-Closed Guarantees:** Tampering, expiration, reuse, relative paths, or repository locations are rejected.
 
 ---
 
 ## 3. Recommended Next Actions
 
-1. **Commit Pilot Blocker Documentation:**
-   Commit the authorized documentation under:
-   `docs(phase7): record five-stock NSE pilot blocker`
-2. **Authorize Corrective Patch:**
-   Request owner authorization to patch `phase7/sources/pilot.py` and associated test fixtures to remove the reusable CLI authorization token requirement.
-3. **Re-authorize Five-Stock Pilot:**
-   Following the corrective patch, re-execute the five-stock live pilot in clean staging under Milestone 4.9.
-4. **Milestone 5 Quarantine:**
+1. **Re-authorize Milestone 4.9 Live Pilot:**
+   Following the completed Milestone 4.9A authorization guard remediation, request owner re-authorization (`RE-AUTHORIZE MILESTONE 4.9: FIVE-STOCK NSE LIVE PILOT`) to create the external marker and execute the live pilot retrieval.
+2. **Milestone 5 Quarantine:**
    Milestone 5 (model training and target generation) remains strictly blocked until real data is procured, ingested, and verified through Gate 1.

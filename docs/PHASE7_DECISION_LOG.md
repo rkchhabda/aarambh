@@ -447,8 +447,39 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
   - `docs/PHASE7_DECISION_LOG.md`
 - **Verification Criteria:**
   - Working tree remains clean after documentation commit.
-  - 248 tests continue to pass in `.venv-phase7`.
-  - Zero market data files in repository.
+---
+
+### DEC-20261010-20: Milestone 4.9A Single-Use Scope-Bound Pilot Authorization Guard
+- **Date:** 2026-10-10
+- **Decision Authority:** Project Owner & Lead Quantitative Research Engineer
+- **Context & Motivation:** Remediation of the reusable authorization token defect recorded in DEC-20261010-19. Replace CLI `--owner-authorization` option and secret phrase string comparisons with an immutable, single-use, scope-bound authorization marker stored strictly outside Git.
+- **Exact Decision:**
+  1. **Removal of Reusable CLI Token:** Completely removed `--owner-authorization` option, phrase comparisons, phrase variables, and phrase logging from `phase7.sources.pilot` and `phase7.sources.pilot_guard`.
+  2. **Single-Use Authorization Marker Architecture:** Created `phase7.sources.authorization` with `PilotAuthorizationRecord` (`authorization_version="1.0"`, `milestone="4.9"`, `scope="FIVE_STOCK_NSE_LIVE_PILOT"`, approved symbols `["RELIANCE", "TCS", "HDFCBANK", "INFY", "ICICIBANK"]`, dates `2024-01-01` to `2024-01-31`, `interval="1d"`, `single_use=True`, `staging_root_hash`, `issued_timestamp`, `expires_timestamp`, `nonce`, and `authorization_hash`).
+  3. **Location & Path Boundary Enforcement:** Marker exists exclusively outside Git under `<staging-root>/authorization/pilot_authorization.json`. In-repo paths, relative paths, and symlinks/junctions into repo are strictly rejected.
+  4. **Atomic Consumption Protocol:** Enforced atomic rename of `pilot_authorization.json` to `pilot_authorization.consumed.<UTC_TIMESTAMP>.json` via `os.replace` prior to client instantiation. If consumption fails, client is never created and process aborts with `AUTHORIZATION_CONSUMPTION_FAILED`.
+  5. **Zero Live Pilot Execution:** Live execution was not authorized and did not execute during Milestone 4.9A. Zero live network requests occurred.
+  6. **Readiness Status:** `NSE_PILOT_AUTHORIZATION_GUARD_CORRECTED_LIVE_EXECUTION_NOT_AUTHORIZED`.
+- **Impacted Modules:**
+  - `phase7/sources/contracts.py`
+  - `phase7/sources/authorization.py`
+  - `phase7/sources/pilot_guard.py`
+  - `phase7/sources/pilot.py`
+  - `phase7/sources/__init__.py`
+  - `tests/phase7/test_source_authorization.py`
+  - `tests/phase7/test_source_pilot_guard.py`
+  - `tests/phase7/test_source_pilot_guardrails.py`
+  - `tests/phase7/test_source_isolation.py`
+  - `docs/PHASE7_NSE_LIVE_PILOT_PROTOCOL.md`
+  - `docs/PHASE7_NSE_DATA_FETCHER_ADAPTER.md`
+  - `docs/PHASE7_DECISION_LOG.md`
+  - `docs/PHASE7_IMPLEMENTATION_MAP.md`
+  - `docs/PHASE7_NSE_FIVE_STOCK_GAP_ANALYSIS.md`
+- **Verification Criteria:**
+  - All 263 tests pass in `.venv-phase7` (248 baseline + 15 new tests).
+  - Source scan confirms zero occurrences of `owner-authorization`, `AUTHORIZE MILESTONE`, `password`, `api_key`, `bearer`, or `cookie` in `phase7/sources/`.
+  - `pip check` reports no broken requirements.
+  - Zero live network requests executed; working tree clean.
 
 ---
 

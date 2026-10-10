@@ -1,10 +1,10 @@
-# Phase 7 Protocol: Five-Stock NSE Live Pilot (Milestone 4.9)
+# Phase 7 Protocol: Five-Stock NSE Live Pilot (Milestone 4.9 / 4.9A)
 
 ## 1. Pilot Scope and Purpose
 
 The Five-Stock NSE Live Pilot is designed to verify the end-to-end operational viability, payload integrity, and schema compliance of real upstream NSE retrieval under strict isolation.
 
-**Milestone 4.8 Status:** The live pilot is **PREPARED BUT NOT EXECUTED**. Execution is strictly unauthorized until Milestone 4.9 is explicitly authorized by the owner.
+**Milestone 4.9A Status:** The live pilot authorization guard has been **CORRECTED**. The previous reusable CLI authorization token has been replaced with a single-use, scope-bound cryptographic authorization marker outside Git. **LIVE EXECUTION REMAINS UNAUTHORIZED** until explicit owner re-authorization.
 
 ---
 
@@ -12,39 +12,67 @@ The Five-Stock NSE Live Pilot is designed to verify the end-to-end operational v
 
 | Parameter | Frozen Value | Enforcement |
 | :--- | :--- | :--- |
-| **Approved Universe** | `RELIANCE`, `TCS`, `HDFCBANK`, `INFY`, `ICICIBANK` | Strict allowlist check in `PilotGuard` |
-| **Stock Count** | Exactly 5 securities | Rejection on any additions or omissions |
+| **Approved Universe** | `RELIANCE`, `TCS`, `HDFCBANK`, `INFY`, `ICICIBANK` | Governed set and strict sequence validation |
+| **Stock Count** | Exactly 5 securities | Rejection on any additions, omissions, or order alterations |
 | **Historical Period** | `2024-01-01` through `2024-01-31` | Exact date match required |
-| **Data Frequency** | Daily End-of-Day (EOD) | `1d` interval |
-| **External Staging Root**| `C:\Users\r_chh\gaurvideep_phase7_staging\nse500\` | Must be strictly external to Git repository |
+| **Data Frequency** | Daily End-of-Day (EOD) | `1d` interval strictly enforced |
+| **External Staging Root**| `C:\Users\r_chh\gaurvideep_phase7_staging\nse500\pilot_4_9` | Must be strictly external to Git repository |
+| **Authorization Marker** | `<staging-root>\authorization\pilot_authorization.json` | Single-use JSON marker outside Git; zero secrets |
+| **Consumed Marker** | `pilot_authorization.consumed.<UTC_TIMESTAMP>.json` | Atomic rename prior to client creation |
 | **Repository Writes** | **STRICTLY ZERO** | Prohibited; fails validation if path inside repo |
 
 ---
 
-## 3. Dedicated CLI Entry Point
+## 3. Dedicated Authorization Marker Creation
 
-The pilot uses a dedicated, isolated entry point (`phase7.sources.pilot`), completely decoupled from the production FastAPI application:
+Single-use authorization markers are generated outside Git via a dedicated CLI without network access or client creation:
+
+```powershell
+.venv-phase7\Scripts\python.exe -m phase7.sources.authorization create `
+    --staging-root "C:\Users\r_chh\gaurvideep_phase7_staging\nse500\pilot_4_9" `
+    --expires-minutes 30
+```
+
+### Marker Invariants
+1. **Zero Secret Content:** Contains no passwords, API keys, cookies, bearer tokens, or owner phrases.
+2. **Immutable Scope Binding:** Strictly binds `milestone="4.9"`, `scope="FIVE_STOCK_NSE_LIVE_PILOT"`, the 5 approved symbols, start date `2024-01-01`, end date `2024-01-31`, and interval `1d`.
+3. **Staging Binding:** Cryptographically hashes the resolved staging root path into `staging_root_hash`.
+4. **Single-Use Enforcement:** `single_use=True` is mandatory; marker is atomically renamed upon consumption.
+5. **Deterministic SHA-256 Hash:** Recomputed and verified during pre-flight checks.
+
+---
+
+## 4. Dedicated Pilot CLI Entry Point
+
+The canonical pilot command uses the single-use authorization file:
 
 ```powershell
 .venv-phase7\Scripts\python.exe -m phase7.sources.pilot `
     --symbols RELIANCE,TCS,HDFCBANK,INFY,ICICIBANK `
     --start 2024-01-01 `
     --end 2024-01-31 `
-    --staging-root "C:\Users\r_chh\gaurvideep_phase7_staging\nse500" `
-    --execute-live `
-    --owner-authorization "AUTHORIZE MILESTONE 4.9: FIVE-STOCK NSE LIVE PILOT"
+    --interval 1d `
+    --staging-root "C:\Users\r_chh\gaurvideep_phase7_staging\nse500\pilot_4_9" `
+    --authorization-file "C:\Users\r_chh\gaurvideep_phase7_staging\nse500\pilot_4_9\authorization\pilot_authorization.json" `
+    --execute-live
 ```
 
-### Authorization Enforcement
-- The flag `--execute-live` enables live network calls.
-- The argument `--owner-authorization` must match **EXACTLY**:
-  `"AUTHORIZE MILESTONE 4.9: FIVE-STOCK NSE LIVE PILOT"`
-- If `--execute-live` is set without the exact phrase, the CLI raises `PermissionError` and exits immediately with code 1.
-- No hardcoded bypass tokens exist.
+### Pre-Flight and Atomic Consumption Order
+1. Parse CLI arguments.
+2. Validate `--execute-live`.
+3. Validate exact pilot scope (5 symbols, exact dates, 1d interval).
+4. Validate staging root (strictly external to Git).
+5. Load and validate authorization marker (scope, staging hash, expiry, single_use=True, SHA-256 hash).
+6. Atomically rename `pilot_authorization.json` to `pilot_authorization.consumed.<UTC_TIMESTAMP>.json`.
+7. Verify active marker no longer exists.
+8. Only then instantiate the real NSE client.
+9. Only then permit the first network request.
+
+If consumption fails, execution aborts with `AUTHORIZATION_CONSUMPTION_FAILED` and zero network requests occur.
 
 ---
 
-## 4. Execution Guardrails & Safety Invariants
+## 5. Execution Guardrails & Safety Invariants
 
 1. **Sequential Execution Lock:** Requests are executed strictly one at a time under a thread lock.
 2. **Mandatory Rate-Limiting Delay:** Minimum `2.0 seconds` delay enforced between successive network requests.
@@ -59,17 +87,20 @@ The pilot uses a dedicated, isolated entry point (`phase7.sources.pilot`), compl
 5. **Immutable Audit Manifests:**
    - Every symbol request generates a cryptographic `RequestManifest` with SHA-256 checksums of the raw payload and normalized records.
    - Staged to `<staging-root>/manifests/<symbol>_<request_id>.json`.
+   - Manifests strictly exclude authorization data, audit nonces, and secrets.
 6. **Rejection Ledgers:**
    - Any rejected symbols or rows are appended to `<staging-root>/rejections/`.
 
 ---
 
-## 5. Verification Checklist for Milestone 4.9
+## 6. Verification Checklist for Live Pilot Execution
 
-Upon completion of live pilot retrieval in Milestone 4.9, the following checks must be verified:
+Upon completion of live pilot retrieval in the future re-authorized checkpoint, verify:
 - [ ] Exactly 5 symbols processed.
 - [ ] Trading dates strictly within January 2024.
+- [ ] Interval strictly 1d.
+- [ ] Authorization marker atomically consumed to `pilot_authorization.consumed.<UTC_TIMESTAMP>.json`.
 - [ ] Staging files located exclusively in `gaurvideep_phase7_staging`.
 - [ ] Repository working tree remains 100% clean (no data files written).
 - [ ] Checksum verification passes for all 5 manifests.
-- [ ] No Phase 6 vault or target generation modules accessed.
+- [ ] Zero Phase 6 vault or target generation modules accessed.

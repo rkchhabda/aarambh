@@ -106,3 +106,21 @@ def test_no_repository_data_writes_in_sources():
         content = py_file.read_text(encoding="utf-8")
         for pat in forbidden_patterns:
             assert pat not in content, f"Forbidden repository data path pattern '{pat}' found in {py_file}"
+
+
+def test_no_reusable_authorization_tokens_in_sources():
+    """Verify phase7.sources contains zero reusable authorization phrases, CLI options, or secrets."""
+    sources_dir = Path(__file__).resolve().parent.parent.parent / "phase7" / "sources"
+    forbidden_tokens = [
+        "owner-authorization",
+        "owner_authorization",
+        "AUTHORIZE MILESTONE",
+        "password",
+        "api_key",
+        "bearer",
+        "cookie",
+    ]
+    for py_file in sources_dir.glob("*.py"):
+        content = py_file.read_text(encoding="utf-8").lower()
+        for ft in forbidden_tokens:
+            assert ft.lower() not in content, f"Forbidden token/phrase '{ft}' found in {py_file}"

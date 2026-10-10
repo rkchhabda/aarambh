@@ -3,8 +3,10 @@
 from pathlib import Path
 import pytest
 
+from phase7.sources.authorization import (
+    create_pilot_authorization,
+)
 from phase7.sources.pilot import (
-    REQUIRED_PILOT_PHRASE,
     validate_pilot_cli_args,
 )
 from phase7.sources.pilot_guard import (
@@ -63,41 +65,51 @@ def test_external_staging_path_required(tmp_path):
     assert validated == outside_staging.resolve()
 
 
-def test_live_execution_requires_exact_authorization_phrase(tmp_path):
-    """Verify live pilot execution fails closed without exact authorization phrase."""
+def test_live_execution_requires_authorization_marker(tmp_path):
+    """Verify live pilot execution fails closed without valid authorization marker."""
+    repo_root = tmp_path / "repo"
+    repo_root.mkdir()
+    (repo_root / ".git").mkdir()
+
     outside_staging = tmp_path / "external_staging"
     outside_staging.mkdir()
 
-    # Dry run / non-live passes without phrase
+    # Dry run / non-live passes without authorization marker
     validate_pilot_cli_args(
         symbols_str="RELIANCE,TCS,HDFCBANK,INFY,ICICIBANK",
         start_date="2024-01-01",
         end_date="2024-01-31",
+        interval="1d",
         staging_root_str=str(outside_staging),
+        authorization_file_str="",
         execute_live=False,
-        owner_authorization="",
-        repo_root=tmp_path / "repo",
+        repo_root=repo_root,
     )
 
-    # Live execution with missing or wrong phrase -> raises PermissionError
-    with pytest.raises(PermissionError, match="authorization phrase must match exactly"):
+    # Live execution with missing authorization file -> raises ValueError
+    with pytest.raises(ValueError, match="Live execution requires a valid --authorization-file"):
         validate_pilot_cli_args(
             symbols_str="RELIANCE,TCS,HDFCBANK,INFY,ICICIBANK",
             start_date="2024-01-01",
             end_date="2024-01-31",
+            interval="1d",
             staging_root_str=str(outside_staging),
+            authorization_file_str="",
             execute_live=True,
-            owner_authorization="PLEASE RUN PILOT",
-            repo_root=tmp_path / "repo",
+            repo_root=repo_root,
         )
 
-    # Live execution with exact phrase -> passes validation
+    # Create valid external marker
+    marker_path = create_pilot_authorization(staging_root=outside_staging, repo_root=repo_root)
+
+    # Live execution with valid authorization marker -> passes CLI validation
     validate_pilot_cli_args(
         symbols_str="RELIANCE,TCS,HDFCBANK,INFY,ICICIBANK",
         start_date="2024-01-01",
         end_date="2024-01-31",
+        interval="1d",
         staging_root_str=str(outside_staging),
+        authorization_file_str=str(marker_path),
         execute_live=True,
-        owner_authorization=REQUIRED_PILOT_PHRASE,
-        repo_root=tmp_path / "repo",
+        repo_root=repo_root,
     )
