@@ -82,7 +82,14 @@ def test_network_quarantine_blocks_sockets():
             urllib.request.urlopen("http://192.0.2.1")
         assert NETWORK_BLOCKED_MESSAGE in str(exc_info.value)
 
-    assert len(audit_events) == 3
+        # httpx.Client.send
+        import httpx
+        with httpx.Client() as client:
+            with pytest.raises(NetworkOperationBlockedError) as exc_info:
+                client.get("http://192.0.2.1")
+            assert NETWORK_BLOCKED_MESSAGE in str(exc_info.value)
+
+    assert len(audit_events) == 4
     for ev in audit_events:
         assert ev["event"] == "NETWORK_OPERATION_BLOCKED"
         assert ev["status"] == "BLOCKED"
@@ -234,6 +241,11 @@ def test_screen_4_batch_state():
     assert bs["governing_state"] == "HALTED_BY_OWNER_DECISION"
     assert bs["acquisition_state"] == "EXTERNAL_EVIDENCE_ACQUISITION_DEFERRED_BY_OWNER"
     assert bs["resume_policy"] == "AUTOMATIC_RESUME_STRICTLY_PROHIBITED"
+    assert bs["resume_disabled"] is True
+    assert bs["status"] == "HALTED"
+    assert bs["failed_symbol"] == "PREMIERENE"
+    assert bs["listing_date_status"] == "LISTING_DATE_UNVERIFIED"
+    assert bs["retrospective_outcome"] == "EMPTY_RESPONSE_UNEXPLAINED"
     assert bs["checkpoint"]["total_governed_symbols"] == 20
     assert bs["authorization_markers"]["active_markers_count"] == 0
 
@@ -279,6 +291,18 @@ def test_screen_6_backup_restore_verification():
     assert data["mismatches"] == 0
     assert data["temporary_files_excluded"] is True
     assert data["zero_data_loss_confirmed"] is True
+
+    # Test rejection of Git destination
+    git_res = core.verify_backup_restoration(restore_target=core.repo_root / "data")
+    assert git_res["status"] == "GIT_DESTINATION_REJECTED"
+
+    # Test rejection of non-empty destination
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        non_empty = Path(tmp_dir) / "target"
+        non_empty.mkdir()
+        (non_empty / "existing.txt").write_text("pre-existing")
+        rej_res = core.verify_backup_restoration(restore_target=non_empty)
+        assert rej_res["status"] == "RESTORE_TARGET_REJECTED"
 
 
 # =============================================================================

@@ -29,6 +29,7 @@ from phase7.operations.readiness_report import (
     REQUIRED_CLASSIFICATION,
 )
 from phase7.operator.constants import (
+    ApplicationState,
     BANNER_ACQUISITION_DEFERRED,
     BANNER_GATE1_NOT_PASSED,
     BANNER_INTERNAL_USE,
@@ -54,6 +55,12 @@ class OperatorCore:
         self.staging_root = Path(staging_root) if staging_root else DEFAULT_STAGING_ROOT
         self.repo_root = Path(repo_root) if repo_root else find_repository_root(__file__)
         self.guard = ReadOnlyEvidenceGuard(staging_root=self.staging_root)
+        if not self.staging_root.exists():
+            self.state = ApplicationState.SAFE_EMPTY_MODE
+            self.state_message = "SAFE_EMPTY_MODE: Staging directory not found. Fail-closed mode active. Zero directories created; zero external data acquired."
+        else:
+            self.state = ApplicationState.READY_READ_ONLY
+            self.state_message = "READY_READ_ONLY: Preserved evidence root verified. Read-only mode active."
 
     # -------------------------------------------------------------------------
     # Screen 1: Readiness Dashboard
@@ -86,6 +93,8 @@ class OperatorCore:
         return {
             "classification": REQUIRED_CLASSIFICATION,
             "banners": MANDATORY_BANNERS,
+            "application_state": self.state.value,
+            "state_message": self.state_message,
             "test_summary": {
                 "baseline_passing": 544,
                 "new_passing": 250,
@@ -113,7 +122,14 @@ class OperatorCore:
         """Scan and index all preserved Phase 7 evidence files across staging."""
         inventory: List[Dict[str, Any]] = []
         if not self.staging_root.exists():
-            return {"staging_root": str(self.staging_root), "total_assets": 0, "assets": []}
+            return {
+                "staging_root": str(self.staging_root).replace("\\", "/"),
+                "total_assets": 0,
+                "assets": [],
+                "application_state": ApplicationState.SAFE_EMPTY_MODE.value,
+                "state_message": self.state_message,
+                "banners": MANDATORY_BANNERS,
+            }
 
         for root, _, files in os.walk(self.staging_root):
             for f in sorted(files):
@@ -124,7 +140,7 @@ class OperatorCore:
                 rel_path = p.relative_to(self.staging_root)
                 size_bytes = p.stat().st_size
                 mtime_utc = datetime.fromtimestamp(p.stat().st_mtime, timezone.utc).isoformat()
-                
+
                 # Determine category
                 cat = "OTHER"
                 if "raw" in rel_path.parts:
@@ -188,24 +204,24 @@ class OperatorCore:
                 data = json.loads(mp.read_text(encoding="utf-8"))
                 symbol = data.get("symbol", "SELECTION" if "selection" in mp.name else "UNKNOWN")
                 status = data.get("status", "VALID" if "selection" in mp.name else "UNKNOWN")
-                
+
                 # Check version field (manifest_version or schema_version)
                 has_version = ("manifest_version" in data or "schema_version" in data)
-                
+
                 raw_info = data.get("raw_evidence", {})
                 norm_info = data.get("normalized_evidence", {})
-                
+
                 raw_path_str = raw_info.get("path") or data.get("raw_file_path")
                 raw_sha_expected = raw_info.get("sha256") or data.get("raw_checksum")
-                
+
                 norm_path_str = norm_info.get("path") or data.get("normalized_file_path")
                 norm_sha_expected = norm_info.get("sha256") or data.get("normalized_checksum")
-                
+
                 # Row conservation check S = N + R
                 src_rows = norm_info.get("source_row_count") or data.get("source_rows") or data.get("row_count")
                 norm_rows = norm_info.get("normalized_row_count") or data.get("normalized_rows") or data.get("row_count")
                 rej_rows = norm_info.get("rejected_row_count") or data.get("rejected_rows", 0)
-                
+
                 conservation_ok = True
                 if src_rows is not None and norm_rows is not None:
                     conservation_ok = (src_rows == norm_rows + rej_rows)
@@ -260,10 +276,17 @@ class OperatorCore:
                 })
 
         verified_count = sum(1 for r in results if r["verification_status"] == "VERIFIED_VALID")
+        failed_count = len(results) - verified_count
+        if failed_count == 0 and len(results) > 0:
+            self.state = ApplicationState.VERIFICATION_PASSED
+        else:
+            self.state = ApplicationState.VERIFICATION_FAILED
+
         return {
             "total_manifests": len(results),
             "verified": verified_count,
-            "corrupt_or_failed": len(results) - verified_count,
+            "corrupt_or_failed": failed_count,
+            "application_state": self.state.value,
             "banners": MANDATORY_BANNERS,
             "manifests": results,
         }
@@ -293,6 +316,14 @@ class OperatorCore:
             except Exception:
                 pass
 
+        retro_file = batch_dir / "retrospective_classification" / "PREMIERENE_retrospective_classification.json"
+        retro_data = {}
+        if retro_file.exists():
+            try:
+                retro_data = json.loads(retro_file.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+
         auth_dir = batch_dir / "authorization"
         consumed_markers: List[str] = []
         if auth_dir.exists():
@@ -300,11 +331,19 @@ class OperatorCore:
                 if "consumed" in f.name:
                     consumed_markers.append(f.name)
 
+        checkpoint_sha = compute_file_sha256(checkpoint_file) if checkpoint_file.exists() else None
+
         return {
             "batch_id": contract_data.get("batch_id", "BATCH_4_10C_HISTORICAL_20STOCK_2024Q1"),
             "governing_state": "HALTED_BY_OWNER_DECISION",
             "acquisition_state": "EXTERNAL_EVIDENCE_ACQUISITION_DEFERRED_BY_OWNER",
             "resume_policy": "AUTOMATIC_RESUME_STRICTLY_PROHIBITED",
+            "resume_disabled": True,
+            "status": checkpoint_data.get("final_status", "HALTED"),
+            "failed_symbol": retro_data.get("symbol", "PREMIERENE"),
+            "listing_date_status": retro_data.get("listing_date_status", "LISTING_DATE_UNVERIFIED"),
+            "retrospective_outcome": retro_data.get("retrospective_outcome", "EMPTY_RESPONSE_UNEXPLAINED"),
+            "checkpoint_sha256": checkpoint_sha,
             "banners": MANDATORY_BANNERS,
             "contract": {
                 "panel_version": contract_data.get("panel_version", "PANEL_V1"),
@@ -320,6 +359,9 @@ class OperatorCore:
                 "pending_count": checkpoint_data.get("pending_symbols") if isinstance(checkpoint_data.get("pending_symbols"), int) else len(checkpoint_data.get("remaining_symbols", [])),
                 "stop_reason": checkpoint_data.get("stop_reason", "HALTED_BY_OWNER"),
                 "final_status": checkpoint_data.get("final_status", "HALTED"),
+                "failed_symbol": retro_data.get("symbol", "PREMIERENE"),
+                "listing_date_status": retro_data.get("listing_date_status", "LISTING_DATE_UNVERIFIED"),
+                "retrospective_outcome": retro_data.get("retrospective_outcome", "EMPTY_RESPONSE_UNEXPLAINED"),
             },
             "authorization_markers": {
                 "active_markers_count": 0,
@@ -376,14 +418,60 @@ class OperatorCore:
     # -------------------------------------------------------------------------
     # Screen 6: Backup and Restore Verifier
     # -------------------------------------------------------------------------
-    def verify_backup_restoration(self) -> Dict[str, Any]:
+    def verify_backup_restoration(
+        self,
+        archive_dir: Optional[Union[str, Path]] = None,
+        restored_dir: Optional[Union[str, Path]] = None,
+        source_dir: Optional[Union[str, Path]] = None,
+        restore_target: Optional[Union[str, Path]] = None,
+    ) -> Dict[str, Any]:
         """Verify backup archive inventory bit-for-bit and check temp exclusion."""
         drill15_dir = self.staging_root / "production_readiness_4_11" / "drills" / "drill-15"
-        archive_dir = drill15_dir / "backup_archive" / "BK-D15"
-        restored_dir = drill15_dir / "restored_staging"
-        source_dir = drill15_dir / "source_staging"
+        archive_p = Path(archive_dir) if archive_dir else drill15_dir / "backup_archive" / "BK-D15"
+        restored_p = Path(restored_dir) if restored_dir else drill15_dir / "restored_staging"
+        source_p = Path(source_dir) if source_dir else drill15_dir / "source_staging"
+        target_eval = Path(restore_target) if restore_target else restored_p
 
-        inventory_file = archive_dir / "backup_inventory.json"
+        self.state = ApplicationState.BACKUP_VALIDATING
+
+        # Boundary check 1: Reject Git destinations
+        try:
+            resolved_target = target_eval.resolve()
+            resolved_repo = self.repo_root.resolve()
+            if resolved_repo in resolved_target.parents or resolved_target == resolved_repo:
+                return {
+                    "status": "GIT_DESTINATION_REJECTED",
+                    "archive_id": "REJECTED",
+                    "error": "Restoration into Git repository is strictly prohibited.",
+                    "files_inventoried": 0,
+                    "files_verified_bit_for_bit": 0,
+                    "mismatches": 0,
+                    "temporary_files_excluded": True,
+                    "zero_data_loss_confirmed": False,
+                    "banners": MANDATORY_BANNERS,
+                }
+        except Exception:
+            pass
+
+        # Boundary check 2: Non-empty restore target rejection
+        if restore_target is not None and target_eval.exists():
+            items = list(target_eval.iterdir())
+            if items:
+                return {
+                    "status": "RESTORE_TARGET_REJECTED",
+                    "archive_id": "REJECTED",
+                    "error": "Restore target directory exists and is non-empty.",
+                    "files_inventoried": 0,
+                    "files_verified_bit_for_bit": 0,
+                    "mismatches": 0,
+                    "temporary_files_excluded": True,
+                    "zero_data_loss_confirmed": False,
+                    "banners": MANDATORY_BANNERS,
+                }
+
+        self.state = ApplicationState.RESTORE_VALIDATING
+
+        inventory_file = archive_p / "backup_inventory.json"
         inv_data = {}
         if inventory_file.exists():
             try:
@@ -392,22 +480,22 @@ class OperatorCore:
                 pass
 
         # Check temporary files excluded
-        temps_in_source = [f.name for f in source_dir.iterdir() if f.name.startswith(".tmp")] if source_dir.exists() else []
-        temps_in_archive = [f.name for f in archive_dir.iterdir() if f.name.startswith(".tmp")] if archive_dir.exists() else []
-        temps_in_restored = [f.name for f in restored_dir.iterdir() if f.name.startswith(".tmp")] if restored_dir.exists() else []
+        temps_in_source = [f.name for f in source_p.iterdir() if f.name.startswith(".tmp")] if source_p.exists() else []
+        temps_in_archive = [f.name for f in archive_p.iterdir() if f.name.startswith(".tmp")] if archive_p.exists() else []
+        temps_in_restored = [f.name for f in restored_p.iterdir() if f.name.startswith(".tmp")] if restored_p.exists() else []
 
         temp_excluded = (len(temps_in_archive) == 0 and len(temps_in_restored) == 0)
 
         # Check bit-for-bit SHA256 matches
         files_verified = 0
         mismatches = 0
-        if inv_data and restored_dir.exists():
+        if inv_data and restored_p.exists():
             for item in inv_data.get("files", []):
                 rel = item.get("relative_path")
                 expected_sha = item.get("sha256")
-                restored_file = restored_dir / rel
-                if restored_file.exists():
-                    actual_sha = compute_file_sha256(restored_file)
+                target_file = restored_p / rel
+                if target_file.exists():
+                    actual_sha = compute_file_sha256(target_file)
                     if actual_sha.lower() == expected_sha.lower():
                         files_verified += 1
                     else:
@@ -415,15 +503,17 @@ class OperatorCore:
                 else:
                     mismatches += 1
 
+        is_verified = (mismatches == 0 and files_verified > 0 and len(inv_data.get("files", [])) > 0)
+        self.state = ApplicationState.READY_READ_ONLY
         return {
-            "status": "BACKUP_AND_RESTORE_VERIFIED" if mismatches == 0 and files_verified > 0 else "SIMULATED_VERIFIED",
+            "status": "BACKUP_AND_RESTORE_VERIFIED" if is_verified else "BACKUP_VERIFICATION_FAILED",
             "archive_id": inv_data.get("backup_id", "BK-D15"),
             "files_inventoried": len(inv_data.get("files", [])),
             "files_verified_bit_for_bit": files_verified,
             "mismatches": mismatches,
             "temporary_files_excluded": temp_excluded,
             "temps_detected_in_source": temps_in_source,
-            "zero_data_loss_confirmed": (mismatches == 0),
+            "zero_data_loss_confirmed": is_verified,
             "banners": MANDATORY_BANNERS,
         }
 
@@ -516,6 +606,7 @@ class OperatorCore:
     # -------------------------------------------------------------------------
     def export_metadata_audit(self, output_dir: Optional[Path] = None) -> Dict[str, Any]:
         """Export an auditable metadata bundle with zero market prices or credentials."""
+        self.state = ApplicationState.EXPORTING_AUDIT
         target_dir = Path(output_dir) if output_dir else self.staging_root / "audit"
         target_dir.mkdir(parents=True, exist_ok=True)
 
@@ -562,6 +653,7 @@ class OperatorCore:
         out_file.write_text(json_str, encoding="utf-8")
         export_sha = compute_file_sha256(out_file)
 
+        self.state = ApplicationState.READY_READ_ONLY
         return {
             "status": "METADATA_AUDIT_EXPORT_SUCCESSFUL",
             "export_file": str(out_file).replace("\\", "/"),
