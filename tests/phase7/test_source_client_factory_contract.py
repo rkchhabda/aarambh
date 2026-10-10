@@ -282,6 +282,19 @@ def test_valid_mocked_live_path_invokes_factory_once(mock_env):
 
     marker_path = create_pilot_authorization(staging_root=staging, expires_minutes=30, repo_root=repo)
     mock_client = MagicMock(spec=NSEClientProtocol)
+    mock_client.fetch_equity_historical_data.return_value = [
+        {
+            "CH_TIMESTAMP": f"2024-01-{day:02d}",
+            "CH_SERIES": "EQ",
+            "CH_OPENING_PRICE": 1000.0,
+            "CH_TRADE_HIGH_PRICE": 1050.0,
+            "CH_TRADE_LOW_PRICE": 990.0,
+            "CH_CLOSING_PRICE": 1020.0,
+            "CH_TOT_TRADED_QTY": 50000,
+            "CH_TOT_TRADED_VAL": 51000000.0,
+        }
+        for day in range(1, 20)
+    ]
     factory_mock = MagicMock(return_value=mock_client)
 
     exit_code = run_pilot(
@@ -294,6 +307,7 @@ def test_valid_mocked_live_path_invokes_factory_once(mock_env):
         execute_live=True,
         client_factory=factory_mock,
         repo_root=repo,
+        pacing_seconds=0.0,
     )
     assert exit_code == 0
     factory_mock.assert_called_once_with(

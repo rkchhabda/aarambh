@@ -17,23 +17,37 @@ from phase7.sources.contracts import (
     HistoricalEODRecord,
     NSEDataFetcherProtocol,
     PilotAuthorizationRecord,
+    PilotExitCode,
+    PilotOutcome,
+    PilotStopReason,
     RejectedRowRecord,
     RejectedSymbolRecord,
     RequestManifest,
     RequestStatus,
+    SessionBootstrapAudit,
 )
 from phase7.sources.http_client import (
     HTTPSafetyError,
     HTTPSafetyViolationType,
     inspect_payload_safety,
 )
-from phase7.sources.manifest import build_manifest, write_manifest
+from phase7.sources.manifest import (
+    build_manifest,
+    build_pending_manifest,
+    check_audit_conservation,
+    write_manifest,
+)
 from phase7.sources.normalization import normalize_historical_row
 from phase7.sources.nse_adapter import HistoricalFetchResult, NSEDataSourceAdapter
 from phase7.sources.nse_constituents import get_nifty500_constituents
 from phase7.sources.nse_corporate_actions import get_corporate_actions
 from phase7.sources.nse_data_fetcher_adapter import NSEDataFetcherAdapter
 from phase7.sources.nse_eod import fetch_symbol_eod_history
+from phase7.sources.persistence import (
+    persist_normalized_records,
+    persist_raw_payload,
+    persist_request_manifest,
+)
 from phase7.sources.pilot_guard import (
     DEVELOPMENT_CUTOFF_DATE,
     PILOT_ALLOWED_SYMBOLS,
@@ -63,7 +77,10 @@ __all__ = [
     "NSEDataFetcherProtocol",
     "NSEDataSourceAdapter",
     "PilotAuthorizationRecord",
+    "PilotExitCode",
     "PilotGuard",
+    "PilotOutcome",
+    "PilotStopReason",
     "PILOT_ALLOWED_SYMBOLS",
     "PILOT_APPROVED_SYMBOLS",
     "PILOT_START_DATE",
@@ -84,14 +101,20 @@ __all__ = [
     "RejectedSymbolRecord",
     "RequestManifest",
     "RequestStatus",
+    "SessionBootstrapAudit",
     "StructuralQualityAudit",
     "build_manifest",
+    "build_pending_manifest",
+    "check_audit_conservation",
     "create_real_nse_client",
     "fetch_symbol_eod_history",
     "get_corporate_actions",
     "get_nifty500_constituents",
     "inspect_payload_safety",
     "normalize_historical_row",
+    "persist_normalized_records",
+    "persist_raw_payload",
+    "persist_request_manifest",
     "validate_date_range",
     "validate_staging_path",
     "validate_staging_root",

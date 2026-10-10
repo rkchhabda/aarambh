@@ -7,7 +7,7 @@ Computes deterministic cryptographic row hashes.
 import hashlib
 import json
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, Optional, Tuple
 
 from phase7.sources.contracts import (
@@ -50,14 +50,19 @@ def normalize_historical_row(
     source_identifier: str = "NSE_DATA_FETCHER_EOD",
     ingestion_timestamp: Optional[str] = None,
 ) -> HistoricalEODRecord:
-    ts = ingestion_ts or ingestion_timestamp or datetime.now(timezone.utc).isoformat()
     """Normalize a raw historical EOD dictionary into a validated canonical HistoricalEODRecord.
 
     Raises:
         ValueError: If dates are invalid, OHLC values are negative, or low > high.
     """
+    ts = ingestion_ts or ingestion_timestamp or datetime.now(timezone.utc).isoformat()
     if not isinstance(raw_row, dict):
         raise ValueError(f"Expected dict row payload, got {type(raw_row).__name__}")
+
+    # Check symbol identity conflict if symbol is present in row
+    raw_sym = raw_row.get("CH_SYMBOL") or raw_row.get("symbol") or raw_row.get("Symbol")
+    if raw_sym and str(raw_sym).strip().upper() != symbol.strip().upper():
+        raise ValueError(f"SYMBOL_IDENTITY_CONFLICT: row symbol '{raw_sym}' does not match requested '{symbol}'")
 
     # Extract date
     date_val = (
@@ -73,12 +78,21 @@ def normalize_historical_row(
     # Normalize date to YYYY-MM-DD
     date_str = str(date_val).strip()
     trading_date: Optional[str] = None
-    for fmt in ("%Y-%m-%d", "%d-%b-%Y", "%d-%m-%Y", "%Y-%m-%dT%H:%M:%S"):
+    for fmt in ("%Y-%m-%d", "%d-%b-%Y", "%d-%m-%Y", "%Y-%m-%dT%H:%M:%S", "%d-%b-%Y %H:%M:%S"):
         try:
-            trading_date = datetime.strptime(date_str[:10], fmt[:8] if len(date_str) == 10 and "%" in fmt else fmt).strftime("%Y-%m-%d")
+            trading_date = datetime.strptime(date_str, fmt).strftime("%Y-%m-%d")
             break
         except ValueError:
-            continue
+            pass
+
+    if not trading_date:
+        for fmt in ("%Y-%m-%d", "%d-%m-%Y", "%d-%b-%Y"):
+            try:
+                prefix = date_str[:11] if "-" in date_str and len(date_str) >= 11 else date_str[:10]
+                trading_date = datetime.strptime(prefix, fmt).strftime("%Y-%m-%d")
+                break
+            except ValueError:
+                pass
 
     if not trading_date:
         # Fallback regex match for YYYY-MM-DD

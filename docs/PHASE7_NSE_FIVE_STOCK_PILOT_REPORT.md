@@ -6,8 +6,11 @@
 - **Status Date:** 2026-10-10
 - **Final Milestone Status:** `NSE_FIVE_STOCK_PILOT_FAILED`
 - **Starting Commit:** `3f4936709b8f5f2e8067c03d735ff7eb37683b94`
-- **Historical Data Requests Executed:** **0 (Zero)**
-- **Session Handshake Requests Executed:** 1 (HTTP/2 transport session setup during `create_real_nse_client`, fetching initial session cookies)
+- **Client Initialization Count:** 1
+- **Session Bootstrap Network Event Count:** `SESSION_BOOTSTRAP_NETWORK_ACTIVITY_CONFIRMED_COUNT_UNAVAILABLE` (Upstream session bootstrap network activity confirmed by presence of external session-credential file `raw/nse_cookies_httpx.json` created during `create_real_nse_client`; exact event count unavailable retrospectively)
+- **Historical Retrieval Request Count:** **0 (Zero)** (Historical symbol retrieval requests did not occur)
+- **Historical Symbols Completed:** **0 (Zero)**
+- **Historical Source Row Count:** **0 (Zero)**
 - **Market Data Files Downloaded:** **0 (Zero)**
 - **Prior Consumed Markers:**
   1. `C:\Users\r_chh\gaurvideep_phase7_staging\nse500\pilot_4_9\authorization\pilot_authorization.consumed.20261010T063226Z.json`
@@ -123,6 +126,11 @@ Exit Code: 0
 
 - **Requested Symbol Count:** 5 (`RELIANCE`, `TCS`, `HDFCBANK`, `INFY`, `ICICIBANK`)
 - **Completed Symbol Count:** 0
+- **client_initialization_count:** 1
+- **session_bootstrap_network_event_count:** `SESSION_BOOTSTRAP_NETWORK_ACTIVITY_CONFIRMED_COUNT_UNAVAILABLE`
+- **historical_retrieval_request_count:** 0
+- **historical_symbols_completed:** 0
+- **historical_source_row_count:** 0
 - **Failed / Stopped Symbol:** Halted prior to symbol 1 (`RELIANCE`)
 - **First Stop Condition:** `PILOT_SYMBOL_RETRIEVAL_PIPELINE_NOT_WIRED` (CLI exited at Step 14 without invoking symbol retrieval loop)
 - **Factory Invocation Parameters:**

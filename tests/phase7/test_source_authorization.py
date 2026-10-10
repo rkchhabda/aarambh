@@ -392,6 +392,19 @@ def test_valid_authorization_reaches_mocked_client_factory(test_env):
 
     marker_path = create_pilot_authorization(staging_root=staging, expires_minutes=30, repo_root=repo)
     mock_client = MagicMock()
+    mock_client.fetch_equity_historical_data.return_value = [
+        {
+            "CH_TIMESTAMP": f"2024-01-{day:02d}",
+            "CH_SERIES": "EQ",
+            "CH_OPENING_PRICE": 1000.0,
+            "CH_TRADE_HIGH_PRICE": 1050.0,
+            "CH_TRADE_LOW_PRICE": 990.0,
+            "CH_CLOSING_PRICE": 1020.0,
+            "CH_TOT_TRADED_QTY": 50000,
+            "CH_TOT_TRADED_VAL": 51000000.0,
+        }
+        for day in range(1, 20)
+    ]
     mock_client_factory = MagicMock(return_value=mock_client)
 
     exit_code = run_pilot(
@@ -404,6 +417,7 @@ def test_valid_authorization_reaches_mocked_client_factory(test_env):
         execute_live=True,
         client_factory=mock_client_factory,
         repo_root=repo,
+        pacing_seconds=0.0,
     )
     assert exit_code == 0
     mock_client_factory.assert_called_once_with(
@@ -421,7 +435,21 @@ def test_expanded_scope_and_repeated_execution_rejected(test_env):
     repo = test_env["repo_root"]
 
     marker_path = create_pilot_authorization(staging_root=staging, expires_minutes=30, repo_root=repo)
-    mock_client_factory = MagicMock()
+    mock_client = MagicMock()
+    mock_client.fetch_equity_historical_data.return_value = [
+        {
+            "CH_TIMESTAMP": f"2024-01-{day:02d}",
+            "CH_SERIES": "EQ",
+            "CH_OPENING_PRICE": 1000.0,
+            "CH_TRADE_HIGH_PRICE": 1050.0,
+            "CH_TRADE_LOW_PRICE": 990.0,
+            "CH_CLOSING_PRICE": 1020.0,
+            "CH_TOT_TRADED_QTY": 50000,
+            "CH_TOT_TRADED_VAL": 51000000.0,
+        }
+        for day in range(1, 20)
+    ]
+    mock_client_factory = MagicMock(return_value=mock_client)
 
     # 36: Expanded symbols (e.g. 6th symbol or full universe)
     with pytest.raises(ValueError, match="not in approved pilot allowlist"):
@@ -462,6 +490,7 @@ def test_expanded_scope_and_repeated_execution_rejected(test_env):
         execute_live=True,
         client_factory=mock_client_factory,
         repo_root=repo,
+        pacing_seconds=0.0,
     )
 
     # 38: Repeated execution fails because marker is already consumed

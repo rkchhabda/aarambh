@@ -556,3 +556,31 @@ Milestone 3 delivered the comprehensive Target Engine (`phase7/targets/`), cover
 - Live Pilot Attempt 3 Outcome: **`NSE_FIVE_STOCK_PILOT_FAILED`** (Client initialized over HTTP/2; `pilot.py` exited at Step 14 without invoking symbol retrieval loop; 0/5 symbols completed).
 - Blocker Status: BLK-01, BLK-02, and BLK-04 remain strictly **OPEN** (STILL_BLOCKED).
 - Milestone 5 Status: Strictly **BLOCKED**.
+
+---
+
+## 16. Milestone 4.9D Governed Historical Retrieval Pipeline Wiring Deliverables
+
+### 16.1 Delivered Code and Test Artifacts
+
+| Capability / Requirement | Technical Description | Source Module | Test Module | Status |
+|---|---|---|---|---|
+| **Sequential Retrieval Loop** | Sequential historical retrieval across strictly 5 approved symbols (`RELIANCE`, `TCS`, `HDFCBANK`, `INFY`, `ICICIBANK`) with 2.0s pacing and single active request locking | `phase7/sources/pilot.py` | `tests/phase7/test_source_pilot_execution.py` | **VERIFIED** |
+| **External Immutable Persistence** | Atomic write-and-rename of raw JSON to `raw/historical/` and canonical JSONL to `normalized/historical/` outside Git; overwrite strictly prohibited | `phase7/sources/persistence.py` | `tests/phase7/test_source_persistence.py` | **VERIFIED** |
+| **RequestManifest Lifecycle** | PENDING written before request; finalized once upon processing; SUCCEEDED requires row count > 0, raw SHA-256, normalized SHA-256 | `phase7/sources/manifest.py` | `tests/phase7/test_source_manifest.py`<br/>`tests/phase7/test_source_persistence.py` | **VERIFIED** |
+| **Row Conservation Enforcement** | Enforces `source_row_count = normalized_row_count + rejected_row_count`; halts with `AUDIT_CONSERVATION_FAILURE` on mismatch | `phase7/sources/manifest.py`<br/>`phase7/sources/pilot.py` | `tests/phase7/test_source_pilot_execution.py` | **VERIFIED** |
+| **Rejection Ledgers** | Logs malformed rows with sanitized reason codes, source row index, request ID, and non-sensitive row hash; scrubs credentials | `phase7/sources/rejections.py` | `tests/phase7/test_source_rejections.py` | **VERIFIED** |
+| **Deterministic Client Cleanup** | Guaranteed client session termination in `finally` block; closure failure produces exit code 9 (`CLIENT_CLOSE_ERROR`) | `phase7/sources/pilot.py` | `tests/phase7/test_source_exit_codes.py`<br/>`tests/phase7/test_source_pilot_execution.py` | **VERIFIED** |
+| **Complete Exit Code Contract** | Strict mapping: 0 (success), 2 (args), 3 (auth), 4 (factory), 5 (network), 6 (schema), 7 (persistence), 8 (incomplete), 9 (close), 10 (internal) | `phase7/sources/pilot.py`<br/>`phase7/sources/contracts.py` | `tests/phase7/test_source_exit_codes.py` | **VERIFIED** |
+| **False-Success Regression Test** | `test_client_initialization_without_symbol_loop_cannot_succeed` asserts initialization alone never exits 0 | `phase7/sources/pilot.py` | `tests/phase7/test_source_exit_codes.py` | **VERIFIED** |
+
+### 16.2 Milestone 4.9D Verification Summary
+- Prior approved test baseline: **285 passing**.
+- New Milestone 4.9D tests: **33 passing** across `test_source_persistence.py`, `test_source_exit_codes.py`, `test_source_pilot_execution.py`.
+- Complete pytest suite: **318 of 318 passing** (`pytest tests/phase7/ test_phase6_safeguards.py -q`).
+- `pip check`: Clean (no broken requirements).
+- `git diff --check`: Clean (zero whitespace errors).
+- Retrieval Pipeline Status: **WIRED & GOVERNED**.
+- Checkpoint Status: **`NSE_PILOT_RETRIEVAL_PIPELINE_WIRED_LIVE_EXECUTION_NOT_AUTHORIZED`**.
+- Blocker Status: BLK-01, BLK-02, and BLK-04 remain strictly **OPEN** (STILL_BLOCKED).
+- Milestone 5 Status: Strictly **BLOCKED**.

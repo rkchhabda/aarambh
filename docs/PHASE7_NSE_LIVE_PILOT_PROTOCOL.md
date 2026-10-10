@@ -1,10 +1,10 @@
-# Phase 7 Protocol: Five-Stock NSE Live Pilot (Milestone 4.9 / 4.9A / 4.9B)
+# Phase 7 Protocol: Five-Stock NSE Live Pilot (Milestone 4.9 / 4.9A / 4.9B / 4.9C / 4.9D)
 
 ## 1. Pilot Scope and Purpose
 
 The Five-Stock NSE Live Pilot is designed to verify the end-to-end operational viability, payload integrity, and schema compliance of real upstream NSE retrieval under strict isolation.
 
-**Milestone 4.9B Status:** The client factory interface mismatch has been **CORRECTED**. The factory protocol and signature have been canonicalized to `create_real_nse_client(download_folder: Path, server: bool = True, timeout: int = 15) -> NSEClientProtocol`. The pilot invocation strictly passes canonical keyword parameters without obsolete aliases (`data_dir`, `server_mode`). Client construction errors are sanitized to `CLIENT_FACTORY_PARAMETER_MISMATCH_HALT`. **LIVE EXECUTION REMAINS UNAUTHORIZED** until explicit owner re-authorization.
+**Milestone 4.9D Status:** The governed historical retrieval pipeline has been **WIRED** in `phase7/sources/pilot.py`. The sequential loop executes across the 5 approved securities with single-request locking, pacing, payload safety validation (HTML, CAPTCHA, empty), raw payload persistence (`<staging>/raw/historical/`), deterministic normalization, row validations (dates, OHLC, negative volumes, natural key duplicates), row conservation enforcement (`source = normalized + rejected`), normalized persistence (`<staging>/normalized/historical/`), manifest lifecycle (`PENDING` -> `SUCCEEDED`/`FAILED`/`HALTED`), rejected-row ledger recording, client cleanup in `finally`, and strict exit-code mapping (0, 2, 3, 4, 5, 6, 7, 8, 9, 10). **LIVE EXECUTION REMAINS STRICTLY UNAUTHORIZED** until explicit owner re-authorization.
 
 ---
 
@@ -115,3 +115,21 @@ Upon completion of live pilot retrieval in the future re-authorized checkpoint, 
 - [ ] Repository working tree remains 100% clean (no data files written).
 - [ ] Checksum verification passes for all 5 manifests.
 - [ ] Zero Phase 6 vault or target generation modules accessed.
+
+---
+
+## 7. Exit Code Contract & Outcome Invariants
+
+| Exit Code | Meaning | Outcome |
+| :--- | :--- | :--- |
+| `0` | All 5 symbols completed, acceptance passed | `NSE_FIVE_STOCK_PILOT_PASSED` |
+| `2` | Argument or scope validation failure | `NSE_FIVE_STOCK_PILOT_FAILED` |
+| `3` | Authorization validation or consumption failure | `NSE_FIVE_STOCK_PILOT_FAILED` |
+| `4` | Client-construction failure | `NSE_FIVE_STOCK_PILOT_FAILED` |
+| `5` | Upstream retrieval or connectivity failure | `NSE_FIVE_STOCK_PILOT_HALTED_ON_SAFETY_CONTROL` |
+| `6` | Payload safety, schema or normalization failure | `NSE_FIVE_STOCK_PILOT_HALTED_ON_SAFETY_CONTROL` |
+| `7` | Persistence, manifest, or conservation failure | `NSE_FIVE_STOCK_PILOT_HALTED_ON_SAFETY_CONTROL` |
+| `8` | Incomplete execution (< 5 symbols completed) | `NSE_FIVE_STOCK_PILOT_FAILED` |
+| `9` | Client close failure | `NSE_FIVE_STOCK_PILOT_FAILED` |
+| `10` | Unexpected internal error | `NSE_FIVE_STOCK_PILOT_FAILED` |
+Exit code `0` is strictly forbidden unless all 5 symbols complete with valid normalized rows, immutable raw/normalized files outside Git, valid checksums, and consistent manifest audits.

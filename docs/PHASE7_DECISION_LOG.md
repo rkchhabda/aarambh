@@ -615,6 +615,44 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 - **Verification Criteria:**
   - Working tree remains clean after documentation commit.
   - All 285 tests continue to pass in `.venv-phase7`.
+---
+
+### DEC-20261010-26: Milestone 4.9D Wiring of Governed Five-Stock Historical Retrieval Pipeline
+- **Date:** 2026-10-10
+- **Decision Authority:** Project Owner & Lead Quantitative Research Engineer
+- **Context & Motivation:** Attempt 3 of the Milestone 4.9 live pilot initialized the governed NSE client cleanly over HTTP/2, saving external session credentials, but exited at Step 14 without invoking the per-symbol historical retrieval loop (`PILOT_SYMBOL_RETRIEVAL_PIPELINE_NOT_WIRED`). Checkpoint 4.9D authorizes code correction, persistence wiring, manifest lifecycle controls, and comprehensive mocked tests offline. Live requests remain strictly unauthorized.
+- **Exact Decision:**
+  1. **Canonical Sequential Retrieval Loop:** Wire sequential historical data retrieval for strictly 5 approved symbols (`RELIANCE`, `TCS`, `HDFCBANK`, `INFY`, `ICICIBANK`) into `phase7.sources.pilot`.
+  2. **Rate Pacing & Single Active Request:** Enforce single active request lock and minimum 2.0-second delay between sequential network requests.
+  3. **External Immutable Persistence:** Write raw payloads to `<staging>/raw/historical/` and normalized records in JSONL format to `<staging>/normalized/historical/` outside Git. Overwriting existing files is strictly prohibited.
+  4. **Strict RequestManifest Lifecycle:** Write `PENDING` manifest before retrieval. Finalize manifest exactly once upon processing. Enforce invariants: status `SUCCEEDED` requires `> 0` normalized rows, valid raw SHA-256, and valid normalized SHA-256.
+  5. **Conservation Invariant:** Strictly enforce `source_row_count = normalized_row_count + rejected_row_count`. Conservation failure halts pilot with `AUDIT_CONSERVATION_FAILURE`.
+  6. **Rejection Ledgers:** Record malformed rows with sanitized reason codes, request identifiers, row indices, and non-sensitive row hashes. Session credentials and authorization tokens are strictly scrubbed.
+  7. **Deterministic Client Closure:** Wrap retrieval loop in `try ... finally` block ensuring client session closure (`client.exit()`). If closure fails, return exit code 9 (`CLIENT_CLOSE_ERROR`).
+  8. **Strict Exit Code Contract:** Enforce 0 (success for all 5 symbols), 2 (argument error), 3 (authorization error), 4 (client construction error), 5 (retrieval connectivity error), 6 (payload safety / schema normalization error), 7 (persistence / manifest / audit error), 8 (incomplete execution / fewer than 5 symbols), 9 (client close failure), 10 (unexpected internal error).
+  9. **Regression Test:** Add `test_client_initialization_without_symbol_loop_cannot_succeed` reproducing and permanently preventing false success on client initialization alone.
+  10. **Zero Live Calls Authorized:** No live requests, no active authorization marker created.
+- **Impacted Modules:**
+  - `phase7/sources/pilot.py`
+  - `phase7/sources/contracts.py`
+  - `phase7/sources/client_protocol.py`
+  - `phase7/sources/manifest.py`
+  - `phase7/sources/normalization.py`
+  - `phase7/sources/rejections.py`
+  - `phase7/sources/persistence.py`
+  - `tests/phase7/test_source_pilot_execution.py`
+  - `tests/phase7/test_source_persistence.py`
+  - `tests/phase7/test_source_exit_codes.py`
+  - `docs/PHASE7_NSE_LIVE_PILOT_PROTOCOL.md`
+  - `docs/PHASE7_NSE_DATA_FETCHER_ADAPTER.md`
+  - `docs/PHASE7_NSE_FIVE_STOCK_PILOT_REPORT.md`
+  - `docs/PHASE7_DECISION_LOG.md`
+  - `docs/PHASE7_IMPLEMENTATION_MAP.md`
+- **Verification Criteria:**
+  - Full test suite passes offline (318 passing tests, including 33 new mocked tests).
+  - `pip check` reports no broken requirements.
+  - `git diff --check` reports zero whitespace errors.
+  - Zero live network requests issued.
   - Zero market data files in repository.
 
 ---

@@ -39,11 +39,64 @@ class ConstituentClassification(str, Enum):
 
 
 class RequestStatus(str, Enum):
+    PENDING = "PENDING"
+    SUCCEEDED = "SUCCEEDED"
     SUCCESS = "SUCCESS"
-    PARTIAL = "PARTIAL"
     FAILED = "FAILED"
-    REJECTED = "REJECTED"
     EMPTY = "EMPTY"
+    PARTIAL = "PARTIAL"
+    REJECTED = "REJECTED"
+    HALTED = "HALTED"
+
+
+class PilotStopReason(str, Enum):
+    CONNECTION_ERROR = "CONNECTION_ERROR"
+    TIMEOUT_ERROR = "TIMEOUT_ERROR"
+    HTML_PAYLOAD_REJECTED = "HTML_PAYLOAD_REJECTED"
+    CAPTCHA_DETECTED = "CAPTCHA_DETECTED"
+    EMPTY_RESPONSE = "EMPTY_RESPONSE"
+    UNEXPECTED_RESPONSE_TYPE = "UNEXPECTED_RESPONSE_TYPE"
+    SCHEMA_MISMATCH = "SCHEMA_MISMATCH"
+    OUT_OF_RANGE_DATE = "OUT_OF_RANGE_DATE"
+    SYMBOL_IDENTITY_CONFLICT = "SYMBOL_IDENTITY_CONFLICT"
+    INVALID_OHLC = "INVALID_OHLC"
+    NEGATIVE_VALUE = "NEGATIVE_VALUE"
+    DUPLICATE_NATURAL_KEY = "DUPLICATE_NATURAL_KEY"
+    RAW_PERSISTENCE_FAILURE = "RAW_PERSISTENCE_FAILURE"
+    NORMALIZED_PERSISTENCE_FAILURE = "NORMALIZED_PERSISTENCE_FAILURE"
+    MANIFEST_FAILURE = "MANIFEST_FAILURE"
+    AUDIT_CONSERVATION_FAILURE = "AUDIT_CONSERVATION_FAILURE"
+    CLIENT_CLOSE_FAILURE = "CLIENT_CLOSE_FAILURE"
+    UNEXPECTED_INTERNAL_ERROR = "UNEXPECTED_INTERNAL_ERROR"
+
+
+class PilotExitCode(int, Enum):
+    SUCCESS = 0
+    ARGUMENT_ERROR = 2
+    AUTHORIZATION_ERROR = 3
+    CLIENT_CONSTRUCTION_ERROR = 4
+    RETRIEVAL_ERROR = 5
+    SCHEMA_NORMALIZATION_ERROR = 6
+    PERSISTENCE_MANIFEST_ERROR = 7
+    INCOMPLETE_EXECUTION_ERROR = 8
+    CLIENT_CLOSE_ERROR = 9
+    UNEXPECTED_INTERNAL_ERROR = 10
+
+
+class PilotOutcome(str, Enum):
+    PASSED = "NSE_FIVE_STOCK_PILOT_PASSED"
+    FAILED = "NSE_FIVE_STOCK_PILOT_FAILED"
+    HALTED_ON_SAFETY_CONTROL = "NSE_FIVE_STOCK_PILOT_HALTED_ON_SAFETY_CONTROL"
+
+
+@dataclass
+class SessionBootstrapAudit:
+    client_initialization_count: int = 0
+    session_bootstrap_network_activity_detected: bool = False
+    historical_retrieval_request_count: int = 0
+    historical_retrieval_response_count: int = 0
+    symbols_completed: int = 0
+    client_close_count: int = 0
 
 
 @runtime_checkable
@@ -133,6 +186,9 @@ class RejectedRowRecord:
     raw_payload: Dict[str, Any]
     reason: str
     timestamp: str
+    row_index: Optional[int] = None
+    request_id: Optional[str] = None
+    row_hash: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -152,6 +208,12 @@ class RequestManifest:
     failure_reason: Optional[str] = None
     retry_count: int = 0
     is_partial: bool = False
+    raw_file_path: Optional[str] = None
+    normalized_file_path: Optional[str] = None
+    schema_version: str = "phase7-eod-v1.0"
+    missing_fields: Optional[Dict[str, int]] = None
+    rejected_row_count: int = 0
+    duration_seconds: Optional[float] = None
 
 
 @dataclass(frozen=True)

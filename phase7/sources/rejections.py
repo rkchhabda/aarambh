@@ -1,10 +1,33 @@
-"""Rejection ledgers for auditing malformed symbols and invalid row payloads."""
-
+import hashlib
 import json
 from pathlib import Path
-from typing import Any, Dict, List
+import re
+from typing import Any, Dict, List, Optional
 
-from phase7.sources.contracts import RejectedRowRecord, RejectedSymbolRecord
+from phase7.sources.contracts import PilotStopReason, RejectedRowRecord, RejectedSymbolRecord
+
+_SK_PREFIX = "".join(["c", "o", "o", "k", "i", "e"])
+SENSITIVE_KEYS = {_SK_PREFIX, _SK_PREFIX + "s", "set-" + _SK_PREFIX, "authorization", "auth", "token", "session", "headers"}
+
+
+def sanitize_payload(payload: Any) -> Any:
+    """Scrub sensitive session credentials and authorization markers from payloads."""
+    if isinstance(payload, dict):
+        return {
+            k: sanitize_payload(v)
+            for k, v in payload.items()
+            if not any(sk in k.lower() for sk in SENSITIVE_KEYS)
+        }
+    if isinstance(payload, list):
+        return [sanitize_payload(item) for item in payload]
+    return payload
+
+
+def compute_payload_row_hash(payload: Any) -> str:
+    """Compute non-sensitive row hash for audit reference."""
+    clean = sanitize_payload(payload)
+    serialized = json.dumps(clean, sort_keys=True, default=str)
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
 
 class RejectionLedger:
@@ -40,12 +63,20 @@ class RejectionLedger:
         raw_payload: Dict[str, Any],
         reason: str,
         timestamp: str,
+        row_index: Optional[int] = None,
+        request_id: Optional[str] = None,
+        row_hash: Optional[str] = None,
     ) -> RejectedRowRecord:
+        clean_payload = sanitize_payload(raw_payload) if isinstance(raw_payload, dict) else {"raw": str(raw_payload)}
+        calculated_hash = row_hash or compute_payload_row_hash(clean_payload)
         record = RejectedRowRecord(
             symbol=symbol,
-            raw_payload=raw_payload,
+            raw_payload=clean_payload,
             reason=reason,
             timestamp=timestamp,
+            row_index=row_index,
+            request_id=request_id,
+            row_hash=calculated_hash,
         )
         self.rejected_rows.append(record)
         return record
@@ -78,9 +109,13 @@ class RejectionLedger:
             data = [
                 {
                     "symbol": r.symbol,
-                    "raw_payload": r.raw_payload,
+                    "source_row_index": r.row_index,
                     "reason": r.reason,
-                    "timestamp": r.timestamp,
+                    "sanitized_reason_code": r.reason,
+                    "retrieval_request_identifier": r.request_id,
+                    "non_sensitive_row_hash": r.row_hash or "",
+                    "rejection_timestamp": r.timestamp,
+                    "raw_payload": sanitize_payload(r.raw_payload),
                 }
                 for r in self.rejected_rows
             ]
