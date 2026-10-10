@@ -66,24 +66,11 @@ flowchart TD
 
 ## 3. Recommended Next Actions
 
-1. **Authorize Milestone 4.9E Schema Normalization Alignment:**
-   Authorize a code modification to `phase7/sources/normalization.py` to support the exact field naming convention returned by `nse==4.0.1`:
-   - Map `mtimestamp` to `trading_date` (parse `%d-%b-%Y`).
-   - Map `chOpeningPrice` to `open_price`.
-   - Map `chTradeHighPrice` to `high_price`.
-   - Map `chTradeLowPrice` to `low_price`.
-   - Map `chClosingPrice` to `close_price`.
-   - Map `chTotTradedQty` to `volume`.
-   - Map `chTotTradedVal` to `turnover`.
-   - Map `chTotalTrades` to `total_trades`.
-   - Map `vwap` to `vwap`.
-   - Map `chSeries` to `series`.
-   - Map `chSymbol` to `symbol`.
-2. **Offline Contract & Unit Testing:**
-   Add unit test fixtures using the exact observed RELIANCE raw dictionary payload. Confirm 22/22 rows normalize deterministically without rejections.
-3. **Re-authorize Five-Stock Live Pilot:**
-   Following the schema alignment patch, request owner re-authorization (`RE-AUTHORIZE MILESTONE 4.9 AFTER NORMALIZATION SCHEMA FIX`) to create a fresh marker and execute the live pilot.
-4. **Milestone 5 Quarantine:**
+1. **Milestone 4.9E Schema Normalization Alignment (COMPLETED):**
+   Explicit source mappings, versioning (`NSE_4_0_1_HISTORICAL_CAMELCASE_V1`), and locale-independent date parsing implemented in `phase7/sources/schema_mappings.py` and `phase7/sources/normalization.py`. Offline replay of preserved RELIANCE payload confirmed 22/22 rows normalized with 0 rejections and conservation verified.
+2. **Re-authorize Five-Stock Live Pilot:**
+   Following the schema alignment and replay verification, request owner re-authorization (`RE-AUTHORIZE MILESTONE 4.9 AFTER NSE 4.0.1 SCHEMA FIX`) to create a fresh single-use marker and execute the live pilot.
+3. **Milestone 5 Quarantine:**
    Milestone 5 (model training and target generation) remains strictly blocked until real data is procured, normalized, and accepted through Gate 1.
-5. **Blockers BLK-01, BLK-02, and BLK-04:**
-   Remain formally OPEN until authentic point-in-time constituent, price-turnover, and sector history data are procured and accepted.
+4. **Blockers BLK-01, BLK-02, and BLK-04:**
+   Remain formally OPEN until authentic point-in-time constituent, price-turnover, and sector history data are procured and accepted across all 5 symbols.

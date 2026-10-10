@@ -114,3 +114,27 @@ The adapter is marked **UNSAFE_FOR_LIVE_PILOT** because:
 1. Upstream `NSEDataFetcher` encapsulates HTTP network operations inside internal libraries.
 2. Transport-level HTTP 429 status codes and CAPTCHA challenges cannot be reliably caught prior to internal exception handling without internal source remediation.
 3. Live requests remain strictly prohibited until Milestone 4.9 authorization.
+
+---
+
+## 7. Versioned Source Schema Mapping (`NSE_4_0_1_HISTORICAL_CAMELCASE_V1`)
+
+To support genuine `nse==4.0.1` historical payload structures while rejecting unknown or future variants (e.g., `nse 5.x`), Phase 7 introduces the `NSE_4_0_1_HISTORICAL_CAMELCASE_V1` mapping (`phase7/sources/schema_mappings.py`):
+
+| Upstream `nse==4.0.1` Key | Canonical Contract Field | Type / Rule |
+| :--- | :--- | :--- |
+| `mtimestamp` | `trading_date` | Parsed via locale-independent `%d-%b-%Y` parser to ISO `YYYY-MM-DD` |
+| `chSymbol` | `symbol` | Strict uppercase normalization; conflict raises `SYMBOL_IDENTITY_CONFLICT` |
+| `chSeries` | `exchange_series` | Mapped directly; missing becomes `NOT_PROVIDED` (never inferred as `EQ`) |
+| `chPreviousClsPrice` | `previous_close` | Strict float > 0 |
+| `chOpeningPrice` | `open` | Strict float > 0; bounded `[low, high]` |
+| `chTradeHighPrice` | `high` | Strict float > 0; `high >= low` |
+| `chTradeLowPrice` | `low` | Strict float > 0; `low <= high` |
+| `chClosingPrice` | `close` | Strict float > 0; bounded `[low, high]` |
+| `chLastTradedPrice` | `last_price` | Optional float; bounded `[low, high]` |
+| `vwap` | `vwap` | Optional float > 0 |
+| `chTotTradedQty` | `total_traded_quantity` | Strict int >= 0 |
+| `chTotTradedVal` | `total_traded_value_inr` | Strict float >= 0; never derived; marked `SOURCE_REPORTED` |
+| `chTotalTrades` | `number_of_trades` | Optional int >= 0 |
+| `ch52WeekHighPrice` | *(Audit Metadata)* | Excluded from canonical EOD pricing schema |
+| `ch52WeekLowPrice` | *(Audit Metadata)* | Excluded from canonical EOD pricing schema |

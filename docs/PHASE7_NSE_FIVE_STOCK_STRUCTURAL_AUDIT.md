@@ -74,3 +74,18 @@ This structural audit evaluates the technical architecture and runtime behavior 
   - The defect is documented.
   - The marker was not recreated.
   - Live pilot outcome is recorded as `NSE_FIVE_STOCK_PILOT_HALTED_ON_SAFETY_CONTROL`.
+
+---
+
+## 4. Milestone 4.9E Normalization Alignment & Replay Audit
+
+1. **Versioned Mapping Introduced:** `NSE_4_0_1_HISTORICAL_CAMELCASE_V1` implemented in `phase7/sources/schema_mappings.py`.
+2. **Deterministic Locale-Independent Date Parser:** Validates `%d-%b-%Y` via explicit English month dictionary without depending on platform locale.
+3. **Numeric Bounds & NaN/Inf Rejection:** Mandatory fields strictly reject NaN, Infinity, negative prices, and negative quantities.
+4. **Offline Replay Compliance:**
+   - 22 source rows $\rightarrow$ 22 normalized rows $\rightarrow$ 0 rejected rows.
+   - Conservation holds: $22 = 22 + 0$.
+   - SHA-256 raw checksum verified: `59af0e392d7bb9073a49603115e11150a8adbab59e0619c6a0608d19ffcbef63`.
+   - SHA-256 normalized checksum generated: `be10e3ca0fc0298c751457aaa822b05c1254839634b7958f6e16aab9e1759a0b`.
+   - Zero duplicate keys, zero invalid OHLC bounds, zero negative values.
+   - Preserved in `<staging>/offline_replay_4_9e/` without modifying live pilot evidence.

@@ -59,6 +59,11 @@ from phase7.sources.pilot_guard import (
     validate_symbol,
 )
 from phase7.sources.rejections import RejectionLedger
+from phase7.sources.schema_mappings import (
+    NSE_4_0_1_SCHEMA_VERSION,
+    detect_payload_schema_version,
+    parse_nse_d_b_y,
+)
 
 __all__ = [
     "AdjustmentState",
@@ -76,6 +81,9 @@ __all__ = [
     "NSEDataFetcherAdapter",
     "NSEDataFetcherProtocol",
     "NSEDataSourceAdapter",
+    "NSE_4_0_1_SCHEMA_VERSION",
+    "detect_payload_schema_version",
+    "parse_nse_d_b_y",
     "PilotAuthorizationRecord",
     "PilotExitCode",
     "PilotGuard",

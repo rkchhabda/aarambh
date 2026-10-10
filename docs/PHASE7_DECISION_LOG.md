@@ -682,6 +682,40 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261010-28: Milestone 4.9E NSE 4.0.1 Historical Payload Schema Alignment & Offline Replay Verification
+- **Date:** 2026-10-10
+- **Decision Authority:** Project Owner & Lead Quantitative Research Engineer
+- **Context & Motivation:** Live pilot Attempt 4 halted with exit code 6 because `phase7/sources/normalization.py` did not recognize lowercase `mtimestamp` or camelCase keys (`chOpeningPrice`, etc.) returned by `nse==4.0.1`. Checkpoint 4.9E authorizes explicit source mapping, locale-independent date parsing, and offline replay validation over the preserved RELIANCE raw payload (`59af0e39...`) without network requests.
+- **Exact Decision:**
+  1. **Source Schema Versioning:** Implement versioned mapping `NSE_4_0_1_HISTORICAL_CAMELCASE_V1` in `phase7/sources/schema_mappings.py`.
+  2. **Locale-Independent Date Parser:** Author `parse_nse_d_b_y` mapping English month names (`%d-%b-%Y`) deterministically to ISO `YYYY-MM-DD` without depending on C runtime locale.
+  3. **Strict Zero-Inference Invariants:** Preserve non-inference of turnover, ISIN (`None`), delivery (`None`), and adjustment state (`AdjustmentState.UNKNOWN` for nse 4.0.1).
+  4. **Strict Numeric Validation:** Reject NaN, Infinity, negative prices, and negative quantities across float and integer parsers.
+  5. **Offline Replay Execution:** Verify 22/22 rows of preserved RELIANCE payload normalize with 0 rejections, 100% date coverage, zero duplicates, and conserved totals ($22 = 22 + 0$).
+  6. **Evidence Integrity:** Staged replay output strictly under `<staging>/offline_replay_4_9e/` outside Git; live raw payload and live manifest remain unchanged.
+- **Impacted Modules:**
+  - `phase7/sources/schema_mappings.py`
+  - `phase7/sources/normalization.py`
+  - `phase7/sources/contracts.py`
+  - `phase7/sources/manifest.py`
+  - `phase7/sources/audit.py`
+  - `phase7/sources/__init__.py`
+  - `tests/phase7/test_source_nse_401_schema.py`
+  - `tests/phase7/test_source_offline_replay.py`
+  - `docs/PHASE7_NSE_DATA_FETCHER_ADAPTER.md`
+  - `docs/PHASE7_NSE_FIVE_STOCK_PILOT_REPORT.md`
+  - `docs/PHASE7_NSE_FIVE_STOCK_STRUCTURAL_AUDIT.md`
+  - `docs/PHASE7_NSE_FIVE_STOCK_GAP_ANALYSIS.md`
+  - `docs/PHASE7_DECISION_LOG.md`
+  - `docs/PHASE7_IMPLEMENTATION_MAP.md`
+- **Verification Criteria:**
+  - Full test suite passes offline (339 passing tests).
+  - `pip check` clean.
+  - `git diff --check` clean.
+  - Offline replay verified 22/22 rows normalized with 0 rejections.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:

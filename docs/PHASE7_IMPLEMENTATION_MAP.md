@@ -603,7 +603,31 @@ Milestone 3 delivered the comprehensive Target Engine (`phase7/targets/`), cover
 ### 17.2 Attempt 4 Verification Summary
 - Complete pytest suite: **318 of 318 passing** (`pytest tests/phase7/ test_phase6_safeguards.py -q`).
 - `pip check`: Clean (no broken requirements).
-- `git diff --check`: Clean (zero whitespace errors).
 - Live Pilot Attempt 4 Outcome: **`NSE_FIVE_STOCK_PILOT_HALTED_ON_SAFETY_CONTROL`** (Raw retrieval proven; halted on `mtimestamp` key casing in normalization; exit code 6).
+- Blocker Status: BLK-01, BLK-02, and BLK-04 remain strictly **OPEN** (STILL_BLOCKED).
+- Milestone 5 Status: Strictly **BLOCKED**.
+
+---
+
+## 18. Milestone 4.9E NSE 4.0.1 Historical Payload Schema Alignment & Offline Replay Deliverables
+
+### 18.1 Delivered Code and Test Artifacts
+
+| Capability / Requirement | Technical Description | Source Module | Test Module | Status |
+|---|---|---|---|---|
+| **Versioned Schema Mapping** | Explicit mapping for `nse==4.0.1` camelCase payload (`NSE_4_0_1_HISTORICAL_CAMELCASE_V1`) | `phase7/sources/schema_mappings.py` | `tests/phase7/test_source_nse_401_schema.py` | **VERIFIED** |
+| **Locale-Independent Date Parsing** | Parses `%d-%b-%Y` (e.g. `'01-Jan-2024'`) deterministically via English month map to ISO `YYYY-MM-DD` | `phase7/sources/schema_mappings.py` | `tests/phase7/test_source_nse_401_schema.py` | **VERIFIED** |
+| **Strict Numeric Validation** | Rejects NaN, Infinity, negative prices, and negative quantities across float and integer parsers | `phase7/sources/schema_mappings.py` | `tests/phase7/test_source_nse_401_schema.py` | **VERIFIED** |
+| **Normalized EOD Field Alignment** | Maps `mtimestamp`, `chOpeningPrice`, `chClosingPrice`, `chTotTradedQty`, `chTotTradedVal`, `vwap`, etc. | `phase7/sources/normalization.py` | `tests/phase7/test_source_nse_401_schema.py` | **VERIFIED** |
+| **Preserved Payload Offline Replay** | Replays preserved RELIANCE raw payload (`59af0e39...`) offline; 22/22 rows normalized with 0 rejections | `tests/phase7/test_source_offline_replay.py` | `tests/phase7/test_source_offline_replay.py` | **VERIFIED** |
+
+### 18.2 Milestone 4.9E Verification Summary
+- Prior approved test baseline: **318 passing**.
+- New Milestone 4.9E tests: **21 passing** across `test_source_nse_401_schema.py` and `test_source_offline_replay.py`.
+- Complete pytest suite: **339 of 339 passing** (`pytest tests/phase7/ test_phase6_safeguards.py -q`).
+- `pip check`: Clean (no broken requirements).
+- `git diff --check`: Clean (zero whitespace errors).
+- Offline Replay Result: **`OFFLINE_NORMALIZATION_REPLAY`** (22/22 rows normalized, 0 rejected, conserved, 100% Jan 2024 coverage).
+- Checkpoint Status: **`NSE_401_SCHEMA_ALIGNED_OFFLINE_REPLAY_PASSED_LIVE_EXECUTION_NOT_AUTHORIZED`**.
 - Blocker Status: BLK-01, BLK-02, and BLK-04 remain strictly **OPEN** (STILL_BLOCKED).
 - Milestone 5 Status: Strictly **BLOCKED**.

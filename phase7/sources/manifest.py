@@ -83,6 +83,7 @@ def build_manifest(
     missing_fields: Optional[Dict[str, int]] = None,
     rejected_row_count: int = 0,
     duration_seconds: Optional[float] = None,
+    mapping_version: Optional[str] = None,
 ) -> RequestManifest:
     """Build an immutable RequestManifest instance with cryptographic checksums."""
     if raw_checksum is None:
@@ -124,6 +125,7 @@ def build_manifest(
         missing_fields=missing_fields,
         rejected_row_count=rejected_row_count,
         duration_seconds=duration_seconds,
+        mapping_version=mapping_version,
     )
 
 
@@ -159,6 +161,7 @@ def write_manifest(
         "missing_fields": manifest.missing_fields,
         "rejected_row_count": manifest.rejected_row_count,
         "duration_seconds": manifest.duration_seconds,
+        "mapping_version": manifest.mapping_version,
     }
     with path.open("w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, sort_keys=True)

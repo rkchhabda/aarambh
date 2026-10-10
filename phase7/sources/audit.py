@@ -23,6 +23,7 @@ class StructuralQualityAudit:
         missing_isin = 0
         invalid_ohlc = 0
         negative_vol = 0
+        mapping_versions: Set[str] = set()
 
         for r in self.records:
             symbols.add(r.symbol)
@@ -41,6 +42,9 @@ class StructuralQualityAudit:
             if r.total_traded_quantity < 0:
                 negative_vol += 1
 
+            if r.mapping_version:
+                mapping_versions.add(r.mapping_version)
+
         earliest = min(dates) if dates else "N/A"
         latest = max(dates) if dates else "N/A"
 
@@ -55,4 +59,5 @@ class StructuralQualityAudit:
             "missing_isin_rows": missing_isin,
             "invalid_ohlc_rows": invalid_ohlc,
             "negative_volume_rows": negative_vol,
+            "schema_mapping_versions": sorted(list(mapping_versions)),
         }

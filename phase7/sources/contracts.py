@@ -138,6 +138,7 @@ class HistoricalEODRecord:
     ingestion_timestamp: str
     source_identifier: str
     row_hash: str
+    mapping_version: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -214,6 +215,7 @@ class RequestManifest:
     missing_fields: Optional[Dict[str, int]] = None
     rejected_row_count: int = 0
     duration_seconds: Optional[float] = None
+    mapping_version: Optional[str] = None
 
 
 @dataclass(frozen=True)

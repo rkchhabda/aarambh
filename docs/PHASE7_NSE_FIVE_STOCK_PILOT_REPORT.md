@@ -214,3 +214,27 @@ Pilot exit code: 6
    - Symbol: map `chSymbol`.
 2. Add deterministic test fixtures with exact `nse==4.0.1` observed payload shape in `tests/phase7/test_source_eod_normalization.py`.
 3. Request explicit owner re-authorization (`RE-AUTHORIZE MILESTONE 4.9 AFTER NORMALIZATION SCHEMA FIX`) to create a fresh marker and execute the live pilot.
+
+---
+
+## 8. Milestone 4.9E Offline Replay Verification
+
+In Milestone 4.9E, explicit source-field mappings and locale-independent date parsing for `NSE_4_0_1_HISTORICAL_CAMELCASE_V1` were implemented and verified through an offline replay of the preserved RELIANCE payload without network requests.
+
+### 8.1 Replay Execution Metrics
+- **Replay Status:** `OFFLINE_NORMALIZATION_REPLAY`
+- **Source File:** `C:\Users\r_chh\gaurvideep_phase7_staging\nse500\pilot_4_9\raw\historical\RELIANCE_2024-01-01_2024-01-31_1d_20261010T081014Z_59af0e39.json`
+- **Source SHA-256:** `59af0e392d7bb9073a49603115e11150a8adbab59e0619c6a0608d19ffcbef63`
+- **Source Rows:** 22
+- **Normalized Rows:** 22
+- **Rejected Rows:** 0
+- **Conservation Status:** `CONSERVED` ($22 = 22 + 0$)
+- **Date Coverage:** 100.0% (22 of 22 trading sessions in Jan 2024)
+- **Duplicate Natural Keys:** 0
+- **Invalid OHLC Rows:** 0
+- **Negative Value Rows:** 0
+- **Missing Required Fields:** 0
+- **Missing Optional Fields:** `isin` (22), `deliverable_quantity` (22), `delivery_percentage` (22) (all explicitly `NOT_PROVIDED` or `None`)
+- **Normalized Checksum:** `be10e3ca0fc0298c751457aaa822b05c1254839634b7958f6e16aab9e1759a0b`
+- **Replay Output Directory:** `C:\Users\r_chh\gaurvideep_phase7_staging\nse500\pilot_4_9\offline_replay_4_9e\`
+- **Original Evidence Integrity:** Preserved unchanged; original raw file hash intact; live `manifest_RELIANCE_*.json` preserved with `status: PARTIAL`.
