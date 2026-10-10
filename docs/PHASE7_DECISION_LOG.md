@@ -994,6 +994,57 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261010-37: Milestone 4.11 Offline Internal Production-Readiness Hardening
+- **Date:** 2026-10-10
+- **Decision Authority:** Project Owner & Lead Quantitative Research Engineer (`AUTHORIZE MILESTONE 4.11`)
+- **Context & Motivation:** In accordance with the Owner Decision deferring external evidence acquisition (`EXTERNAL_EVIDENCE_ACQUISITION_DEFERRED_BY_OWNER`), Milestone 4.11 was authorized to execute comprehensive offline internal production-readiness hardening of the Phase 7 source, persistence, manifest, checkpoint, authorization, and batch subsystems. The mandate required adding approximately 200–250 high-value automated tests, implementing exactly 16 governed operational fault-injection drills, achieving zero external network calls, and ensuring bounded synthetic scale up to 500 symbols.
+- **Exact Decision:**
+  1. **New Operations Framework:** Author `phase7/operations/` containing production-hardened primitives: `atomic_io.py`, `file_lock.py`, `integrity.py`, `recovery.py`, `backup_restore.py`, `fault_injection.py`, `security_validation.py`, `scale_simulation.py`, `audit_reconciliation.py`, `drill_runner.py`, and `readiness_report.py`.
+  2. **Automated Test Expansion:** Implement 250 high-value automated tests across Workstreams A through H:
+     - Workstream A (Atomic Persistence & Durability): 45 tests
+     - Workstream B (Checkpoint, Manifest & Integrity): 35 tests
+     - Workstream C (Crash Recovery & Resume Authorization): 30 tests
+     - Workstream D (Concurrency, Process Locking & Race Conditions): 25 tests
+     - Workstream E (Security Boundaries & Hostile Inputs): 49 tests
+     - Workstream F (Synthetic Scale & Memory Guardrails): 25 tests
+     - Workstream G (Logging, Auditability & Redaction): 15 tests
+     - Workstream H (Backup, Restoration & Disaster Recovery): 15 tests
+     - Operational Drills Suite: 16 tests
+  3. **Operational Drill Program:** Execute all 16 mandatory operational fault-injection drills (`DRILL-01` through `DRILL-16`). All 16 drills passed (100% pass rate). Output records written exclusively to external staging (`C:\Users\r_chh\gaurvideep_phase7_staging\nse500\production_readiness_4_11\drills\`).
+  4. **OS-Level Network Denial:** Install autouse network-denial fixture in `tests/phase7/conftest.py` intercepting `socket.socket.connect`, `socket.create_connection`, `httpx.Client.send`, and `urllib.request.urlopen`. Zero network calls permitted.
+  5. **15-Domain Readiness Classification:** Evaluate all 15 engineering domains as `PASS` on the non-investment scorecard, confirming `INTERNAL_NON_DISTRIBUTED_PRODUCTION_LIKE_READINESS_CONFIRMED`.
+  6. **Governed Quarantine Preservation:** Zero market prices retrieved, zero constituent snapshots downloaded, zero targets generated, zero models trained, and Phase 6 vaults strictly unaccessed. Milestone 5 remains blocked.
+- **Impacted Modules:**
+  - `phase7/operations/` (package created with 11 modules)
+  - `tests/phase7/conftest.py` (created)
+  - `tests/phase7/test_prod_atomic_persistence.py` (created)
+  - `tests/phase7/test_prod_manifest_integrity.py` (created)
+  - `tests/phase7/test_prod_crash_recovery.py` (created)
+  - `tests/phase7/test_prod_process_locking.py` (created)
+  - `tests/phase7/test_prod_hostile_inputs.py` (created)
+  - `tests/phase7/test_prod_synthetic_scale.py` (created)
+  - `tests/phase7/test_prod_audit_and_logging.py` (created)
+  - `tests/phase7/test_prod_backup_restore.py` (created)
+  - `tests/phase7/test_prod_operational_drills.py` (created)
+  - `docs/PHASE7_INTERNAL_PRODUCTION_READINESS_PLAN.md` (created)
+  - `docs/PHASE7_OFFLINE_FAULT_INJECTION_PROTOCOL.md` (created)
+  - `docs/PHASE7_OPERATIONAL_DRILL_REPORT.md` (created)
+  - `docs/PHASE7_SECURITY_HARDENING_REPORT.md` (created)
+  - `docs/PHASE7_BACKUP_RESTORE_PROTOCOL.md` (created)
+  - `docs/PHASE7_SYNTHETIC_SCALE_REPORT.md` (created)
+  - `docs/PHASE7_INTERNAL_READINESS_SCORECARD.md` (created)
+  - `docs/PHASE7_DECISION_LOG.md`
+  - `docs/PHASE7_IMPLEMENTATION_MAP.md`
+  - `docs/PHASE7_EXECUTION_PLAN.md`
+  - `docs/PHASE7_BLOCKERS.md`
+- **Verification Criteria:**
+  - 794 total passing tests (544 existing + 250 new) with zero failures.
+  - Exactly 16 operational drills passing with external JSON records.
+  - `pip check` clean.
+  - Zero live network requests, zero active authorization markers, zero repo data writes.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:

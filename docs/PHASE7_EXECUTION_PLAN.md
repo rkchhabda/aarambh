@@ -165,6 +165,7 @@ flowchart TD
 | Milestone 4.10C | 20-Stock Live Batch Pilot | `AUTHORIZE MILESTONE 4.10C: 20-STOCK THREE-MONTH LIVE BATCH PILOT` |
 | Milestone 4.10C-1 | Pre-Listing Interval Classification Governance | `AUTHORIZE MILESTONE 4.10C-1: GOVERN PRE-LISTING INTERVAL CLASSIFICATION` |
 | Milestone 4.10C-2 | Official Listing-Date Evidence Pilot | `AUTHORIZE MILESTONE 4.10C-2: OFFICIAL LISTING-DATE EVIDENCE PILOT` |
+| Milestone 4.11 | Offline Internal Production-Readiness Hardening | `AUTHORIZE MILESTONE 4.11: OFFLINE INTERNAL PRODUCTION-READINESS HARDENING` |
 | Milestone 5 | Gate 1 Real Data Accepted | `APPROVE MILESTONE 5` |
 | Milestone 6 | Baseline Board Frozen | `APPROVE MILESTONE 6` |
 | Milestone 7 | Linear Models Registered | `APPROVE MILESTONE 7` |

@@ -831,3 +831,32 @@ Milestone 3 delivered the comprehensive Target Engine (`phase7/targets/`), cover
 - **Frozen 20-Symbol Deterministic Sample:** Checksum `60dd0358...`, ordered-symbol hash `26e4be7c...`.
 - **Halted Batch Run:** `BATCH_4_10C_HISTORICAL_20STOCK_2024Q1_20261010T112814Z` (halted fail-closed on Symbol 0 `PREMIERENE`).
 - **Consumed Authorization Tokens:** Permanently consumed and non-reusable.
+
+---
+
+## 26. Milestone 4.11 Offline Internal Production-Readiness Hardening Deliverables
+
+### 26.1 Operations and Durability Framework
+- Created `phase7/operations/` package containing 11 production-readiness modules:
+  - `atomic_io.py`: Atomic writes with flush, fsync, SHA-256 validation, path checks, and overwrite refusal.
+  - `file_lock.py`: Inter-process file locking (`.process_lock.raw`), single-writer directory gate, stale lock detection, and single-request gate.
+  - `integrity.py`: Checkpoint/manifest integrity verification, mathematical row conservation ($S = N + R$), and contract matching.
+  - `recovery.py`: Fail-closed crash recovery inspection, resume prerequisite validator, mandatory active marker enforcement.
+  - `backup_restore.py`: Governed offline backup and restore validator with SHA-256 inventory and temporary/session file filtering.
+  - `fault_injection.py`: Controlled lifecycle crash framework (20 injection points), disk full (ENOSPC), permission denied (EACCES).
+  - `security_validation.py`: Hostile input defense (shell, metacharacters, traversal, UNC, device, NTFS, Unicode bidi/slash, NaN/Inf).
+  - `scale_simulation.py`: Synthetic universe generators (20, 100, 500 symbols $\times$ 65, 252, 3000 sessions) and memory tracking.
+  - `audit_reconciliation.py`: Structured JSONL audit logging with UTC timestamps, secret redaction, and CRLF escaping.
+  - `drill_runner.py`: Executor for DRILL-01 through DRILL-16.
+  - `readiness_report.py`: 15-domain engineering scorecard generator.
+
+### 26.2 Automated Test Battery & Operational Drills
+- Prior test baseline: **544 passing**.
+- New automated tests added: **250 passing** (Target: 200–250).
+- Total test suite: **794 of 794 passing** (`pytest tests/phase7/ test_phase6_safeguards.py -q`).
+- Total suite execution time: **~60 seconds**.
+- Operational Drill Program: **16 of 16 drills passed (100%)**. Output JSON records written exclusively to `C:\Users\r_chh\gaurvideep_phase7_staging\nse500\production_readiness_4_11\drills\`.
+- Network Quarantine: **100% verified** via autouse OS-level socket denial fixture in `tests/phase7/conftest.py`. Zero network calls made.
+- Gating Scorecard Classification: **`INTERNAL_NON_DISTRIBUTED_PRODUCTION_LIKE_READINESS_CONFIRMED`** (all 15 domains PASS).
+- Blocker Status: `BLK-01`, `BLK-02`, and `BLK-04` remain **STILL_BLOCKED** / **OPEN**.
+- Milestone 5 Quarantine: Strictly **BLOCKED**.
