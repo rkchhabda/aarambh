@@ -662,3 +662,33 @@ Milestone 3 delivered the comprehensive Target Engine (`phase7/targets/`), cover
   - `BLK-04` (Point-in-Time Sector Classification History): **`STILL_BLOCKED`**
 - **Next Authorized Milestone:** **`MILESTONE 4.10A: CURRENT NIFTY 500 CONSTITUENT SNAPSHOT PILOT`**.
 - **Milestone 5 Quarantine:** Strictly **BLOCKED**.
+
+---
+
+## 20. Milestone 4.10A Current NIFTY 500 Constituent Snapshot Pilot Deliverables & Closure
+
+### 20.1 Runtime Execution & Deliverables Summary
+
+| Capability / Requirement | Technical Description | Source Module | Staging Artifact / Test | Status |
+|---|---|---|---|---|
+| **Single-Use Snapshot Authorization** | Single-use marker scoped to `CURRENT_NIFTY500_CONSTITUENT_SNAPSHOT_PILOT`; atomic rename on validation | `phase7/sources/constituent_authorization.py` | `authorization/snapshot_authorization.consumed.20261010T102946Z.json` | **VERIFIED** |
+| **Governed Constituent Adapter** | Dependency-injected adapter with strict index validation (`NIFTY 500` only) and fail-closed error handling | `phase7/sources/nse_constituents.py` | `tests/phase7/test_source_constituent_contract.py` | **VERIFIED** |
+| **Header Row Detection & Conservation** | Recognizes index summary header (`symbol: NIFTY 500`); logs to rejected audit; verifies $501 = 500 + 1$ | `phase7/sources/nse_constituents.py` | `rejected/constituents/NIFTY_500_rejected_...jsonl` | **VERIFIED** |
+| **Upstream Network Request** | Single live call to `nse.NSE.listEquityStocksByIndex(index="NIFTY 500")` | `phase7/sources/constituent_pilot.py` | 1 network request (0 retries) | **VERIFIED (501 ROWS)** |
+| **External Raw Persistence** | Raw payload saved outside Git; raw SHA-256 computed (`37f6e829...`) | `phase7/sources/constituent_persistence.py` | `raw/constituents/NIFTY_500_snapshot_...json` | **VERIFIED** |
+| **Snapshot Normalization & Freeze** | Normalized to `CURRENT_SNAPSHOT_ONLY`; SHA-256 computed (`8f4c439f...`); frozen as `CURRENT_NIFTY500_09Oct2026_8F4C439F` | `phase7/sources/nse_constituents.py`<br/>`phase7/sources/constituent_persistence.py` | `normalized/constituents/NIFTY_500_normalized_...jsonl` | **VERIFIED (500 EQUITIES)** |
+| **Manifest Finalization** | Manifest finalized with status `SUCCEEDED`, duration 1.03s, client closed | `phase7/sources/constituent_pilot.py` | `manifests/manifest_NIFTY_500_...json` | **VERIFIED** |
+
+### 20.2 Final Milestone 4.10A Verification Summary
+- **Complete Test Baseline:** **389 of 389 passing** (`pytest tests/phase7/ test_phase6_safeguards.py -q`).
+- **`pip check` Result:** Clean (no broken requirements).
+- **`git diff --check` Result:** Clean (zero whitespace errors).
+- **Process Outcome Code:** `NSE_CURRENT_NIFTY500_SNAPSHOT_PILOT_PASSED` (Exit code 0).
+- **Dataset Classification:** `CURRENT_SNAPSHOT_ONLY`.
+- **Capability Label:** `CURRENT_NIFTY500_SNAPSHOT_CAPABILITY_CONFIRMED`.
+- **Negative Governance Declarations:** The constituent list is strictly a current snapshot as of 2026-10-09. It is NOT historical NIFTY 500 membership, NOT point-in-time membership, NOT survivorship-free, DOES NOT resolve BLK-01, DOES NOT satisfy Gate 1, and DOES NOT authorize model training.
+- **Blocker Status Registry:**
+  - `BLK-01` (Point-in-Time NIFTY 500 Constituent Membership History): **`STILL_BLOCKED`**
+  - `BLK-02` (Historical OHLCV Prices and Daily Traded Value / Turnover): **`PILOT_CAPABILITY_CONFIRMED_GATE1_NOT_PASSED`**
+  - `BLK-04` (Point-in-Time Sector Classification History): **`STILL_BLOCKED`**
+- **Milestone 5 Quarantine:** Strictly **BLOCKED**.

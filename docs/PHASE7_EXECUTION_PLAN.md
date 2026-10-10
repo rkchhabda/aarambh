@@ -85,9 +85,12 @@ flowchart TD
 - **Status:** Formally closed as `NSE_FIVE_STOCK_PILOT_CLOSED_SUCCESSFULLY`.
 - **Required Authorization Phrase:** `AUTHORIZE MILESTONE 4.9: FIVE-STOCK NSE LIVE PILOT` (Received).
 
-### Milestone 4.10A: Current NIFTY 500 Constituent Snapshot Pilot (RECOMMENDED NEXT)
-- **Objective:** Perform static audit and single controlled snapshot acquisition of current NIFTY 500 constituent symbols to evaluate official index constituent feeds.
-- **Required Authorization Phrase:** `AUTHORIZE MILESTONE 4.10A: CURRENT NIFTY 500 CONSTITUENT SNAPSHOT PILOT`.
+### Milestone 4.10A: Current NIFTY 500 Constituent Snapshot Pilot (COMPLETED - NSE_CURRENT_NIFTY500_SNAPSHOT_PILOT_PASSED)
+- **Objective:** Perform static audit, safe adapter implementation, and single controlled snapshot acquisition of current NIFTY 500 constituent symbols via `nse==4.0.1` (`listEquityStocksByIndex`).
+- **Outcome:** Process exit code 0 (`SnapshotPilotExitCode.SUCCESS`); 501 source rows $\to$ 500 normalized rows $\to$ 1 rejected row ($501 = 500 + 1$ conserved); 500 unique valid equity symbols; 0 duplicates; 0 missing symbols. Manifest finalized with `status: SUCCEEDED`.
+- **Classification:** `CURRENT_SNAPSHOT_ONLY`. Panel version frozen: `CURRENT_NIFTY500_09Oct2026_8F4C439F`. Capability label granted: `CURRENT_NIFTY500_SNAPSHOT_CAPABILITY_CONFIRMED`.
+- **Blockers:** BLK-01 remains `STILL_BLOCKED` (current snapshot does not provide historical additions/removals/effective dates). BLK-02 remains `PILOT_CAPABILITY_CONFIRMED_GATE1_NOT_PASSED`. BLK-04 remains `STILL_BLOCKED`.
+- **Required Authorization Phrase:** `AUTHORIZE MILESTONE 4.10A: CURRENT NIFTY 500 CONSTITUENT SNAPSHOT PILOT` (Received).
 
 ### Milestone 5: Non-ML Baselines (BLOCKED PENDING GATE 1 REAL DATA)
 - **Objective:** Evaluate Equal-Weight universe, Sector-Neutral Equal-Weight, 12-1 Momentum, and simple SUE composite across walk-forward folds.

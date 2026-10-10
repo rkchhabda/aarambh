@@ -35,6 +35,7 @@
 - **Resolution Test:** Verification script testing that the universe for date $t$ excludes securities added to Nifty 500 at $t+k$ and includes securities active at $t$ even if later delisted.
 - **Current Status:** **CONTRACT_READY_REAL_DATA_BLOCKED.** Canonical contract (`PITMembershipRecord`) and universe builder interface implemented. Real historical Nifty 500 constituent addition/deletion records are unavailable; Gate 1 real-data evaluation cannot proceed until genuine point-in-time data is ingested.
 - **Milestone 4.7 Audit (2026-10-10):** Audited existing connectors for NIFTY 500 retrieval capability. Result: **`STILL_BLOCKED`** / **`NSE_CONNECTOR_PILOT_FAILED`**. GaurviDEEP possesses zero internal application functions for NIFTY 500 constituent retrieval; pilot failed. Status remains strictly blocked.
+- **Milestone 4.10A Current Snapshot Pilot (2026-10-10):** Successfully executed controlled current constituent snapshot pilot via `nse.NSE.listEquityStocksByIndex(index="NIFTY 500")`. Result: 500 unique valid equity symbols acquired, normalized, checksummed, and frozen (`CURRENT_NIFTY500_09Oct2026_8F4C439F`) in external staging. However, this snapshot reflects only current membership as of 2026-10-09 with zero historical effective dates, additions, or deletions across 2016–2026. Applying this snapshot retrospectively would introduce severe survivorship bias. Result: **`STILL_BLOCKED`**. Separate capability label granted: **`CURRENT_NIFTY500_SNAPSHOT_CAPABILITY_CONFIRMED`**.
 
 ---
 

@@ -755,6 +755,54 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261010-30: Milestone 4.10A Current NIFTY 500 Constituent Snapshot Pilot Execution & Freezing
+- **Date:** 2026-10-10
+- **Decision Authority:** Project Owner (`AUTHORIZE MILESTONE 4.10A: CURRENT NIFTY 500 CONSTITUENT SNAPSHOT PILOT`)
+- **Context & Motivation:** Authorized single controlled attempt to retrieve, validate, normalize, checksum, and freeze a current NIFTY 500 constituent snapshot via `nse==4.0.1` method `listEquityStocksByIndex(index="NIFTY 500")` to test upstream constituent acquisition capability.
+- **Exact Decision:**
+  1. **Pilot Outcome & Exit Code:** Formally record outcome `NSE_CURRENT_NIFTY500_SNAPSHOT_PILOT_PASSED` with process exit code 0.
+  2. **Dataset Classification:** Classify the acquired 500-constituent dataset strictly as `CURRENT_SNAPSHOT_ONLY`.
+  3. **Panel Version Identifier:** Freeze snapshot identifier as `CURRENT_NIFTY500_09Oct2026_8F4C439F` based on source report date `09-Oct-2026` and normalized checksum prefix `8F4C439F`.
+  4. **Strict Negative Declarations:** Under Non-Negotiable Rules and Gate 1 Data Integrity standards, this constituent list:
+     - Is NOT historical NIFTY 500 membership;
+     - Is NOT point-in-time membership;
+     - Is NOT survivorship-free membership;
+     - Is NOT effective-dated index history;
+     - DOES NOT resolve `BLK-01`;
+     - DOES NOT satisfy Gate 1;
+     - DOES NOT authorize model training or feature generation.
+  5. **Blocker Registry Update:**
+     - `BLK-01` (PIT NIFTY 500 Membership): Remains `STILL_BLOCKED`.
+     - Capability Label: `CURRENT_NIFTY500_SNAPSHOT_CAPABILITY_CONFIRMED` granted.
+     - `BLK-02` (Historical OHLCV & Turnover): Remains `PILOT_CAPABILITY_CONFIRMED_GATE1_NOT_PASSED`.
+     - `BLK-04` (PIT Sector Classification): Remains `STILL_BLOCKED`.
+  6. **External Staging & Checksums:** Raw payload SHA-256 (`37f6e829...`) and normalized JSONL SHA-256 (`8f4c439f...`) preserved immutably in `C:\Users\r_chh\gaurvideep_phase7_staging\nse500\snapshot_4_10a` outside Git.
+  7. **Milestone 5 Quarantine:** Milestone 5 remains strictly blocked until authentic point-in-time membership data is ingested and Gate 1 passes.
+- **Impacted Modules:**
+  - `phase7/sources/contracts.py`
+  - `phase7/sources/nse_constituents.py`
+  - `phase7/sources/constituent_authorization.py`
+  - `phase7/sources/constituent_persistence.py`
+  - `phase7/sources/constituent_pilot.py`
+  - `docs/PHASE7_NSE500_CURRENT_SNAPSHOT_PILOT_REPORT.md`
+  - `docs/PHASE7_NSE500_CURRENT_SNAPSHOT_STRUCTURAL_AUDIT.md`
+  - `docs/PHASE7_NSE500_CURRENT_SNAPSHOT_MANIFEST_REFERENCE.md`
+  - `docs/PHASE7_NSE500_CURRENT_SNAPSHOT_LIMITATIONS.md`
+  - `docs/PHASE7_BLOCKERS.md`
+  - `docs/PHASE7_DECISION_LOG.md`
+  - `docs/PHASE7_EXECUTION_PLAN.md`
+  - `docs/PHASE7_IMPLEMENTATION_MAP.md`
+- **Verification Criteria:**
+  - Process exit code 0 (`SnapshotPilotExitCode.SUCCESS`).
+  - Exactly 1 network request dispatched.
+  - Manifest finalized with `status: SUCCEEDED`.
+  - Conservation holds: $501 = 500 + 1$.
+  - 500 unique valid symbols present; 0 duplicate symbols.
+  - All 389 tests pass offline.
+  - Zero market data in Git repository.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:
