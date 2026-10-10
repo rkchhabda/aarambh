@@ -89,6 +89,25 @@ class PilotOutcome(str, Enum):
     HALTED_ON_SAFETY_CONTROL = "NSE_FIVE_STOCK_PILOT_HALTED_ON_SAFETY_CONTROL"
 
 
+class SnapshotPilotExitCode(int, Enum):
+    SUCCESS = 0
+    ARGUMENT_ERROR = 2
+    AUTHORIZATION_ERROR = 3
+    CLIENT_CONSTRUCTION_ERROR = 4
+    RETRIEVAL_ERROR = 5
+    SCHEMA_NORMALIZATION_ERROR = 6
+    PERSISTENCE_MANIFEST_ERROR = 7
+    INCOMPLETE_EXECUTION_ERROR = 8
+    CLIENT_CLOSE_ERROR = 9
+    UNEXPECTED_INTERNAL_ERROR = 10
+
+
+class SnapshotPilotOutcome(str, Enum):
+    PASSED = "NSE_CURRENT_NIFTY500_SNAPSHOT_PILOT_PASSED"
+    FAILED = "NSE_CURRENT_NIFTY500_SNAPSHOT_PILOT_FAILED"
+    HALTED_ON_SAFETY_CONTROL = "NSE_CURRENT_NIFTY500_SNAPSHOT_PILOT_HALTED_ON_SAFETY_CONTROL"
+
+
 @dataclass
 class SessionBootstrapAudit:
     client_initialization_count: int = 0
@@ -152,6 +171,11 @@ class ConstituentRecord:
     ingestion_timestamp: str
     source_identifier: str
     row_hash: str
+    index_code: Optional[str] = None
+    exchange_series: Optional[str] = None
+    sector: Optional[str] = None
+    industry: Optional[str] = None
+    source_report_date: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -233,3 +257,48 @@ class PilotAuthorizationRecord:
     single_use: bool
     nonce: str
     authorization_hash: str
+
+
+@dataclass(frozen=True)
+class SnapshotAuthorizationRecord:
+    authorization_version: str
+    milestone: str
+    scope: str
+    index_name: str
+    staging_root_hash: str
+    issued_timestamp: str
+    expires_timestamp: str
+    single_use: bool
+    nonce: str
+    authorization_hash: str
+
+
+@dataclass(frozen=True)
+class ConstituentSnapshotManifest:
+    request_id: str
+    index_name: str
+    retrieval_timestamp: str
+    client_version: str
+    source_identifier: str
+    status: RequestStatus
+    source_row_count: int
+    normalized_row_count: int
+    rejected_row_count: int
+    unique_symbols: int
+    duplicate_symbols: int
+    missing_symbols: int
+    unique_isins: int
+    duplicate_isins: int
+    missing_isins: int
+    missing_series: int
+    missing_sectors: int
+    missing_industries: int
+    classification: str
+    raw_checksum: str
+    normalized_checksum: str
+    panel_version_id: str
+    schema_version: str = "phase7-constituents-snapshot-v1.0"
+    raw_file_path: Optional[str] = None
+    normalized_file_path: Optional[str] = None
+    duration_seconds: Optional[float] = None
+    failure_reason: Optional[str] = None
