@@ -569,6 +569,32 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261010-24: Milestone 4.9C Addition of Required NSE HTTP/2 Runtime Dependencies
+- **Date:** 2026-10-10
+- **Decision Authority:** Project Owner & Lead Quantitative Research Engineer
+- **Context & Motivation:** Remediation of the runtime dependency blocker observed in Attempt 2 (`UPSTREAM_DEPENDENCY_DEFECT_HALT`: `Using http2=True, but the 'h2' package is not installed. Make sure to install httpx using 'pip install httpx[http2]'`). The client factory requires `server=True` for governed pilot execution, which requires HTTP/2 transport support inside upstream `nse==4.0.1`.
+- **Exact Decision:**
+  1. **Requirement Pin Update:** Replaced `nse==4.0.1` with `nse[server]==4.0.1` in `requirements-phase7.txt`. Pinned version remains 4.0.1 without unpinned packages or version upgrades.
+  2. **Dependency Installation:** Installed through `.venv-phase7\Scripts\python.exe -m pip install -r requirements-phase7.txt`. Resolved `h2==4.4.1`, `hpack==4.2.0`, `hyperframe==6.1.0`. Maintained `httpx==0.28.1` and `nse==4.0.1`.
+  3. **Licensing & Copyleft Retained:** `h2`, `hpack`, and `hyperframe` are MIT licensed. `LEGAL_REVIEW_REQUIRED_BEFORE_DISTRIBUTION` retained; installing optional extras does not alter the GPLv3 boundary associated with `nse==4.0.1`.
+  4. **Client Construction Verification:** Verified that `create_real_nse_client(download_folder=..., server=True, timeout=15)` instantiates and closes without the missing-`h2` error when network transport is intercepted. Result: `CLIENT_CONSTRUCTION_SUCCEEDED_ZERO_NETWORK_REQUESTS`.
+  5. **Zero Live Pilot Execution:** Live execution was not authorized and did not execute. Exactly 0 network requests occurred.
+  6. **Readiness Status:** `NSE_HTTP2_RUNTIME_DEPENDENCIES_READY_LIVE_EXECUTION_NOT_AUTHORIZED`.
+- **Impacted Modules:**
+  - `requirements-phase7.txt`
+  - `tests/phase7/test_source_runtime_dependencies.py`
+  - `docs/PHASE7_ENVIRONMENT_VERIFICATION.md`
+  - `docs/PHASE7_NSE_DATA_FETCHER_DEPENDENCY_MAP.md`
+  - `docs/PHASE7_DECISION_LOG.md`
+  - `docs/PHASE7_NSE_FIVE_STOCK_GAP_ANALYSIS.md`
+- **Verification Criteria:**
+  - Full pytest suite passes in `.venv-phase7` (285 passing tests, including 9 new runtime dependency tests).
+  - `pip check` reports no broken requirements.
+  - Zero market data files in repository.
+  - Zero live network calls made to NSE.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:

@@ -117,5 +117,31 @@ the Free Software Foundation, either version 3 of the License...
   - `httpx==0.28.1` (BSD-3-Clause)
   - `mthrottle==0.0.2`
   - Transitive: `anyio==4.15.1`, `certifi==2026.7.22`, `h11==0.16.0`, `httpcore==1.0.9`, `idna==3.20`
-- **Zero Live Requests:** Installation completed without issuing any network requests to NSE or market data endpoints.
 - **Operational Boundary:** Module must only be imported inside explicitly authorized client factory; not at top level of Phase 7 source modules.
+
+---
+
+## 8. Milestone 4.9C HTTP/2 Runtime Dependencies Installation Record (`.venv-phase7`)
+
+- **Installation Command:**
+  ```powershell
+  .venv-phase7\Scripts\python.exe -m pip install -r requirements-phase7.txt
+  ```
+- **Requirements Pin:** Replaced `nse==4.0.1` with `nse[server]==4.0.1` in `requirements-phase7.txt`.
+- **pip check Result:** `No broken requirements found.`
+- **Installed Packages (`pip show`):**
+  - `h2==4.4.1` (License: MIT, requires `hpack`, `hyperframe`)
+  - `hpack==4.2.0` (License: MIT)
+  - `hyperframe==6.1.0` (License: MIT)
+- **Maintained Packages:**
+  - `nse==4.0.1` (GPLv3)
+  - `httpx==0.28.1` (BSD-3-Clause)
+  - `httpcore==1.0.9`, `h11==0.16.0`, `mthrottle==0.0.2`
+- **Client Construction Verification:**
+  - Pre-flight test confirmed `create_real_nse_client(server=True, timeout=15)` instantiates without the missing-`h2` error when network transport is intercepted.
+  - Result: `CLIENT_CONSTRUCTION_SUCCEEDED_ZERO_NETWORK_REQUESTS`.
+- **Licensing & Legal Governance Boundary:**
+  - `h2`, `hpack`, and `hyperframe` are permissively licensed under MIT License.
+  - Retains: `LEGAL_REVIEW_REQUIRED_BEFORE_DISTRIBUTION`.
+  - Installing optional server extras does not alter or mitigate the GPLv3 boundary of `nse==4.0.1`.
+- **Zero Live Requests:** Exactly zero live network calls were made to NSE.

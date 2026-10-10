@@ -280,3 +280,34 @@ py -3.12 -m venv .venv-phase7
   - **Prohibitions:** Not authorized for commercial distribution, proprietary production integration, public API deployment, or redistribution.
   - **Legal Status:** `LEGAL_REVIEW_REQUIRED_BEFORE_DISTRIBUTION`.
 - **Zero Live Requests:** Installation completed without issuing any network requests to NSE or market data endpoints.
+
+---
+
+## 9. Milestone 4.9C Approved HTTP/2 Runtime Dependencies (`nse[server]==4.0.1`)
+
+- **Approval Authority:** Project Owner (Authorization Milestone 4.9C, 2026-10-10)
+- **Approved Package Pin:** `nse[server]==4.0.1` (replacing `nse==4.0.1`)
+- **Installation Command:**
+  ```powershell
+  .venv-phase7\Scripts\python.exe -m pip install -r requirements-phase7.txt
+  ```
+- **Execution Date:** 2026-10-10
+- **pip check Result:**
+  ```text
+  No broken requirements found.
+  ```
+- **Installed HTTP/2 Runtime Packages (`pip show`):**
+  - `h2==4.4.1` (License: MIT, Author: Cory Benfield, pure Python HTTP/2 protocol implementation)
+  - `hpack==4.2.0` (License: MIT, Author: Cory Benfield, pure Python HPACK header encoding)
+  - `hyperframe==6.1.0` (License: MIT, Author: Cory Benfield, pure Python HTTP/2 framing)
+- **Maintained Package Pins:**
+  - `nse==4.0.1` (remains pinned)
+  - `httpx==0.28.1` (remains pinned, now satisfies `httpx[http2]==0.28.1`)
+  - `httpcore==1.0.9`, `h11==0.16.0`, `mthrottle==0.0.2` (all remain satisfied)
+- **Client Construction Verification:**
+  - Status: `CLIENT_CONSTRUCTION_SUCCEEDED_ZERO_NETWORK_REQUESTS`
+  - Verified under network transport interception; zero network sockets opened.
+- **Licensing & Legal Governance Boundary:**
+  - `h2`, `hpack`, and `hyperframe` are permissively licensed under the **MIT License**.
+  - **Legal Status:** `LEGAL_REVIEW_REQUIRED_BEFORE_DISTRIBUTION` retained. Installing optional extras does not alter or mitigate the GPLv3 boundary associated with `nse==4.0.1`.
+- **Zero Live Requests:** Installation completed without issuing any network requests to NSE or market data endpoints.
