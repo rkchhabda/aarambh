@@ -39,8 +39,18 @@ from phase7.sources.listing_evidence import (
     classify_date_statement_text,
     classify_retrospective_listing_outcome,
 )
+from phase7.sources.official_domain_policy import (
+    CANONICAL_APPROVED_HOSTS,
+    CANONICAL_APPROVED_HOSTS_SET,
+    MAX_ALLOWED_REDIRECTS,
+    AttachmentHostNotAuthorizedError,
+    OfficialDomainPolicyViolation,
+    validate_official_url,
+    validate_redirect_target,
+)
 from phase7.sources.listing_evidence_authorization import (
     APPROVED_EVIDENCE_DOMAINS,
+    APPROVED_EVIDENCE_HOSTS,
     EVIDENCE_REQUIRED_EXCHANGE,
     EVIDENCE_REQUIRED_REQUESTED_END,
     EVIDENCE_REQUIRED_SECURITY_NAME,
@@ -73,27 +83,13 @@ class ListingEvidenceAcquisitionError(Exception):
     pass
 
 
-def validate_source_url(url: str, approved_domains: Optional[List[str]] = None) -> str:
-    """Validate that source URL uses HTTPS and belongs to an approved official domain."""
-    domains = approved_domains or APPROVED_EVIDENCE_DOMAINS
-    parsed = urlparse(url)
-
-    if parsed.scheme.lower() != "https":
-        raise ListingEvidenceAcquisitionError(
-            f"Disallowed scheme '{parsed.scheme}' in URL '{url}'. Only HTTPS is permitted."
-        )
-
-    netloc = parsed.netloc.lower()
-    # Remove port if present
-    if ":" in netloc:
-        netloc = netloc.split(":")[0]
-
-    if netloc not in domains:
-        raise ListingEvidenceAcquisitionError(
-            f"Unapproved domain '{netloc}' in URL '{url}'. Permitted domains: {domains}"
-        )
-
-    return url
+def validate_source_url(url: str, approved_hosts: Optional[List[str]] = None) -> str:
+    """Validate that source URL uses HTTPS and belongs to an approved canonical host."""
+    try:
+        res = validate_official_url(url, approved_hosts=approved_hosts)
+        return res.canonical_url
+    except OfficialDomainPolicyViolation as exc:
+        raise ListingEvidenceAcquisitionError(str(exc)) from exc
 
 
 def extract_pdf_text(data: bytes) -> str:
@@ -327,7 +323,7 @@ def execute_listing_evidence_pilot(
 
     # Validate all URLs before network requests
     for u in urls_to_fetch:
-        validate_source_url(u, auth_record.approved_domains)
+        validate_source_url(u, auth_record.approved_hosts)
 
     acquired_sources: List[Dict[str, Any]] = []
     all_date_statements: List[DateStatementRecord] = []
@@ -344,7 +340,7 @@ def execute_listing_evidence_pilot(
     if execute_live:
         client = httpx.Client(
             timeout=30.0,
-            follow_redirects=True,
+            follow_redirects=False,
             headers=headers,
         )
 
@@ -366,29 +362,94 @@ def execute_listing_evidence_pilot(
 
             print(f"[{request_count}/{MAXIMUM_REQUEST_COUNT}] Requesting official source: {url}")
 
+            current_url = url
+            redirect_history: List[str] = []
             status_code = 0
             content_bytes = b""
             content_type = ""
+            canonical_final_host = ""
 
-            if mock_responses and url in mock_responses:
-                status_code, content_bytes, content_type = mock_responses[url]
-            elif execute_live:
+            while True:
+                resp_headers: Dict[str, str] = {}
+                if mock_responses and current_url in mock_responses:
+                    mock_entry = mock_responses[current_url]
+                    if len(mock_entry) == 4:
+                        status_code, content_bytes, content_type, resp_headers = mock_entry
+                    else:
+                        status_code, content_bytes, content_type = mock_entry
+                        resp_headers = {}
+
+                    if status_code in (301, 302, 303, 307, 308):
+                        loc = resp_headers.get("Location") or resp_headers.get("location")
+                        if not loc:
+                            raise ListingEvidenceAcquisitionError(
+                                f"Redirect status {status_code} missing Location header for '{current_url}'."
+                            )
+                        redirect_history.append(current_url)
+                        try:
+                            next_url = validate_redirect_target(
+                                current_url=current_url,
+                                target_location=loc,
+                                approved_hosts=auth_record.approved_hosts,
+                                redirect_history=redirect_history,
+                            )
+                        except AttachmentHostNotAuthorizedError as att_err:
+                            raise ListingEvidenceAcquisitionError(f"ATTACHMENT_HOST_NOT_AUTHORIZED: {att_err}") from att_err
+                        except OfficialDomainPolicyViolation as pol_err:
+                            raise ListingEvidenceAcquisitionError(f"Redirect policy violation: {pol_err}") from pol_err
+
+                        current_url = next_url
+                        continue
+
+                elif execute_live:
+                    try:
+                        resp = client.get(current_url)
+                        status_code = resp.status_code
+
+                        if status_code in (301, 302, 303, 307, 308):
+                            loc = resp.headers.get("Location") or resp.headers.get("location")
+                            if not loc:
+                                raise ListingEvidenceAcquisitionError(
+                                    f"Redirect status {status_code} missing Location header for '{current_url}'."
+                                )
+                            redirect_history.append(current_url)
+                            try:
+                                next_url = validate_redirect_target(
+                                    current_url=current_url,
+                                    target_location=loc,
+                                    approved_hosts=auth_record.approved_hosts,
+                                    redirect_history=redirect_history,
+                                )
+                            except AttachmentHostNotAuthorizedError as att_err:
+                                raise ListingEvidenceAcquisitionError(f"ATTACHMENT_HOST_NOT_AUTHORIZED: {att_err}") from att_err
+                            except OfficialDomainPolicyViolation as pol_err:
+                                raise ListingEvidenceAcquisitionError(f"Redirect policy violation: {pol_err}") from pol_err
+
+                            current_url = next_url
+                            continue
+                        else:
+                            content_bytes = resp.content
+                            content_type = resp.headers.get("content-type", "")
+
+                    except ListingEvidenceAcquisitionError:
+                        raise
+                    except Exception as net_err:
+                        raise ListingEvidenceAcquisitionError(f"HTTP request failed for '{current_url}': {net_err}") from net_err
+                else:
+                    # Dry run without mock or live
+                    print(f"Dry run: skipping network request for {url}")
+                    break
+
+                # Validate final URL before reading or processing response body
                 try:
-                    resp = client.get(url)
-                    status_code = resp.status_code
-                    content_bytes = resp.content
-                    content_type = resp.headers.get("content-type", "")
+                    final_res = validate_official_url(current_url, auth_record.approved_hosts)
+                    canonical_final_host = final_res.canonical_host
+                except OfficialDomainPolicyViolation as val_err:
+                    raise ListingEvidenceAcquisitionError(
+                        f"Final URL validation failed for '{current_url}': {val_err}"
+                    ) from val_err
 
-                    # Check redirect safety
-                    final_url = str(resp.url)
-                    validate_source_url(final_url, auth_record.approved_domains)
-
-                except Exception as net_err:
-                    raise ListingEvidenceAcquisitionError(f"HTTP request failed for '{url}': {net_err}") from net_err
-            else:
-                # Dry run without mock or live
-                print(f"Dry run: skipping network request for {url}")
-                continue
+                break
 
             # Verify response
             if status_code in (401, 403, 405):
@@ -408,9 +469,9 @@ def execute_listing_evidence_pilot(
                 raise ListingEvidenceAcquisitionError(f"CAPTCHA / Bot detection triggered for '{url}'. Stopping immediately.")
 
             # Determine file type and persist raw file
-            url_path = urlparse(url).path
+            url_path = urlparse(current_url).path
             base_filename = os.path.basename(url_path) or f"source_{request_count}.html"
-            is_pdf = url.lower().endswith(".pdf") or "pdf" in content_type.lower()
+            is_pdf = current_url.lower().endswith(".pdf") or "pdf" in content_type.lower()
 
             if is_pdf:
                 if not content_bytes.startswith(b"%PDF-"):
@@ -418,7 +479,7 @@ def execute_listing_evidence_pilot(
                 text_content = extract_pdf_text(content_bytes)
                 source_type = (
                     ListingSourceType.NSE_OFFICIAL_CIRCULAR
-                    if "nsearchives" in url
+                    if "nsearchives" in current_url
                     else ListingSourceType.NSE_EXCHANGE_RECORD
                 )
                 publisher = "National Stock Exchange of India"
@@ -426,7 +487,7 @@ def execute_listing_evidence_pilot(
                 text_content = extract_html_text(content_bytes.decode("utf-8", errors="ignore"))
                 source_type = (
                     ListingSourceType.SEBI_PROSPECTUS
-                    if "sebi.gov.in" in url
+                    if "sebi.gov.in" in current_url
                     else ListingSourceType.NSE_EXCHANGE_RECORD
                 )
                 publisher = "Securities and Exchange Board of India"
@@ -440,7 +501,7 @@ def execute_listing_evidence_pilot(
                 staging_root=s_resolved,
                 filename=base_filename,
                 content_bytes=content_bytes,
-                source_url=url,
+                source_url=current_url,
                 mime_type=content_type,
                 publisher=publisher,
                 repo_root=repo_root,
@@ -449,7 +510,7 @@ def execute_listing_evidence_pilot(
             # Analyze document text
             analysis = analyze_document_content(
                 content_text=text_content,
-                source_url=url,
+                source_url=current_url,
                 symbol=symbol,
                 security_name=security_name,
                 exchange=exchange,
@@ -461,6 +522,9 @@ def execute_listing_evidence_pilot(
 
             source_record = {
                 "source_url": url,
+                "final_url": current_url,
+                "canonical_host": canonical_final_host,
+                "redirect_history": redirect_history,
                 "raw_file_path": str(raw_path),
                 "raw_sha256": raw_sha256,
                 "content_type": content_type,
@@ -598,6 +662,7 @@ def execute_listing_evidence_pilot(
         "security_name": security_name,
         "exchange": exchange,
         "requested_period_end": requested_end,
+        "approved_hosts": list(auth_record.approved_hosts),
         "request_count": request_count,
         "acquired_sources": acquired_sources,
         "date_statements_count": len(all_date_statements),

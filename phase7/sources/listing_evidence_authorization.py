@@ -22,6 +22,11 @@ import sys
 from typing import Any, Dict, List, Optional, Tuple, Union
 import uuid
 
+from phase7.sources.official_domain_policy import (
+    CANONICAL_APPROVED_HOSTS,
+    CANONICAL_APPROVED_HOSTS_SET,
+)
+
 EVIDENCE_AUTHORIZATION_VERSION = "1.0"
 EVIDENCE_MILESTONE = "4.10C-2"
 EVIDENCE_SCOPE = "OFFICIAL_LISTING_DATE_EVIDENCE_PILOT"
@@ -29,12 +34,8 @@ EVIDENCE_REQUIRED_SYMBOL = "PREMIERENE"
 EVIDENCE_REQUIRED_SECURITY_NAME = "Premier Energies Limited"
 EVIDENCE_REQUIRED_EXCHANGE = "NSE"
 EVIDENCE_REQUIRED_REQUESTED_END = "2024-03-31"
-APPROVED_EVIDENCE_DOMAINS = [
-    "nsearchives.nseindia.com",
-    "nseindia.com",
-    "sebi.gov.in",
-    "bseindia.com",
-]
+APPROVED_EVIDENCE_HOSTS: List[str] = list(CANONICAL_APPROVED_HOSTS)
+APPROVED_EVIDENCE_DOMAINS: List[str] = APPROVED_EVIDENCE_HOSTS
 MAXIMUM_REQUEST_COUNT = 5
 DEFAULT_EXPIRES_MINUTES = 30
 ACTIVE_MARKER_FILENAME = "listing_evidence_authorization.json"
@@ -49,7 +50,7 @@ class ListingEvidenceAuthorizationRecord:
     security_name: str
     exchange: str
     requested_period_end: str
-    approved_domains: List[str]
+    approved_hosts: List[str]
     maximum_request_count: int
     staging_root_hash: str
     issued_timestamp: str
@@ -57,6 +58,10 @@ class ListingEvidenceAuthorizationRecord:
     single_use: bool
     nonce: str
     authorization_hash: str
+
+    @property
+    def approved_domains(self) -> List[str]:
+        return self.approved_hosts
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -70,8 +75,9 @@ def compute_staging_root_hash(staging_root: Union[Path, str]) -> str:
 
 def compute_listing_evidence_authorization_hash(data: Dict[str, Any]) -> str:
     """Compute deterministic SHA-256 hash for canonical evidence authorization fields."""
+    hosts = list(data.get("approved_hosts") or data.get("approved_domains") or [])
     canonical = {
-        "approved_domains": sorted(list(data["approved_domains"])),
+        "approved_hosts": sorted(hosts),
         "authorization_version": str(data["authorization_version"]),
         "exchange": str(data["exchange"]),
         "expires_timestamp": str(data["expires_timestamp"]),
@@ -138,6 +144,11 @@ def validate_listing_evidence_marker_path(
             f"Authorization marker must reside directly in staging authorization directory '{expected_dir}', got: '{m_resolved.parent}'"
         )
 
+    if m_resolved.name != ACTIVE_MARKER_FILENAME:
+        raise ValueError(
+            f"Active authorization marker must be named '{ACTIVE_MARKER_FILENAME}', got '{m_resolved.name}'. Consumed or renamed markers cannot be reused."
+        )
+
     return m_resolved
 
 
@@ -184,7 +195,7 @@ def create_listing_evidence_authorization(
         "security_name": security_name,
         "exchange": exchange,
         "requested_period_end": requested_end,
-        "approved_domains": sorted(APPROVED_EVIDENCE_DOMAINS),
+        "approved_hosts": list(CANONICAL_APPROVED_HOSTS),
         "maximum_request_count": MAXIMUM_REQUEST_COUNT,
         "staging_root_hash": staging_hash,
         "issued_timestamp": now_utc.isoformat(),
@@ -231,7 +242,7 @@ def load_and_validate_listing_evidence_authorization(
         "security_name",
         "exchange",
         "requested_period_end",
-        "approved_domains",
+        "approved_hosts",
         "maximum_request_count",
         "staging_root_hash",
         "issued_timestamp",
@@ -272,6 +283,33 @@ def load_and_validate_listing_evidence_authorization(
             f"Maximum request count exceeds ceiling: {data['maximum_request_count']} > {MAXIMUM_REQUEST_COUNT}"
         )
 
+    # Validate exact approved_hosts binding
+    hosts = data["approved_hosts"]
+    if not isinstance(hosts, list) or not hosts:
+        raise ValueError("Authorization marker 'approved_hosts' must be a non-empty list of strings.")
+
+    for h in hosts:
+        if not isinstance(h, str) or not h:
+            raise ValueError(f"Authorization marker contains invalid host entry: {h!r}")
+        if "*" in h or h.startswith("."):
+            raise ValueError(
+                f"Authorization marker approved_hosts contains forbidden wildcard or leading-dot host: '{h}'"
+            )
+        if h not in CANONICAL_APPROVED_HOSTS_SET:
+            raise ValueError(
+                f"Authorization marker approved_hosts contains unapproved host: '{h}'"
+            )
+
+    if "www.sebi.gov.in" not in hosts:
+        raise ValueError(
+            "Authorization marker invalid: 'www.sebi.gov.in' is missing from approved_hosts."
+        )
+
+    if sorted(hosts) != CANONICAL_APPROVED_HOSTS:
+        raise ValueError(
+            f"Authorization marker approved_hosts does not match exact canonical approved host set: {sorted(hosts)} != {CANONICAL_APPROVED_HOSTS}"
+        )
+
     s_resolved = validate_staging_root(staging_root, repo_root=repo_root)
     computed_staging_hash = compute_staging_root_hash(s_resolved)
     if data["staging_root_hash"] != computed_staging_hash:
@@ -294,7 +332,24 @@ def load_and_validate_listing_evidence_authorization(
             f"Authorization marker expired at '{expires_ts.isoformat()}'. Current time is '{now_utc.isoformat()}'."
         )
 
-    return ListingEvidenceAuthorizationRecord(**data)
+    record_kwargs = {
+        "authorization_version": data["authorization_version"],
+        "milestone": data["milestone"],
+        "scope": data["scope"],
+        "symbol": data["symbol"],
+        "security_name": data["security_name"],
+        "exchange": data["exchange"],
+        "requested_period_end": data["requested_period_end"],
+        "approved_hosts": data["approved_hosts"],
+        "maximum_request_count": data["maximum_request_count"],
+        "staging_root_hash": data["staging_root_hash"],
+        "issued_timestamp": data["issued_timestamp"],
+        "expires_timestamp": data["expires_timestamp"],
+        "single_use": data["single_use"],
+        "nonce": data["nonce"],
+        "authorization_hash": data["authorization_hash"],
+    }
+    return ListingEvidenceAuthorizationRecord(**record_kwargs)
 
 
 def consume_listing_evidence_authorization(marker_path: Union[Path, str]) -> Path:

@@ -123,3 +123,9 @@ Root Cause Analysis:
    - Verification status: `UNVERIFIED`
    - Retrospective outcome: `EMPTY_RESPONSE_UNEXPLAINED`
    - Final status: `PREMIERENE_LISTING_EVIDENCE_PILOT_HALTED_ON_SAFETY_CONTROL`
+5. **Milestone 4.10C-3 Domain Policy Correction:**
+   - Exact approved-host allowlist implemented in `phase7.sources.official_domain_policy` recognizing `www.sebi.gov.in`.
+   - Security regression test suite added (48 tests, including `test_www_sebi_gov_in_is_an_exact_approved_host`).
+   - Static candidate validation verified all 3 candidate URLs as `ACCEPTED`.
+   - The consumed marker `listing_evidence_authorization.consumed.20261010T120840Z.json` remains permanently consumed.
+   - Live acquisition remains unauthorized until explicit owner re-authorization (`RE-AUTHORIZE MILESTONE 4.10C-2 AFTER DOMAIN VALIDATION FIX`).

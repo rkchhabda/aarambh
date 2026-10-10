@@ -67,12 +67,50 @@ Evidence acquisition requires an explicit, single-use, scope-bound authorization
 - **Milestone:** `4.10C-2`
 - **Scope:** `OFFICIAL_LISTING_DATE_EVIDENCE_PILOT`
 - **Target Symbol:** Bound to target security (e.g. `PREMIERENE`)
-- **Approved Domains:** Strictly whitelisted (`nsearchives.nseindia.com`, `nseindia.com`, `sebi.gov.in`, `bseindia.com`)
+- **Approved Hosts:** Bound strictly via `approved_hosts`:
+  ```json
+  [
+    "nsearchives.nseindia.com",
+    "nseindia.com",
+    "sebi.gov.in",
+    "www.nseindia.com",
+    "www.sebi.gov.in"
+  ]
+  ```
 - **Ceiling:** Maximum 5 requests total
 - **Concurrency:** Maximum 1 request at a time
 - **Pacing:** Minimum 2.0 seconds between consecutive requests
 - **Automatic Retries:** 0 (strictly fail-closed on first error)
 - **Consumption:** Atomic rename to `.consumed.<UTC_TIMESTAMP>.json` **prior** to the first network request.
+
+---
+
+## 4.1 Canonical Official-Host Policy & Redirect Security
+
+Under Milestone 4.10C-3 governance, URL validation and HTTP dispatch are strictly governed by `phase7.sources.official_domain_policy`:
+
+1. **Exact-Host Allowlist:** Only the following exact canonical hostnames are approved:
+   - `nsearchives.nseindia.com` (NSE archive circulars & notices)
+   - `nseindia.com` (NSE root domain)
+   - `www.nseindia.com` (NSE primary web portal)
+   - `sebi.gov.in` (SEBI regulatory filings)
+   - `www.sebi.gov.in` (SEBI primary regulatory web portal)
+2. **Canonicalization Procedure:**
+   - URL parsing via `urllib.parse.urlsplit` (strict parser).
+   - Strict scheme enforcement: `https` only (no `http:`, `javascript:`, `file:`, or `//` protocol-relative URLs).
+   - Hostname normalized to lowercase, ASCII IDNA conversion applied, single terminal DNS dot removed.
+   - Embedded credentials strictly rejected (`user:password@host`).
+   - Port policy: only default scheme port or explicit port `443` permitted.
+   - Exact membership check: no wildcards (`*.sebi.gov.in`, `.sebi.gov.in`) and no unrestricted suffix matching.
+3. **Safe Per-Hop Redirect Policy:**
+   - HTTP clients must set `follow_redirects=False`.
+   - Each redirect hop resolves relative `Location` headers against the approved current URL.
+   - Re-runs complete scheme, hostname, credential, and port validation on the target.
+   - Strict ceiling of at most three redirects (`MAX_ALLOWED_REDIRECTS = 3`).
+   - Redirect loops and downgrades to HTTP are strictly rejected.
+   - Unapproved redirect targets trigger `ATTACHMENT_HOST_NOT_AUTHORIZED` and halt execution without fetching.
+   - Zero response bodies are read or processed until the final URL passes validation.
+   - Canonical final host is recorded in the evidence manifest and source records.
 
 ---
 

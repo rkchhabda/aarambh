@@ -928,6 +928,41 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261010-35: Milestone 4.10C-3 Canonical Official Evidence Host Validation Correction
+- **Date:** 2026-10-10
+- **Decision Authority:** Project Owner (`AUTHORIZE MILESTONE 4.10C-3: CORRECT OFFICIAL EVIDENCE DOMAIN VALIDATION`)
+- **Context & Motivation:** The Milestone 4.10C-2 evidence pilot halted correctly before network dispatch because the official SEBI candidate URL uses `www.sebi.gov.in`, while the approved-domain validator did not recognize that exact hostname. The purpose of this checkpoint is to correct exact canonical-host validation, bind `approved_hosts` in authorization markers, implement per-hop redirect validation, add comprehensive security regression tests, and update protocol documentation without executing downloads or creating active markers.
+- **Exact Decision:**
+  1. **Canonical Exact-Host Policy Engine:** Created `phase7.sources.official_domain_policy` establishing an explicit exact-host allowlist: `nsearchives.nseindia.com`, `nseindia.com`, `sebi.gov.in`, `www.nseindia.com`, `www.sebi.gov.in`.
+  2. **Strict Canonicalization & Rejections:** Enforced lowercase normalization, ASCII IDNA conversion, removal of a single terminal DNS dot, port 443 enforcement, control-character checks, and embedded-credential rejection. Strictly rejected wildcards (`*.sebi.gov.in`, `.sebi.gov.in`), protocol-relative URLs (`//`), and unrestricted suffix matching.
+  3. **Safe Per-Hop Redirect Policy:** Replaced unrestricted client redirects with strict per-hop validation (`follow_redirects=False`) allowing at most 3 redirects, rejecting loops and HTTPS downgrades, and enforcing `ATTACHMENT_HOST_NOT_AUTHORIZED` for external attachment domains.
+  4. **Marker Host Binding:** Updated `phase7.sources.listing_evidence_authorization` to bind exact `approved_hosts` list into authorization records and cryptographic hashes. Rejection enforced if `www.sebi.gov.in` is omitted, unapproved hosts are added, or wildcards are present.
+  5. **Regression & Safety Test Suite:** Implemented `tests/phase7/test_source_official_domain_policy.py` with 48 passing tests including `test_www_sebi_gov_in_is_an_exact_approved_host`, covering all 47 mandated safety criteria.
+  6. **Static Candidate Validation:** Validated candidate URLs statically (0 network calls, 0 sockets):
+     - `https://nsearchives.nseindia.com/corporate/ADV_INE0BS701011_02SEP2024.pdf`: ACCEPTED (`nsearchives.nseindia.com`)
+     - `https://www.sebi.gov.in/filings/public-issues/aug-2024/premier-energies-limited-prospectus_86360.html`: ACCEPTED (`www.sebi.gov.in`)
+     - `https://www.sebi.gov.in/filings/public-issues/aug-2024/premier-energies-limited-rhp_86076.html`: ACCEPTED (`www.sebi.gov.in`)
+  7. **Governance Invariants Maintained:** Consumed marker `listing_evidence_authorization.consumed.20261010T120840Z.json` remains consumed and unchanged. Zero active markers created. Zero network requests issued. Halted batch `BATCH_4_10C_HISTORICAL_20STOCK_2024Q1_20261010T112814Z` and frozen selection (`60dd0358...`) remain immutable.
+- **Impacted Modules:**
+  - `phase7/sources/official_domain_policy.py` (created)
+  - `phase7/sources/listing_evidence_authorization.py`
+  - `phase7/sources/listing_evidence_acquisition.py`
+  - `phase7/sources/__init__.py`
+  - `tests/phase7/test_source_official_domain_policy.py` (created)
+  - `tests/phase7/test_source_listing_evidence_authorization.py`
+  - `tests/phase7/test_source_listing_evidence_acquisition.py`
+  - `docs/PHASE7_NSE500_LISTING_EVIDENCE_PROTOCOL.md`
+  - `docs/PHASE7_PREMIERENE_LISTING_EVIDENCE_PILOT_REPORT.md`
+  - `docs/PHASE7_DECISION_LOG.md`
+  - `docs/PHASE7_IMPLEMENTATION_MAP.md`
+- **Verification Criteria:**
+  - 544 passing tests in `.venv-phase7` (48 new tests, 0 failures).
+  - `pip check` clean.
+  - `git diff --check` clean.
+  - Zero live network requests, zero document acquisitions, zero active markers.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:

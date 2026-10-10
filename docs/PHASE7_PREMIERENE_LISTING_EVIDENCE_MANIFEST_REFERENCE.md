@@ -48,3 +48,4 @@ External Staging Root:
 2. **Single-Use Enforcement:** The authorization marker was consumed atomically prior to any network activity and cannot be reused.
 3. **No Market Data Leak:** Zero historical market prices were requested.
 4. **Current Status:** Halted on safety control; PREMIERENE listing date remains `LISTING_DATE_UNVERIFIED`.
+5. **Milestone 4.10C-3 Alignment:** Canonical exact-host validation corrected via `official_domain_policy.py`; candidate URLs validated statically as `ACCEPTED`; awaiting owner re-authorization (`RE-AUTHORIZE MILESTONE 4.10C-2 AFTER DOMAIN VALIDATION FIX`).

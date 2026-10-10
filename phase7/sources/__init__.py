@@ -60,10 +60,21 @@ from phase7.sources.listing_evidence import (
     validate_listing_evidence,
 )
 from phase7.sources.listing_evidence_authorization import (
+    APPROVED_EVIDENCE_DOMAINS,
+    APPROVED_EVIDENCE_HOSTS,
     ListingEvidenceAuthorizationRecord,
     consume_listing_evidence_authorization,
     create_listing_evidence_authorization,
     load_and_validate_listing_evidence_authorization,
+)
+from phase7.sources.official_domain_policy import (
+    CANONICAL_APPROVED_HOSTS,
+    CANONICAL_APPROVED_HOSTS_SET,
+    AttachmentHostNotAuthorizedError,
+    CanonicalUrlResult,
+    OfficialDomainPolicyViolation,
+    check_official_url,
+    validate_official_url,
 )
 from phase7.sources.listing_evidence_persistence import (
     persist_evidence_manifest,
@@ -73,6 +84,7 @@ from phase7.sources.listing_evidence_persistence import (
 )
 from phase7.sources.listing_evidence_acquisition import (
     execute_listing_evidence_pilot,
+    validate_source_url,
 )
 from phase7.sources.client_factory import create_real_nse_client
 from phase7.sources.client_protocol import NSEClientFactoryProtocol, NSEClientProtocol
@@ -279,6 +291,16 @@ __all__ = [
     "persist_evidence_manifest",
     "persist_retrospective_classification_record",
     "execute_listing_evidence_pilot",
+    "validate_source_url",
+    "CANONICAL_APPROVED_HOSTS",
+    "CANONICAL_APPROVED_HOSTS_SET",
+    "APPROVED_EVIDENCE_HOSTS",
+    "APPROVED_EVIDENCE_DOMAINS",
+    "OfficialDomainPolicyViolation",
+    "AttachmentHostNotAuthorizedError",
+    "CanonicalUrlResult",
+    "validate_official_url",
+    "check_official_url",
 ]
 
 

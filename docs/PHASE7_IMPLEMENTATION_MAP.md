@@ -777,3 +777,34 @@ Milestone 3 delivered the comprehensive Target Engine (`phase7/targets/`), cover
   - `BLK-04` (Point-in-Time Sector Classification History): **`STILL_BLOCKED`**
 - **Recommended Next Decision:** **`AUTHORIZE MILESTONE 4.10C-2: OFFICIAL LISTING-DATE EVIDENCE PILOT`**.
 - **Milestone 5 Quarantine:** Strictly **BLOCKED**.
+
+---
+
+## 24. Milestone 4.10C-3 Canonical Official Evidence Host Validation Correction Deliverables & Outcome
+
+### 24.1 Delivered Code, Test, and Protocol Artifacts
+
+| Capability / Requirement | Technical Description | Source Module | Test Module / Artifact | Status |
+|---|---|---|---|---|
+| **Canonical Official-Host Policy Engine** | Exact-host allowlist (`nsearchives.nseindia.com`, `nseindia.com`, `sebi.gov.in`, `www.nseindia.com`, `www.sebi.gov.in`); strict normalization; wildcards & suffix-matching rejected | `phase7/sources/official_domain_policy.py` | `tests/phase7/test_source_official_domain_policy.py` | **VERIFIED** |
+| **Safe Per-Hop Redirect Policy** | No automatic client redirect (`follow_redirects=False`); max 3 hops; loop detection; protocol downgrade rejection; external targets trigger `ATTACHMENT_HOST_NOT_AUTHORIZED` | `phase7/sources/official_domain_policy.py` | `tests/phase7/test_source_official_domain_policy.py` | **VERIFIED** |
+| **Marker Host Binding (`approved_hosts`)** | Authorization marker schema and cryptographic digest bind ordered canonical host list; rejection on unapproved hosts, omissions, or wildcards | `phase7/sources/listing_evidence_authorization.py` | `tests/phase7/test_source_listing_evidence_authorization.py`<br/>`tests/phase7/test_source_official_domain_policy.py` | **VERIFIED** |
+| **Governed Acquisition Runner Integration** | Per-hop safe redirect loop; pre-body final host verification; final canonical host and redirect audit trail captured in manifest | `phase7/sources/listing_evidence_acquisition.py` | `tests/phase7/test_source_listing_evidence_acquisition.py` | **VERIFIED** |
+| **Security Regression Test Suite** | 48 mocked tests covering all 47 mandated criteria; explicit `test_www_sebi_gov_in_is_an_exact_approved_host` reproducing and resolving previous halt | `tests/phase7/test_source_official_domain_policy.py` | `tests/phase7/test_source_official_domain_policy.py` | **VERIFIED** |
+
+### 24.2 Verification Summary
+- **Complete Test Baseline:** **544 of 544 passing** (`pytest tests/phase7/ test_phase6_safeguards.py -q`).
+- **`pip check` Result:** Clean (no broken requirements).
+- **`git diff --check` Result:** Clean (zero whitespace errors).
+- **Static Candidate Validation:** All 3 candidate URLs validated statically as `ACCEPTED` (0 network requests, 0 sockets opened):
+  - `https://nsearchives.nseindia.com/corporate/ADV_INE0BS701011_02SEP2024.pdf`: `nsearchives.nseindia.com` (ACCEPTED)
+  - `https://www.sebi.gov.in/filings/public-issues/aug-2024/premier-energies-limited-prospectus_86360.html`: `www.sebi.gov.in` (ACCEPTED)
+  - `https://www.sebi.gov.in/filings/public-issues/aug-2024/premier-energies-limited-rhp_86076.html`: `www.sebi.gov.in` (ACCEPTED)
+- **Milestone Outcome Status:** `OFFICIAL_EVIDENCE_DOMAIN_VALIDATION_CORRECTED_LIVE_ACQUISITION_NOT_AUTHORIZED`.
+- **Classification:** `DETERMINISTIC_CURRENT_PANEL_OPERATIONAL_SAMPLE`.
+- **Blocker Status Registry:**
+  - `BLK-01` (Point-in-Time NIFTY 500 Constituent Membership History): **`STILL_BLOCKED`**
+  - `BLK-02` (Historical OHLCV Prices and Daily Traded Value / Turnover): **`PILOT_CAPABILITY_CONFIRMED_GATE1_NOT_PASSED`**
+  - `BLK-04` (Point-in-Time Sector Classification History): **`STILL_BLOCKED`**
+- **Recommended Next Decision Phrase:** **`RE-AUTHORIZE MILESTONE 4.10C-2 AFTER DOMAIN VALIDATION FIX`**.
+- **Milestone 5 Quarantine:** Strictly **BLOCKED**.

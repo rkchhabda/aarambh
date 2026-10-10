@@ -23,6 +23,7 @@ Under Phase 7 governance rules:
    - **Listing Date Status:** `LISTING_DATE_UNVERIFIED`
    - **Verification Status:** `UNVERIFIED`
    - **Retrospective Outcome:** `EMPTY_RESPONSE_UNEXPLAINED`
+5. **Domain Validation Correction (Milestone 4.10C-3):** Canonical exact-host validation was corrected and regression-tested to recognize `www.sebi.gov.in` alongside `nsearchives.nseindia.com`. Candidate URLs verified statically as `ACCEPTED`. Awaiting owner re-authorization (`RE-AUTHORIZE MILESTONE 4.10C-2 AFTER DOMAIN VALIDATION FIX`) with a new single-use marker.
 
 ---
 
