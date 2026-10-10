@@ -20,7 +20,7 @@ from phase7.operations.drill_runner import (
     OperationalDrillRunner,
 )
 
-pytestmark = [pytest.mark.drill]
+pytestmark = [pytest.mark.drill, pytest.mark.fault_injection]
 
 
 @pytest.fixture(scope="module")
@@ -33,6 +33,10 @@ def drill_runner(repo_root: Path) -> OperationalDrillRunner:
 def test_drill_01_pre_consumption_crash(drill_runner: OperationalDrillRunner):
     rec = drill_runner.run_drill_01()
     assert rec.passed is True
+    assert rec.drill_passed is True
+    assert rec.drill_runner_exit_code == 0
+    assert rec.system_under_test_exit_code == 1
+    assert rec.expected_system_exit_code == 1
     assert rec.exit_code == 1
     assert rec.checksum_status == "VERIFIED_UNCHANGED"
     assert rec.operator_decision == "PROCEED_PASS"
@@ -42,6 +46,10 @@ def test_drill_01_pre_consumption_crash(drill_runner: OperationalDrillRunner):
 def test_drill_02_post_consumption_crash(drill_runner: OperationalDrillRunner):
     rec = drill_runner.run_drill_02()
     assert rec.passed is True
+    assert rec.drill_passed is True
+    assert rec.drill_runner_exit_code == 0
+    assert rec.system_under_test_exit_code == 1
+    assert rec.expected_system_exit_code == 1
     assert rec.exit_code == 1
     assert rec.checksum_status == "VERIFIED_CONSUMED"
     assert rec.operator_decision == "PROCEED_PASS"
@@ -51,6 +59,10 @@ def test_drill_02_post_consumption_crash(drill_runner: OperationalDrillRunner):
 def test_drill_03_pre_raw_persistence_crash(drill_runner: OperationalDrillRunner):
     rec = drill_runner.run_drill_03()
     assert rec.passed is True
+    assert rec.drill_passed is True
+    assert rec.drill_runner_exit_code == 0
+    assert rec.system_under_test_exit_code == 1
+    assert rec.expected_system_exit_code == 1
     assert rec.exit_code == 1
     assert rec.checksum_status == "NO_FILE_PRESENT"
     assert rec.operator_decision == "PROCEED_PASS"
@@ -60,6 +72,10 @@ def test_drill_03_pre_raw_persistence_crash(drill_runner: OperationalDrillRunner
 def test_drill_04_pre_normalization_crash(drill_runner: OperationalDrillRunner):
     rec = drill_runner.run_drill_04()
     assert rec.passed is True
+    assert rec.drill_passed is True
+    assert rec.drill_runner_exit_code == 0
+    assert rec.system_under_test_exit_code == 1
+    assert rec.expected_system_exit_code == 1
     assert rec.exit_code == 1
     assert rec.checksum_status == "RAW_VALID_NORM_ABSENT"
     assert rec.operator_decision == "PROCEED_PASS"
@@ -69,6 +85,10 @@ def test_drill_04_pre_normalization_crash(drill_runner: OperationalDrillRunner):
 def test_drill_05_pre_manifest_crash(drill_runner: OperationalDrillRunner):
     rec = drill_runner.run_drill_05()
     assert rec.passed is True
+    assert rec.drill_passed is True
+    assert rec.drill_runner_exit_code == 0
+    assert rec.system_under_test_exit_code == 1
+    assert rec.expected_system_exit_code == 1
     assert rec.exit_code == 1
     assert rec.checksum_status == "RAW_NORM_PRESENT_MANIFEST_ABSENT"
     assert rec.operator_decision == "PROCEED_PASS"
@@ -78,6 +98,10 @@ def test_drill_05_pre_manifest_crash(drill_runner: OperationalDrillRunner):
 def test_drill_06_corrupt_raw_checksum(drill_runner: OperationalDrillRunner):
     rec = drill_runner.run_drill_06()
     assert rec.passed is True
+    assert rec.drill_passed is True
+    assert rec.drill_runner_exit_code == 0
+    assert rec.system_under_test_exit_code == 1
+    assert rec.expected_system_exit_code == 1
     assert rec.exit_code == 1
     assert rec.checksum_status == "CORRUPTION_DETECTED"
     assert rec.operator_decision == "PROCEED_PASS"
@@ -87,6 +111,10 @@ def test_drill_06_corrupt_raw_checksum(drill_runner: OperationalDrillRunner):
 def test_drill_07_corrupt_normalized_checksum(drill_runner: OperationalDrillRunner):
     rec = drill_runner.run_drill_07()
     assert rec.passed is True
+    assert rec.drill_passed is True
+    assert rec.drill_runner_exit_code == 0
+    assert rec.system_under_test_exit_code == 1
+    assert rec.expected_system_exit_code == 1
     assert rec.exit_code == 1
     assert rec.checksum_status == "CORRUPTION_DETECTED"
     assert rec.operator_decision == "PROCEED_PASS"
@@ -96,6 +124,11 @@ def test_drill_07_corrupt_normalized_checksum(drill_runner: OperationalDrillRunn
 def test_drill_08_delete_finalized_manifest(drill_runner: OperationalDrillRunner):
     rec = drill_runner.run_drill_08()
     assert rec.passed is True
+    assert rec.drill_passed is True
+    assert rec.drill_runner_exit_code == 0
+    assert rec.system_under_test_exit_code == 1
+    assert rec.expected_system_exit_code == 1
+    assert rec.exit_code == 1
     assert rec.checksum_status == "MANIFEST_MISSING_DETECTED"
     assert rec.operator_decision == "PROCEED_PASS"
 
@@ -104,6 +137,11 @@ def test_drill_08_delete_finalized_manifest(drill_runner: OperationalDrillRunner
 def test_drill_09_concurrent_processes_lock(drill_runner: OperationalDrillRunner):
     rec = drill_runner.run_drill_09()
     assert rec.passed is True
+    assert rec.drill_passed is True
+    assert rec.drill_runner_exit_code == 0
+    assert rec.system_under_test_exit_code == 1
+    assert rec.expected_system_exit_code == 1
+    assert rec.exit_code == 1
     assert rec.checksum_status == "EXCLUSIVE_LOCK_ENFORCED"
     assert rec.operator_decision == "PROCEED_PASS"
 
@@ -112,6 +150,10 @@ def test_drill_09_concurrent_processes_lock(drill_runner: OperationalDrillRunner
 def test_drill_10_disk_full_raw_write(drill_runner: OperationalDrillRunner):
     rec = drill_runner.run_drill_10()
     assert rec.passed is True
+    assert rec.drill_passed is True
+    assert rec.drill_runner_exit_code == 0
+    assert rec.system_under_test_exit_code == 28
+    assert rec.expected_system_exit_code == 28
     assert rec.exit_code == 28
     assert rec.cleanup_status == "TEMP_CLEANED"
     assert rec.operator_decision == "PROCEED_PASS"
@@ -121,6 +163,10 @@ def test_drill_10_disk_full_raw_write(drill_runner: OperationalDrillRunner):
 def test_drill_11_permission_denied_manifest(drill_runner: OperationalDrillRunner):
     rec = drill_runner.run_drill_11()
     assert rec.passed is True
+    assert rec.drill_passed is True
+    assert rec.drill_runner_exit_code == 0
+    assert rec.system_under_test_exit_code == 13
+    assert rec.expected_system_exit_code == 13
     assert rec.exit_code == 13
     assert rec.checksum_status == "NO_FALSE_SUCCESS"
     assert rec.operator_decision == "PROCEED_PASS"
@@ -130,6 +176,10 @@ def test_drill_11_permission_denied_manifest(drill_runner: OperationalDrillRunne
 def test_drill_12_client_close_failure(drill_runner: OperationalDrillRunner):
     rec = drill_runner.run_drill_12()
     assert rec.passed is True
+    assert rec.drill_passed is True
+    assert rec.drill_runner_exit_code == 0
+    assert rec.system_under_test_exit_code == 9
+    assert rec.expected_system_exit_code == 9
     assert rec.exit_code == 9
     assert rec.checksum_status == "SUCCESS_PROHIBITED"
     assert rec.operator_decision == "PROCEED_PASS"
@@ -139,6 +189,10 @@ def test_drill_12_client_close_failure(drill_runner: OperationalDrillRunner):
 def test_drill_13_consumed_marker_replay(drill_runner: OperationalDrillRunner):
     rec = drill_runner.run_drill_13()
     assert rec.passed is True
+    assert rec.drill_passed is True
+    assert rec.drill_runner_exit_code == 0
+    assert rec.system_under_test_exit_code == 1
+    assert rec.expected_system_exit_code == 1
     assert rec.exit_code == 1
     assert rec.checksum_status == "REPLAY_REJECTED"
     assert rec.operator_decision == "PROCEED_PASS"
@@ -148,6 +202,10 @@ def test_drill_13_consumed_marker_replay(drill_runner: OperationalDrillRunner):
 def test_drill_14_repository_escape_attempt(drill_runner: OperationalDrillRunner):
     rec = drill_runner.run_drill_14()
     assert rec.passed is True
+    assert rec.drill_passed is True
+    assert rec.drill_runner_exit_code == 0
+    assert rec.system_under_test_exit_code == 1
+    assert rec.expected_system_exit_code == 1
     assert rec.exit_code == 1
     assert rec.checksum_status == "NO_REPO_WRITE"
     assert rec.operator_decision == "PROCEED_PASS"
@@ -157,6 +215,10 @@ def test_drill_14_repository_escape_attempt(drill_runner: OperationalDrillRunner
 def test_drill_15_backup_restore_reconciliation(drill_runner: OperationalDrillRunner):
     rec = drill_runner.run_drill_15()
     assert rec.passed is True
+    assert rec.drill_passed is True
+    assert rec.drill_runner_exit_code == 0
+    assert rec.system_under_test_exit_code == 0
+    assert rec.expected_system_exit_code == 0
     assert rec.exit_code == 0
     assert rec.checksum_status == "ALL_CHECKSUMS_VERIFIED"
     assert rec.operator_decision == "PROCEED_PASS"
@@ -166,6 +228,10 @@ def test_drill_15_backup_restore_reconciliation(drill_runner: OperationalDrillRu
 def test_drill_16_accelerated_soak_simulation(drill_runner: OperationalDrillRunner):
     rec = drill_runner.run_drill_16(cycle_count=1000)
     assert rec.passed is True
+    assert rec.drill_passed is True
+    assert rec.drill_runner_exit_code == 0
+    assert rec.system_under_test_exit_code == 0
+    assert rec.expected_system_exit_code == 0
     assert rec.exit_code == 0
     assert rec.checksum_status == "SOAK_CHECKSUMS_STABLE"
     assert rec.cleanup_status == "NO_LEAKED_TEMPORARY_FILES"

@@ -31,7 +31,7 @@ from phase7.operations.recovery import (
     validate_resume_prerequisites,
 )
 
-pytestmark = [pytest.mark.unit]
+pytestmark = [pytest.mark.unit, pytest.mark.fault_injection]
 
 
 # 1-20: Lifecycle crash injection points

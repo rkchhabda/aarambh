@@ -92,14 +92,18 @@ class DrillRecord:
     injected_fault: str
     expected_result: str
     actual_result: str
-    exit_code: int
+    drill_runner_exit_code: int
+    system_under_test_exit_code: int
+    expected_system_exit_code: int
+    drill_passed: bool
     evidence_paths: List[str]
     checksum_status: str
     cleanup_status: str
-    passed: bool
     duration_seconds: float
     timestamp_utc: str
     operator_decision: str
+    exit_code: int = 0
+    passed: bool = True
 
     def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
@@ -178,14 +182,18 @@ class OperationalDrillRunner:
             injected_fault="Crash injected before marker status transition to CONSUMED",
             expected_result="Marker remains active; client not created; zero requests; exit code 1",
             actual_result=actual_result,
+            drill_runner_exit_code=drill_runner_exit_code,
+            system_under_test_exit_code=system_under_test_exit_code,
+            expected_system_exit_code=expected_system_exit_code,
+            drill_passed=drill_passed,
             evidence_paths=[str(marker_path)],
             checksum_status="VERIFIED_UNCHANGED",
             cleanup_status="CLEAN",
             duration_seconds=round(time.monotonic() - start_t, 4),
             timestamp_utc=datetime.now(timezone.utc).isoformat(),
             operator_decision="PROCEED_PASS" if drill_passed else "HALT_FAIL",
-            exit_code=0,
-            passed=passed,
+            exit_code=system_under_test_exit_code,
+            passed=drill_passed,
         )
         self._save_drill_record(rec)
         return rec
@@ -238,14 +246,18 @@ class OperationalDrillRunner:
             injected_fault="Crash injected after marker consumed but before client creation",
             expected_result="Marker remains consumed; client not created; new authorization required",
             actual_result=actual_result,
+            drill_runner_exit_code=drill_runner_exit_code,
+            system_under_test_exit_code=system_under_test_exit_code,
+            expected_system_exit_code=expected_system_exit_code,
+            drill_passed=drill_passed,
             evidence_paths=[str(marker_path)],
             checksum_status="VERIFIED_CONSUMED",
             cleanup_status="CLEAN",
             duration_seconds=round(time.monotonic() - start_t, 4),
             timestamp_utc=datetime.now(timezone.utc).isoformat(),
             operator_decision="PROCEED_PASS" if drill_passed else "HALT_FAIL",
-            exit_code=0,
-            passed=passed,
+            exit_code=system_under_test_exit_code,
+            passed=drill_passed,
         )
         self._save_drill_record(rec)
         return rec
@@ -282,14 +294,18 @@ class OperationalDrillRunner:
             injected_fault="Crash injected before atomic_write_bytes called",
             expected_result="No final raw file; run incomplete; no false success",
             actual_result=actual_result,
+            drill_runner_exit_code=drill_runner_exit_code,
+            system_under_test_exit_code=system_under_test_exit_code,
+            expected_system_exit_code=expected_system_exit_code,
+            drill_passed=drill_passed,
             evidence_paths=[],
             checksum_status="NO_FILE_PRESENT",
             cleanup_status="CLEAN",
             duration_seconds=round(time.monotonic() - start_t, 4),
             timestamp_utc=datetime.now(timezone.utc).isoformat(),
             operator_decision="PROCEED_PASS" if drill_passed else "HALT_FAIL",
-            exit_code=0,
-            passed=passed,
+            exit_code=system_under_test_exit_code,
+            passed=drill_passed,
         )
         self._save_drill_record(rec)
         return rec
@@ -325,14 +341,18 @@ class OperationalDrillRunner:
             injected_fault="Crash injected before normalization pipeline",
             expected_result="Raw evidence preserved; normalized evidence absent; restart requires new authorization",
             actual_result=actual_result,
+            drill_runner_exit_code=drill_runner_exit_code,
+            system_under_test_exit_code=system_under_test_exit_code,
+            expected_system_exit_code=expected_system_exit_code,
+            drill_passed=drill_passed,
             evidence_paths=[str(raw_target)],
             checksum_status="RAW_VALID_NORM_ABSENT",
             cleanup_status="CLEAN",
             duration_seconds=round(time.monotonic() - start_t, 4),
             timestamp_utc=datetime.now(timezone.utc).isoformat(),
             operator_decision="PROCEED_PASS" if drill_passed else "HALT_FAIL",
-            exit_code=0,
-            passed=passed,
+            exit_code=system_under_test_exit_code,
+            passed=drill_passed,
         )
         self._save_drill_record(rec)
         return rec
@@ -374,14 +394,18 @@ class OperationalDrillRunner:
             injected_fault="Crash injected before manifest finalized",
             expected_result="Raw and normalized evidence preserved; incomplete manifest detected",
             actual_result=actual_result,
+            drill_runner_exit_code=drill_runner_exit_code,
+            system_under_test_exit_code=system_under_test_exit_code,
+            expected_system_exit_code=expected_system_exit_code,
+            drill_passed=drill_passed,
             evidence_paths=[str(raw_target), str(norm_target)],
             checksum_status="RAW_NORM_PRESENT_MANIFEST_ABSENT",
             cleanup_status="CLEAN",
             duration_seconds=round(time.monotonic() - start_t, 4),
             timestamp_utc=datetime.now(timezone.utc).isoformat(),
             operator_decision="PROCEED_PASS" if drill_passed else "HALT_FAIL",
-            exit_code=0,
-            passed=passed,
+            exit_code=system_under_test_exit_code,
+            passed=drill_passed,
         )
         self._save_drill_record(rec)
         return rec
@@ -433,14 +457,18 @@ class OperationalDrillRunner:
             injected_fault="One byte flipped in raw evidence file",
             expected_result="Resume validation fails; no overwrite; no continuation",
             actual_result=f"Detected checksum mismatch: {errors}",
+            drill_runner_exit_code=drill_runner_exit_code,
+            system_under_test_exit_code=system_under_test_exit_code,
+            expected_system_exit_code=expected_system_exit_code,
+            drill_passed=drill_passed,
             evidence_paths=[str(raw_target)],
             checksum_status="CORRUPTION_DETECTED",
             cleanup_status="CLEAN",
             duration_seconds=round(time.monotonic() - start_t, 4),
             timestamp_utc=datetime.now(timezone.utc).isoformat(),
             operator_decision="PROCEED_PASS" if drill_passed else "HALT_FAIL",
-            exit_code=0,
-            passed=passed,
+            exit_code=system_under_test_exit_code,
+            passed=drill_passed,
         )
         self._save_drill_record(rec)
         return rec
@@ -492,14 +520,18 @@ class OperationalDrillRunner:
             injected_fault="One byte flipped in normalized evidence file",
             expected_result="Resume validation fails; no overwrite; no continuation",
             actual_result=f"Detected checksum mismatch: {errors}",
+            drill_runner_exit_code=drill_runner_exit_code,
+            system_under_test_exit_code=system_under_test_exit_code,
+            expected_system_exit_code=expected_system_exit_code,
+            drill_passed=drill_passed,
             evidence_paths=[str(norm_target)],
             checksum_status="CORRUPTION_DETECTED",
             cleanup_status="CLEAN",
             duration_seconds=round(time.monotonic() - start_t, 4),
             timestamp_utc=datetime.now(timezone.utc).isoformat(),
             operator_decision="PROCEED_PASS" if drill_passed else "HALT_FAIL",
-            exit_code=0,
-            passed=passed,
+            exit_code=system_under_test_exit_code,
+            passed=drill_passed,
         )
         self._save_drill_record(rec)
         return rec
@@ -550,16 +582,20 @@ class OperationalDrillRunner:
             drill_name="Delete a finalized manifest",
             initial_state="Finalized manifest on disk",
             injected_fault="Manifest file unlinked prior to resume inspection",
-            expected_result="Completed symbol cannot be trusted or skipped; marked as remaining",
+            expected_result="Completed symbol cannot be trusted or skipped; marked as remaining; non-success system exit code 1",
             actual_result=f"Completed: {plan.completed_symbols}, Remaining: {plan.remaining_symbols}",
+            drill_runner_exit_code=drill_runner_exit_code,
+            system_under_test_exit_code=system_under_test_exit_code,
+            expected_system_exit_code=expected_system_exit_code,
+            drill_passed=drill_passed,
             evidence_paths=[],
             checksum_status="MANIFEST_MISSING_DETECTED",
             cleanup_status="CLEAN",
             duration_seconds=round(time.monotonic() - start_t, 4),
             timestamp_utc=datetime.now(timezone.utc).isoformat(),
             operator_decision="PROCEED_PASS" if drill_passed else "HALT_FAIL",
-            exit_code=0,
-            passed=passed,
+            exit_code=system_under_test_exit_code,
+            passed=drill_passed,
         )
         self._save_drill_record(rec)
         return rec
@@ -612,16 +648,20 @@ class OperationalDrillRunner:
             drill_name="Attempt two concurrent batch processes",
             initial_state="Process 1 acquires exclusive directory lock",
             injected_fault="Process 2 attempts immediate lock acquisition on same directory",
-            expected_result="Process 2 fails with LockAcquisitionError; zero client/requests",
+            expected_result="Process 2 fails with LockAcquisitionError; zero client/requests; non-success system exit code 1",
             actual_result=f"Process 2 lock rejected: {second_error}",
+            drill_runner_exit_code=drill_runner_exit_code,
+            system_under_test_exit_code=system_under_test_exit_code,
+            expected_system_exit_code=expected_system_exit_code,
+            drill_passed=drill_passed,
             evidence_paths=[str(drill_dir / ".process_lock")],
             checksum_status="EXCLUSIVE_LOCK_ENFORCED",
             cleanup_status="CLEAN",
             duration_seconds=round(time.monotonic() - start_t, 4),
             timestamp_utc=datetime.now(timezone.utc).isoformat(),
             operator_decision="PROCEED_PASS" if drill_passed else "HALT_FAIL",
-            exit_code=0,
-            passed=passed,
+            exit_code=system_under_test_exit_code,
+            passed=drill_passed,
         )
         self._save_drill_record(rec)
         return rec
@@ -662,14 +702,18 @@ class OperationalDrillRunner:
             injected_fault="ENOSPC raised during stream write to temporary file",
             expected_result="Atomic write fails; no corrupt final file; temporary cleaned up",
             actual_result=f"Raised ENOSPC; final file exists: {target_file.exists()}",
+            drill_runner_exit_code=drill_runner_exit_code,
+            system_under_test_exit_code=system_under_test_exit_code,
+            expected_system_exit_code=expected_system_exit_code,
+            drill_passed=drill_passed,
             evidence_paths=[],
             checksum_status="NO_CORRUPT_FILE",
             cleanup_status="TEMP_CLEANED",
             duration_seconds=round(time.monotonic() - start_t, 4),
             timestamp_utc=datetime.now(timezone.utc).isoformat(),
             operator_decision="PROCEED_PASS" if drill_passed else "HALT_FAIL",
-            exit_code=0,
-            passed=passed,
+            exit_code=system_under_test_exit_code,
+            passed=drill_passed,
         )
         self._save_drill_record(rec)
         return rec
@@ -707,14 +751,18 @@ class OperationalDrillRunner:
             injected_fault="PermissionError raised before atomic write begins",
             expected_result="Run halts; no false SUCCEEDED status recorded",
             actual_result=f"PermissionError caught; manifest exists: {manifest_target.exists()}",
+            drill_runner_exit_code=drill_runner_exit_code,
+            system_under_test_exit_code=system_under_test_exit_code,
+            expected_system_exit_code=expected_system_exit_code,
+            drill_passed=drill_passed,
             evidence_paths=[],
             checksum_status="NO_FALSE_SUCCESS",
             cleanup_status="CLEAN",
             duration_seconds=round(time.monotonic() - start_t, 4),
             timestamp_utc=datetime.now(timezone.utc).isoformat(),
             operator_decision="PROCEED_PASS" if drill_passed else "HALT_FAIL",
-            exit_code=0,
-            passed=passed,
+            exit_code=system_under_test_exit_code,
+            passed=drill_passed,
         )
         self._save_drill_record(rec)
         return rec
@@ -747,14 +795,18 @@ class OperationalDrillRunner:
             injected_fault="InjectedClientCloseError during client session close",
             expected_result="Exit code 9; overall success strictly prohibited",
             actual_result=actual_result,
+            drill_runner_exit_code=drill_runner_exit_code,
+            system_under_test_exit_code=system_under_test_exit_code,
+            expected_system_exit_code=expected_system_exit_code,
+            drill_passed=drill_passed,
             evidence_paths=[],
             checksum_status="SUCCESS_PROHIBITED",
             cleanup_status="DIRTY_HALT",
             duration_seconds=round(time.monotonic() - start_t, 4),
             timestamp_utc=datetime.now(timezone.utc).isoformat(),
             operator_decision="PROCEED_PASS" if drill_passed else "HALT_FAIL",
-            exit_code=0,
-            passed=passed,
+            exit_code=system_under_test_exit_code,
+            passed=drill_passed,
         )
         self._save_drill_record(rec)
         return rec
@@ -794,14 +846,18 @@ class OperationalDrillRunner:
             injected_fault="Attempting to launch or resume batch using consumed marker",
             expected_result="Authorization rejected before client creation; replay prohibited",
             actual_result=f"Resume rejected: {plan.reasons}",
+            drill_runner_exit_code=drill_runner_exit_code,
+            system_under_test_exit_code=system_under_test_exit_code,
+            expected_system_exit_code=expected_system_exit_code,
+            drill_passed=drill_passed,
             evidence_paths=[str(marker_path)],
             checksum_status="REPLAY_REJECTED",
             cleanup_status="CLEAN",
             duration_seconds=round(time.monotonic() - start_t, 4),
             timestamp_utc=datetime.now(timezone.utc).isoformat(),
             operator_decision="PROCEED_PASS" if drill_passed else "HALT_FAIL",
-            exit_code=0,
-            passed=passed,
+            exit_code=system_under_test_exit_code,
+            passed=drill_passed,
         )
         self._save_drill_record(rec)
         return rec
@@ -834,14 +890,18 @@ class OperationalDrillRunner:
             injected_fault="Staging path violation injection into repository boundary",
             expected_result="Path rejected with StagingPathViolation; zero write occurs",
             actual_result=f"Boundary violation trapped: {rejection_msg}",
+            drill_runner_exit_code=drill_runner_exit_code,
+            system_under_test_exit_code=system_under_test_exit_code,
+            expected_system_exit_code=expected_system_exit_code,
+            drill_passed=drill_passed,
             evidence_paths=[],
             checksum_status="NO_REPO_WRITE",
             cleanup_status="CLEAN",
             duration_seconds=round(time.monotonic() - start_t, 4),
             timestamp_utc=datetime.now(timezone.utc).isoformat(),
             operator_decision="PROCEED_PASS" if drill_passed else "HALT_FAIL",
-            exit_code=0,
-            passed=passed,
+            exit_code=system_under_test_exit_code,
+            passed=drill_passed,
         )
         self._save_drill_record(rec)
         return rec
@@ -892,14 +952,18 @@ class OperationalDrillRunner:
             injected_fault="Full backup creation, temporary file filtering, and complete restoration",
             expected_result="Restored evidence passes reconciliation; temporary files excluded",
             actual_result=f"Restored success: {success}, Errors: {errors}, Temp excluded: {temp_not_restored}",
+            drill_runner_exit_code=drill_runner_exit_code,
+            system_under_test_exit_code=system_under_test_exit_code,
+            expected_system_exit_code=expected_system_exit_code,
+            drill_passed=drill_passed,
             evidence_paths=[str(backup_folder), str(restore_dir)],
             checksum_status="ALL_CHECKSUMS_VERIFIED",
             cleanup_status="CLEAN",
             duration_seconds=round(time.monotonic() - start_t, 4),
             timestamp_utc=datetime.now(timezone.utc).isoformat(),
             operator_decision="PROCEED_PASS" if drill_passed else "HALT_FAIL",
-            exit_code=0,
-            passed=passed,
+            exit_code=system_under_test_exit_code,
+            passed=drill_passed,
         )
         self._save_drill_record(rec)
         return rec
@@ -961,14 +1025,18 @@ class OperationalDrillRunner:
                 f"Completed {cycle_count} cycles. Checksum drifts: {checksum_drifts}, "
                 f"Leaked temps: {leaked_temps}, Peak memory: {mem.peak_megabytes:.2f}MB"
             ),
+            drill_runner_exit_code=drill_runner_exit_code,
+            system_under_test_exit_code=system_under_test_exit_code,
+            expected_system_exit_code=expected_system_exit_code,
+            drill_passed=drill_passed,
             evidence_paths=[str(drill_dir)],
             checksum_status="SOAK_CHECKSUMS_STABLE",
             cleanup_status="NO_LEAKED_TEMPORARY_FILES",
             duration_seconds=round(time.monotonic() - start_t, 4),
             timestamp_utc=datetime.now(timezone.utc).isoformat(),
             operator_decision="PROCEED_PASS" if drill_passed else "HALT_FAIL",
-            exit_code=0,
-            passed=passed,
+            exit_code=system_under_test_exit_code,
+            passed=drill_passed,
         )
         self._save_drill_record(rec)
         return rec
