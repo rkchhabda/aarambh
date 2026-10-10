@@ -5,7 +5,7 @@
 **Audit Target:** `connector_review/nse_data_service.py`
 **Inspected Import:** `from nse import NSE`
 **Dependency Approval Decision:** `REQUIRES_DEPENDENCY_APPROVAL`
-**Installation Status:** `DEPENDENCY_NOT_INSTALLED` (in Phase 7 runtime environment)
+**Installation Status:** `INSTALLED_FOR_INTERNAL_RESEARCH_ONLY` (Milestone 4.8B in `.venv-phase7`)
 
 ---
 
@@ -99,8 +99,23 @@ the Free Software Foundation, either version 3 of the License...
 
 ### Formal Classifications:
 - **`INTENDED_DISTRIBUTION_CONFIRMED`** (`nse` v4.0.1 by Benny Thadikaran)
-- **`DEPENDENCY_NOT_INSTALLED_IN_PHASE7_VENV`**
-- **`REQUIRES_DEPENDENCY_APPROVAL`**
-- **`GPLV3_LEGAL_REVIEW_REQUIRED`**
+- **`DEPENDENCY_APPROVED_FOR_INTERNAL_FEASIBILITY_RESEARCH_ONLY`** (Milestone 4.8B)
+- **`GPLV3_LEGAL_REVIEW_REQUIRED_BEFORE_DISTRIBUTION`**
 
-No dependency installation or environment modification is authorized during this milestone.
+---
+
+## 7. Milestone 4.8B Installation Record (`.venv-phase7`)
+
+- **Installation Command:**
+  ```powershell
+  .venv-phase7\Scripts\python.exe -m pip install -r requirements-phase7.txt
+  ```
+- **Requirements Pin:** `nse==4.0.1` added to `requirements-phase7.txt` without changing existing pins.
+- **pip check Result:** `No broken requirements found.`
+- **Installed Packages (`pip show`):**
+  - `nse==4.0.1` (`C:\Users\r_chh\OneDrive - optgbrc\Apps\GaurviDEEP\.venv-phase7\Lib\site-packages`)
+  - `httpx==0.28.1` (BSD-3-Clause)
+  - `mthrottle==0.0.2`
+  - Transitive: `anyio==4.15.1`, `certifi==2026.7.22`, `h11==0.16.0`, `httpcore==1.0.9`, `idna==3.20`
+- **Zero Live Requests:** Installation completed without issuing any network requests to NSE or market data endpoints.
+- **Operational Boundary:** Module must only be imported inside explicitly authorized client factory; not at top level of Phase 7 source modules.

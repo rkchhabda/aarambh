@@ -253,3 +253,30 @@ py -3.12 -m venv .venv-phase7
 4. **Vault Defense:** Neither Phase 6 vault directory nor any sealed `.7z` vault archive was accessed, inspected, queried, or modified.
 5. **Phase 6 Immutability:** Zero Phase 6 files, scripts, reports, or test suites were altered.
 6. **Milestone 3 Boundary:** Milestone 3 (Target Engine and Forward Returns) has **NOT** been started. All research execution remains strictly halted.
+
+---
+
+## 8. Milestone 4.8B Approved External Connector Dependency (`nse==4.0.1`)
+
+- **Approval Authority:** Project Owner (Re-Authorization Milestone 4.8B, 2026-10-10)
+- **Approved Package Pin:** `nse==4.0.1`
+- **Installation Command:**
+  ```powershell
+  .venv-phase7\Scripts\python.exe -m pip install -r requirements-phase7.txt
+  ```
+- **Execution Date:** 2026-10-10
+- **pip check Result:**
+  ```text
+  No broken requirements found.
+  ```
+- **Installed Package Inventory:**
+  - `nse==4.0.1` (Author: Benny Thadikaran, pure Python wheel `py3-none-any`)
+  - `httpx==0.28.1` (BSD-3-Clause, direct dependency)
+  - `mthrottle==0.0.2` (direct dependency, generic rate limiter)
+  - `httpcore==1.0.9`, `h11==0.16.0`, `anyio==4.15.1`, `certifi==2026.7.22`, `idna==3.20` (transitive HTTP dependencies)
+- **Licensing & Legal Governance Boundary:**
+  - `nse` is licensed under the **GNU General Public License v3.0 (GPLv3)**.
+  - **Approval Scope:** Strictly approved for **internal, non-distributed Phase 7 feasibility research only**.
+  - **Prohibitions:** Not authorized for commercial distribution, proprietary production integration, public API deployment, or redistribution.
+  - **Legal Status:** `LEGAL_REVIEW_REQUIRED_BEFORE_DISTRIBUTION`.
+- **Zero Live Requests:** Installation completed without issuing any network requests to NSE or market data endpoints.

@@ -374,6 +374,26 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
   - External staging path created and preserved outside repository.
   - Zero Phase 6 file changes; zero production code changes; zero market data committed.
 
+### DEC-20261010-02: Milestone 4.8B NSE Dependency Approval (nse==4.0.1)
+- **Date:** 2026-10-10
+- **Decision Authority:** Project Owner & Lead Quantitative Research Engineer (AUTHORIZE MILESTONE 4.8B: NSE DEPENDENCY APPROVAL AND FAIL-CLOSED SOURCE ADAPTER)
+- **Context & Motivation:** Following the static audit of `connector_review/nse_data_service.py` confirming explicit historical date range capability, the project owner authorized evaluation and installation of `nse==4.0.1` inside `.venv-phase7` strictly for internal, non-distributed Phase 7 feasibility research.
+- **Exact Decision:**
+  1. **Strict Dependency Pin:** Exactly `nse==4.0.1` is added to `requirements-phase7.txt`. Unpinned releases or 5.x releases are strictly prohibited.
+  2. **Licensing Boundary (GPLv3):** Acknowledged that `nse` is licensed under GPLv3. Approved exclusively for internal, non-distributed feasibility research. Commercial distribution, proprietary production integration, or public API deployment is strictly prohibited without prior legal review (`LEGAL_REVIEW_REQUIRED_BEFORE_DISTRIBUTION`).
+  3. **Architectural Isolation:** Direct top-level imports of `nse` in research modeling modules are forbidden. The library must be accessed only through an isolated client protocol and runtime factory within `phase7/sources/`.
+  4. **Installation & Clean Resolution:** Installed into `.venv-phase7` (Python 3.12.10) with direct dependencies `httpx==0.28.1` and `mthrottle==0.0.2`. Verified with `pip check` reporting zero broken requirements.
+  5. **Zero Live Requests:** Installation completed without issuing any live network requests to NSE or market data endpoints.
+- **Impacted Modules:**
+  - `requirements-phase7.txt`
+  - `docs/PHASE7_ENVIRONMENT_VERIFICATION.md`
+  - `docs/PHASE7_NSE_DATA_FETCHER_DEPENDENCY_MAP.md`
+  - `docs/PHASE7_DECISION_LOG.md`
+- **Verification Criteria:**
+  - `pip check` returns exit code 0 ("No broken requirements found.").
+  - Existing 189 automated tests continue to pass in `.venv-phase7`.
+  - Zero live network requests executed; zero market data downloaded.
+
 ---
 
 ## 3. Log Schema for Future Amendments

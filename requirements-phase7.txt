@@ -29,3 +29,6 @@ pytest==8.3.4
 # Optional progress tracking and utilities
 joblib==1.4.2
 tqdm==4.67.1
+
+# Approved external data connector (Milestone 4.8B internal feasibility research only)
+nse==4.0.1
