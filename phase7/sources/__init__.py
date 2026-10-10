@@ -44,15 +44,35 @@ from phase7.sources.batch_selection import (
     save_selection_evidence,
 )
 from phase7.sources.listing_evidence import (
+    DateSemanticClassification,
+    DateStatementRecord,
     ListingDateStatus,
     ListingEvidenceRecord,
     ListingSourcePriority,
     ListingSourceType,
     ListingVerificationStatus,
+    RetrospectiveOutcome,
+    classify_date_statement_text,
     classify_historical_period_outcome,
+    classify_retrospective_listing_outcome,
     load_listing_evidence,
     save_listing_evidence,
     validate_listing_evidence,
+)
+from phase7.sources.listing_evidence_authorization import (
+    ListingEvidenceAuthorizationRecord,
+    consume_listing_evidence_authorization,
+    create_listing_evidence_authorization,
+    load_and_validate_listing_evidence_authorization,
+)
+from phase7.sources.listing_evidence_persistence import (
+    persist_evidence_manifest,
+    persist_extracted_evidence_record,
+    persist_raw_source_document,
+    persist_retrospective_classification_record,
+)
+from phase7.sources.listing_evidence_acquisition import (
+    execute_listing_evidence_pilot,
 )
 from phase7.sources.client_factory import create_real_nse_client
 from phase7.sources.client_protocol import NSEClientFactoryProtocol, NSEClientProtocol
@@ -241,10 +261,24 @@ __all__ = [
     "ListingSourcePriority",
     "ListingSourceType",
     "ListingVerificationStatus",
+    "DateSemanticClassification",
+    "DateStatementRecord",
+    "RetrospectiveOutcome",
+    "classify_date_statement_text",
     "classify_historical_period_outcome",
+    "classify_retrospective_listing_outcome",
     "load_listing_evidence",
     "save_listing_evidence",
     "validate_listing_evidence",
+    "ListingEvidenceAuthorizationRecord",
+    "create_listing_evidence_authorization",
+    "load_and_validate_listing_evidence_authorization",
+    "consume_listing_evidence_authorization",
+    "persist_raw_source_document",
+    "persist_extracted_evidence_record",
+    "persist_evidence_manifest",
+    "persist_retrospective_classification_record",
+    "execute_listing_evidence_pilot",
 ]
 
 

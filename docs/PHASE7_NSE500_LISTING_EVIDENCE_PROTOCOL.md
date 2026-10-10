@@ -2,13 +2,14 @@
 
 ## 1. Objective and Governance Scope
 
-This protocol establishes the immutable criteria and 15-point acquisition plan for obtaining, verifying, and preserving official listing-date evidence across securities selected from the current NIFTY 500 snapshot.
+This protocol establishes the immutable criteria and governed acquisition pipeline for obtaining, verifying, and preserving official documentary listing-date evidence for securities selected from the current NIFTY 500 snapshot.
 
-Under Milestone 4.10C-1 governance:
-- An empty source response by itself must **never** establish a listing date.
+Under Milestone 4.10C-1 and 4.10C-2 governance:
+- An empty source response by itself must **never** establish a listing date or pre-listing status.
 - Listing status cannot be inferred from current index membership, company name, ticker pattern, search-engine snippets, or portfolio holdings.
-- An empty response may only be classified as `NOT_LISTED_DURING_REQUESTED_PERIOD_VERIFIED` when an independently sourced, cryptographically hashed, and verified listing date proves `listing_date > requested_end_date`.
-- All evidence must remain strictly outside Git.
+- An empty response may only be classified as `NOT_LISTED_DURING_REQUESTED_PERIOD_VERIFIED` when an independently sourced, cryptographically hashed, and verified official listing date proves $\text{listing\_date} > \text{requested\_end\_date}$ (e.g. 2024-03-31).
+- If only an expected or proposed trading commencement date is obtained from an official source (e.g. prospectus indicative timetable), it is classified as `PRELISTING_AFTER_PERIOD_PROVISIONALLY_CONFIRMED`.
+- All evidence must remain strictly outside Git in external staging.
 
 ---
 
@@ -17,8 +18,8 @@ Under Milestone 4.10C-1 governance:
 Listing-date evidence must be acquired strictly according to the following priority hierarchy:
 
 ### Priority 1: Official Exchange Records
-1. Official NSE Security Master (`security_master.csv` / official exchange master file).
-2. Official NSE Circulars / Listing Notices announcing commencement of trading.
+1. Official NSE Circulars / Listing Notices announcing admission to dealings and commencement of trading.
+2. Official NSE Security Master (`security_master.csv` / official exchange master file).
 3. Official Exchange Security-Information web records with confirmed listing date.
 
 ### Priority 2: Regulatory Filings
@@ -29,7 +30,7 @@ Listing-date evidence must be acquired strictly according to the following prior
 1. BSE official security master or notice where the exact **NSE listing date** is explicitly and independently declared.
 
 ### Strictly Disallowed Sources
-The following sources are ungoverned and **strictly prohibited** as standalone evidence:
+The following sources are ungoverned and **strictly prohibited** as evidence:
 - Financial news articles and media releases
 - Community or corporate blogs
 - Third-party market screeners (e.g. Screener.in, Trendlyne)
@@ -41,49 +42,57 @@ The following sources are ungoverned and **strictly prohibited** as standalone e
 
 ---
 
-## 3. 15-Point Governed Acquisition Plan
+## 3. Date-Semantic Classification Taxonomy
 
-1. **Approved Sources:** Restricted to Priority 1 (NSE official), Priority 2 (SEBI filing), Priority 3 (Explicit cross-exchange).
-2. **Expected Record / Document:** Machine-readable official CSV, JSON, circular text, or official PDF prospectus with confirmed commencement date.
-3. **Required Fields:** `symbol`, `security_name`, `exchange`, `listing_date` (YYYY-MM-DD), `source_identifier`, `source_type`.
-4. **Identifier Matching Rules:** Exact uppercase ASCII symbol match; no fuzzy matching or heuristic ticker substitution.
-5. **Symbol-Renaming Handling:** Requires manual provenance review and official exchange change notice; automated name aliasing is prohibited.
-6. **ISIN Utilization:** Governed ISIN matching (12-character alphanumeric, e.g. `INE0K8D01017`) is required when reported by source.
-7. **Conflict Resolution:** If disparate sources declare differing listing dates, the record status is set to `CONFLICT` and classification falls back to `LISTING_DATE_UNVERIFIED`.
-8. **Missing-Date Handling:** If listing date is absent or not reported, record is classified `NOT_PROVIDED` / `LISTING_DATE_UNVERIFIED`. Batch halts remain intact.
-9. **Cryptographic Checksum:** Every evidence artifact must have an immutable SHA-256 digest recorded in the manifest.
-10. **External Staging Root:** `C:\Users\r_chh\gaurvideep_phase7_staging\nse500\batch_4_10c\listing_evidence\` (outside Git).
-11. **Reviewer Status:** Every record requires explicit provenance classification (`GOVERNED_SYSTEM` or `PEER_REVIEWED`).
-12. **Update Frequency:** Static per batch milestone; no continuous background polling.
-13. **Licensing & Terms:** Strictly non-commercial research use in accordance with official exchange data policies.
-14. **Maximum Request Ceiling:** Maximum 1 request per selected security (total 20 requests).
-15. **Halt Conditions:** Network connection timeout, HTTP non-200, schema divergence, or CAPTCHA immediately halts the evidence pilot.
+Every date statement extracted from an official source is classified into exactly one semantic category:
+
+| Semantic Classification | Criteria / Phrase Matching | Evidentiary Weight |
+|---|---|---|
+| `CONFIRMED_TRADING_COMMENCEMENT_DATE` | "admitted to dealings", "shall be listed and admitted to dealings w.e.f.", "trading shall commence" in official exchange circular | Supports `NOT_LISTED_DURING_REQUESTED_PERIOD_VERIFIED` |
+| `EXPECTED_TRADING_COMMENCEMENT_DATE` | "trading is expected to commence", "tentative timetable", "indicative schedule", "proposed listing date" | Supports `PRELISTING_AFTER_PERIOD_PROVISIONALLY_CONFIRMED` |
+| `LISTING_APPROVAL_DATE` | Exchange in-principle or final listing approval notice | Ancillary record |
+| `PROSPECTUS_DATE` | "Prospectus dated ... filed with ROC" | Filing date record |
+| `ALLOTMENT_DATE` | "Basis of allotment approved / finalised on" | Ancillary offer record |
+| `OFFER_OPEN_DATE` | "Bid/Offer opens on" | Ancillary offer record |
+| `OFFER_CLOSE_DATE` | "Bid/Offer closes on" | Ancillary offer record |
+| `UNCLASSIFIED_DATE` | Other dates not matching governed operational categories | Non-probative |
+
+Expected and confirmed trading commencement dates must **never** be conflated. An expected date must never be silently converted into an actual confirmed trading date.
 
 ---
 
-## 4. Evidence Persistence Format
+## 4. Single-Use Authorization Protocol
 
-Evidence files are saved externally as:
-`listing_evidence/<SYMBOL>_listing_evidence.json`
+Evidence acquisition requires an explicit, single-use, scope-bound authorization marker:
+- **Milestone:** `4.10C-2`
+- **Scope:** `OFFICIAL_LISTING_DATE_EVIDENCE_PILOT`
+- **Target Symbol:** Bound to target security (e.g. `PREMIERENE`)
+- **Approved Domains:** Strictly whitelisted (`nsearchives.nseindia.com`, `nseindia.com`, `sebi.gov.in`, `bseindia.com`)
+- **Ceiling:** Maximum 5 requests total
+- **Concurrency:** Maximum 1 request at a time
+- **Pacing:** Minimum 2.0 seconds between consecutive requests
+- **Automatic Retries:** 0 (strictly fail-closed on first error)
+- **Consumption:** Atomic rename to `.consumed.<UTC_TIMESTAMP>.json` **prior** to the first network request.
 
-Example Schema:
-```json
-{
-  "symbol": "PREMIERENE",
-  "security_name": "Premier Energies Limited",
-  "exchange": "NSE",
-  "listing_date": "2024-09-03",
-  "listing_date_status": "SOURCE_REPORTED",
-  "source_type": "NSE_SECURITY_MASTER",
-  "source_identifier": "NSE_CIRCULAR_LISTING_20240903",
-  "source_document_date": "2024-09-03",
-  "retrieval_timestamp": "2026-10-10T12:00:00Z",
-  "evidence_file_reference": "listing_evidence/PREMIERENE_circular.pdf",
-  "evidence_sha256": "8f...",
-  "source_row_hash": "a1...",
-  "verification_status": "VERIFIED_SINGLE_SOURCE",
-  "reviewer_status": "GOVERNED_SYSTEM",
-  "notes": "Verified against official exchange commencement notice",
-  "isin": "INE0K8D01017"
-}
-```
+---
+
+## 5. Storage Layout Outside Git
+
+Evidence files are saved externally under:
+`C:\Users\r_chh\gaurvideep_phase7_staging\nse500\batch_4_10c\listing_evidence\<SYMBOL>\`
+
+Directory layout:
+- `authorization/`: Single-use active and consumed authorization markers
+- `raw/`: Unaltered official source documents (PDFs, HTML files) with SHA-256 integrity
+- `extracted/`: Sanitized, structured extraction records (identities, dates, statement hashes)
+- `manifests/`: Finalized evidence manifest with cryptographic digest
+- `audit/`: Retrospective classification records
+- `logs/`: Operational execution logs
+
+Requirements:
+1. Immutable filenames.
+2. Atomic writes via temporary files.
+3. No overwrite of existing files.
+4. SHA-256 for every downloaded source.
+5. Strict sanitization: zero cookies, session headers, or tokens in stored files.
+6. Zero evidence files or downloaded PDFs/HTML in the Git repository.
