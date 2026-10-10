@@ -1067,6 +1067,34 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261010-39: Milestone 4.12 Final Integration Reconciliation and Acceptance
+- **Date:** 2026-10-10
+- **Decision Authority:** Project Owner / Research Governance Officer
+- **Context & Motivation:** Perform formal integration reconciliation of the Milestone 4.12 offline operator console suite across all 32 required integration boundaries and execute exactly six offline operational walkthroughs.
+- **Exact Decision:**
+  1. **17-Test Suite Sufficiency:** Retain the focused 17-test suite in `tests/phase7/test_operator_app.py`, confirming that all 10 safety-critical boundaries and all 22 additional integration boundaries are materially covered without mock tautologies or suite bloat.
+  2. **Six Walkthrough Verification:** Successfully execute and verify all six offline walkthroughs (`WALKTHROUGH-01` through `WALKTHROUGH-06`) with zero network requests, zero evidence mutations, clean lock release, and external JSON records stored strictly in `C:\Users\r_chh\gaurvideep_phase7_staging\nse500\offline_app_4_12\walkthroughs\`.
+  3. **Explicit State Transitions:** Mandate and verify the 12-state application lifecycle (`STARTING`, `SAFE_EMPTY_MODE`, `READY_READ_ONLY`, `VERIFYING`, `VERIFICATION_PASSED`, `VERIFICATION_FAILED`, `EXPORTING_AUDIT`, `BACKUP_VALIDATING`, `RESTORE_VALIDATING`, `BLOCKED_BY_POLICY`, `SHUTTING_DOWN`, `STOPPED`).
+  4. **Strict Qualified Readiness Terminology:** Prohibit unqualified `PRODUCTION_READY` across all views, banners, titles, logs, and audit files; retain qualification as `INTERNAL_NON_DISTRIBUTED_PRODUCTION_LIKE_READINESS_CONFIRMED`.
+  5. **Final Closure Status:** Formally certify Milestone 4.12 as `INTERNAL_OFFLINE_APPLICATION_INTEGRATION_COMPLETE`.
+- **Impacted Modules:**
+  - `phase7/operator/constants.py`
+  - `phase7/operator/core.py`
+  - `phase7/operator/cli.py`
+  - `tests/phase7/test_operator_app.py`
+  - `docs/PHASE7_OFFLINE_APPLICATION_WALKTHROUGH_REPORT.md`
+  - `docs/PHASE7_OFFLINE_APPLICATION_SECURITY_BOUNDARY.md`
+  - `docs/PHASE7_MILESTONE_4_12_CLOSURE_REPORT.md`
+  - `docs/PHASE7_DECISION_LOG.md`
+- **Verification Criteria:**
+  - Complete test suite passes at 811 tests in 40.73s.
+  - `pip check` confirmed clean.
+  - `git diff --check b767d83..HEAD` confirmed zero output.
+  - All six offline walkthrough records pass with external JSON records.
+  - Milestone 5 remains strictly blocked and quarantined.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:
