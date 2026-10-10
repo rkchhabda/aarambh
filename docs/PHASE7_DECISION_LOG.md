@@ -506,6 +506,45 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261010-22: Milestone 4.9B Alignment of NSE Pilot Client Factory Interface
+- **Date:** 2026-10-10
+- **Decision Authority:** Project Owner & Lead Quantitative Research Engineer
+- **Context & Motivation:** Remediation of the client factory interface mismatch (`CLIENT_FACTORY_PARAMETER_MISMATCH_HALT`: `TypeError: create_real_nse_client() got an unexpected keyword argument 'data_dir'`) observed during Milestone 4.9 re-authorization. The pilot invocation passed legacy parameters `data_dir` and `server_mode`, whereas the factory defined `create_real_nse_client(download_folder: Path, server: bool = True, timeout: int = 15)`.
+- **Exact Decision:**
+  1. **Canonical Factory Signature & Contract:** Formalized one canonical factory signature:
+     `create_real_nse_client(download_folder: Path, server: bool = True, timeout: int = 15) -> NSEClientProtocol`.
+     - `download_folder`: Must be an absolute `pathlib.Path` strictly outside the Git repository.
+     - `server`: Must be strictly boolean `True` for governed pilot execution.
+     - `timeout`: Must be strictly integer `15` seconds.
+     - Explicit parameter binding without `**kwargs` to prevent silent parameter masking; unexpected keyword arguments raise `TypeError`.
+  2. **Protocol Definition:** Defined and exported `@runtime_checkable class NSEClientFactoryProtocol(Protocol)` in `phase7.sources.client_protocol` and `phase7.sources.__init__`.
+  3. **Pilot Invocation Alignment:** Updated `phase7.sources.pilot` to invoke `client_factory(download_folder=valid_staging / "raw", server=True, timeout=15)`.
+  4. **Sanitized Error Handling:** Client-construction `TypeError` exceptions are caught in `phase7.sources.pilot` and converted into `RuntimeError("CLIENT_FACTORY_PARAMETER_MISMATCH_HALT: ...")`.
+  5. **Removal of Obsolete Keywords:** Scanned `phase7/sources/` confirming zero occurrences of `data_dir=` or `server_mode=`.
+  6. **Consumed Marker Protection:** The prior consumed marker `pilot_authorization.consumed.20261010T063226Z.json` remains safely consumed. No replacement marker was generated.
+  7. **Zero Live Execution & Network Calls:** Live execution was not authorized and did not execute. Exactly 0 network requests occurred.
+  8. **Readiness Status:** `NSE_PILOT_CLIENT_FACTORY_ALIGNED_LIVE_EXECUTION_NOT_AUTHORIZED`.
+- **Impacted Modules:**
+  - `phase7/sources/client_protocol.py`
+  - `phase7/sources/client_factory.py`
+  - `phase7/sources/pilot.py`
+  - `phase7/sources/__init__.py`
+  - `tests/phase7/test_source_client_factory_contract.py`
+  - `tests/phase7/test_source_authorization.py`
+  - `docs/PHASE7_NSE_LIVE_PILOT_PROTOCOL.md`
+  - `docs/PHASE7_NSE_DATA_FETCHER_ADAPTER.md`
+  - `docs/PHASE7_DECISION_LOG.md`
+  - `docs/PHASE7_IMPLEMENTATION_MAP.md`
+  - `docs/PHASE7_NSE_FIVE_STOCK_GAP_ANALYSIS.md`
+- **Verification Criteria:**
+  - Full pytest suite passes in `.venv-phase7` (276 passing tests, including 13 new contract and regression tests).
+  - `pip check` reports no broken requirements.
+  - CLI `phase7.sources.pilot --help` exits cleanly with zero side-effects.
+  - Consumed authorization marker remains consumed. Zero new markers generated.
+  - Zero market data files in repository.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:

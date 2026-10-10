@@ -1,10 +1,10 @@
-# Phase 7 Protocol: Five-Stock NSE Live Pilot (Milestone 4.9 / 4.9A)
+# Phase 7 Protocol: Five-Stock NSE Live Pilot (Milestone 4.9 / 4.9A / 4.9B)
 
 ## 1. Pilot Scope and Purpose
 
 The Five-Stock NSE Live Pilot is designed to verify the end-to-end operational viability, payload integrity, and schema compliance of real upstream NSE retrieval under strict isolation.
 
-**Milestone 4.9A Status:** The live pilot authorization guard has been **CORRECTED**. The previous reusable CLI authorization token has been replaced with a single-use, scope-bound cryptographic authorization marker outside Git. **LIVE EXECUTION REMAINS UNAUTHORIZED** until explicit owner re-authorization.
+**Milestone 4.9B Status:** The client factory interface mismatch has been **CORRECTED**. The factory protocol and signature have been canonicalized to `create_real_nse_client(download_folder: Path, server: bool = True, timeout: int = 15) -> NSEClientProtocol`. The pilot invocation strictly passes canonical keyword parameters without obsolete aliases (`data_dir`, `server_mode`). Client construction errors are sanitized to `CLIENT_FACTORY_PARAMETER_MISMATCH_HALT`. **LIVE EXECUTION REMAINS UNAUTHORIZED** until explicit owner re-authorization.
 
 ---
 
@@ -65,10 +65,21 @@ The canonical pilot command uses the single-use authorization file:
 5. Load and validate authorization marker (scope, staging hash, expiry, single_use=True, SHA-256 hash).
 6. Atomically rename `pilot_authorization.json` to `pilot_authorization.consumed.<UTC_TIMESTAMP>.json`.
 7. Verify active marker no longer exists.
-8. Only then instantiate the real NSE client.
-9. Only then permit the first network request.
+8. Verify consumed marker exists in external staging.
+9. Build the download folder under external staging (`<staging-root>/raw`).
+10. Invoke `create_real_nse_client(download_folder=download_folder, server=True, timeout=15)` using canonical keywords.
+11. Convert any client-construction `TypeError` into sanitized `CLIENT_FACTORY_PARAMETER_MISMATCH_HALT`.
+12. Only then permit the first network request.
 
 If consumption fails, execution aborts with `AUTHORIZATION_CONSUMPTION_FAILED` and zero network requests occur.
+
+### Canonical Client Factory Protocol Contract
+- **Protocol:** `NSEClientFactoryProtocol(download_folder: Path, server: bool = True, timeout: int = 15) -> NSEClientProtocol`.
+- **`download_folder`**: Absolute `pathlib.Path` strictly outside the Git repository.
+- **`server`**: Strict boolean `True` for governed pilot execution.
+- **`timeout`**: Strict integer `15` seconds.
+- **Rejection of Unknown Keywords**: The factory rejects `data_dir`, `server_mode`, and any unexpected keyword arguments without `**kwargs` masking.
+- **Zero Module-Import Invocation**: Factory is strictly invoked at runtime inside an authorized context; never on import or `--help`.
 
 ---
 

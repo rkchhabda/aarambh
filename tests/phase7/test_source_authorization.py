@@ -406,7 +406,11 @@ def test_valid_authorization_reaches_mocked_client_factory(test_env):
         repo_root=repo,
     )
     assert exit_code == 0
-    mock_client_factory.assert_called_once_with(data_dir=str(staging.resolve()), server_mode=True)
+    mock_client_factory.assert_called_once_with(
+        download_folder=staging.resolve() / "raw",
+        server=True,
+        timeout=15,
+    )
     assert not marker_path.exists()  # Marker was consumed atomically
 
 

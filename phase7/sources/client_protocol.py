@@ -39,3 +39,16 @@ class NSEClientProtocol(Protocol):
 
     def exit(self) -> None:
         ...
+
+
+@runtime_checkable
+class NSEClientFactoryProtocol(Protocol):
+    """Protocol matching the canonical client factory signature."""
+
+    def __call__(
+        self,
+        download_folder: Any,
+        server: bool = True,
+        timeout: int = 15,
+    ) -> NSEClientProtocol:
+        ...

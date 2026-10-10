@@ -45,20 +45,25 @@ flowchart TD
 - **Atomic Pre-Client Consumption:** Consumed via `os.replace` to `pilot_authorization.consumed.<timestamp>.json` before client initialization. Zero network requests occur if validation or consumption fails.
 - **Fail-Closed Guarantees:** Tampering, expiration, reuse, relative paths, or repository locations are rejected.
 
-### 2.3 Re-Authorized Execution Halt: Client Factory Parameter Mismatch
+### 2.3 Re-Authorized Execution Halt: Client Factory Parameter Mismatch (Remediated in Milestone 4.9B)
 - **Observation:** During the re-authorized execution of Milestone 4.9, the single-use marker was created and atomically consumed. Execution halted immediately during client construction with:
   `TypeError: create_real_nse_client() got an unexpected keyword argument 'data_dir'`
-- **Problem:** `phase7/sources/pilot.py` invokes `client_factory(data_dir=str(valid_staging), server_mode=True)`, whereas `create_real_nse_client` in `phase7/sources/client_factory.py` specifies `(download_folder: Path, server: bool = True, timeout: int = 15)`.
+- **Problem:** `phase7/sources/pilot.py` invoked `client_factory(data_dir=str(valid_staging), server_mode=True)`, whereas `create_real_nse_client` in `phase7/sources/client_factory.py` specified `(download_folder: Path, server: bool = True, timeout: int = 15)`.
 - **Safety Impact:** Client initialization failed closed before network socket creation. Exactly zero network requests occurred. Marker remains safely consumed.
-- **Required Action:** Authorize a corrective patch to align the client factory calling convention in `phase7/sources/pilot.py` with `phase7/sources/client_factory.py`, followed by fresh marker creation and pilot re-authorization.
+- **Remediation Completed in Milestone 4.9B:**
+  1. Standardized on canonical factory signature: `create_real_nse_client(download_folder: Path, server: bool = True, timeout: int = 15) -> NSEClientProtocol`.
+  2. Formalized `NSEClientFactoryProtocol` in `phase7.sources.client_protocol` and `phase7.sources.__init__`.
+  3. Updated `phase7.sources.pilot` to invoke `client_factory(download_folder=staging/"raw", server=True, timeout=15)`.
+  4. Added sanitized error handler converting factory `TypeError` into `CLIENT_FACTORY_PARAMETER_MISMATCH_HALT`.
+  5. Implemented comprehensive contract and regression test suite (`tests/phase7/test_source_client_factory_contract.py`).
 
 ---
 
 ## 3. Recommended Next Actions
 
-1. **Authorize Corrective Patch:**
-   Authorize a corrective maintenance patch to reconcile the factory keyword arguments (`download_folder` vs `data_dir`) between `phase7/sources/pilot.py` and `phase7/sources/client_factory.py`.
-2. **Re-authorize Five-Stock Live Pilot:**
-   Following the factory signature alignment, request owner re-authorization to create a fresh marker and execute the live pilot.
-3. **Milestone 5 Quarantine:**
+1. **Re-authorize Five-Stock Live Pilot:**
+   Following the factory signature alignment in Milestone 4.9B, request owner re-authorization (`RE-AUTHORIZE MILESTONE 4.9 AFTER FACTORY FIX`) to generate a fresh single-use marker outside Git and execute the live pilot.
+2. **Milestone 5 Quarantine:**
    Milestone 5 (model training and target generation) remains strictly blocked until real data is procured, ingested, and verified through Gate 1.
+3. **Blockers BLK-01, BLK-02, and BLK-04:**
+   Remain formally OPEN until authentic point-in-time constituent, price-turnover, and sector history data are procured and accepted.

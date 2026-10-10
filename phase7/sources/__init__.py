@@ -6,7 +6,7 @@ Zero top-level imports of third-party NSE packages.
 
 from phase7.sources.audit import StructuralQualityAudit
 from phase7.sources.client_factory import create_real_nse_client
-from phase7.sources.client_protocol import NSEClientProtocol
+from phase7.sources.client_protocol import NSEClientFactoryProtocol, NSEClientProtocol
 from phase7.sources.contracts import (
     AdjustmentState,
     CapabilityStatus,
@@ -57,6 +57,7 @@ __all__ = [
     "HistoricalFetchResult",
     "HTTPSafetyError",
     "HTTPSafetyViolationType",
+    "NSEClientFactoryProtocol",
     "NSEClientProtocol",
     "NSEDataFetcherAdapter",
     "NSEDataFetcherProtocol",

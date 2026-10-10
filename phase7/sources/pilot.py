@@ -200,14 +200,27 @@ def run_pilot(
             "AUTHORIZATION_CONSUMPTION_FAILED: Active authorization marker still exists after rename."
         )
 
-    # Step 9: Only then create the NSE client
+    # Step 12: Build the download_folder under external staging
+    download_folder = valid_staging / "raw"
+    download_folder.mkdir(parents=True, exist_ok=True)
+
+    # Step 13: Only then invoke create_real_nse_client using canonical keywords
     if client_factory is None:
         from phase7.sources.client_factory import create_real_nse_client
         client_factory = create_real_nse_client
 
-    client = client_factory(data_dir=str(valid_staging), server_mode=True)
+    try:
+        client = client_factory(
+            download_folder=download_folder,
+            server=True,
+            timeout=15,
+        )
+    except TypeError as exc:
+        raise RuntimeError(
+            f"CLIENT_FACTORY_PARAMETER_MISMATCH_HALT: {exc}"
+        ) from exc
 
-    # Step 10: Only then permit network retrieval
+    # Step 14: Only then permit network retrieval
     print("Executing authorized live pilot with single-use authorization...")
     print(f"Consumed Marker: {consumed_marker}")
     print(f"Client Initialized: {type(client).__name__}")

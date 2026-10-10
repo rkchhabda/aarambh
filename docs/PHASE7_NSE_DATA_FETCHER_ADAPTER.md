@@ -33,15 +33,17 @@ graph TD
 | `manifest.py` | Request manifest construction | Generates immutable `RequestManifest` with cryptographic SHA-256 checksums |
 | `rejections.py` | Malformed symbol/row recording | Logs rejected symbols and invalid rows with reasons and raw payloads |
 | `authorization.py` | Single-use authorization marker | Generates and validates immutable markers outside Git; binds staging hash; enforces single-use; atomic consumption |
+| `client_protocol.py` | Client and factory runtime protocols | Defines `@runtime_checkable` `NSEClientProtocol` and `NSEClientFactoryProtocol` |
+| `client_factory.py` | Runtime client factory | Enforces canonical `create_real_nse_client(download_folder: Path, server: bool = True, timeout: int = 15)` contract; validates path outside Git; rejects legacy `data_dir` / `server_mode` |
 | `pilot_guard.py` | Pilot pre-flight boundaries | Validates approved 5 symbols (`RELIANCE, TCS, HDFCBANK, INFY, ICICIBANK`), date window (`2024-01-01`..`2024-01-31`), external staging |
-| `pilot.py` | Dedicated CLI entry point | Requires `--execute-live` and valid single-use authorization marker; atomic consumption before client creation |
+| `pilot.py` | Dedicated CLI entry point | Requires `--execute-live` and valid single-use authorization marker; atomic consumption before client creation; invokes canonical factory |
 | `audit.py` | Structural quality audit | Audits coverage, nullity, duplicates, and natural key uniqueness |
 
 ---
 
 ## 3. Protocol & Capability Discovery
 
-The adapter defines `NSEDataFetcherProtocol` to allow complete dependency injection:
+The adapter defines `NSEDataFetcherProtocol`, `NSEClientProtocol`, and `NSEClientFactoryProtocol` to allow complete dependency injection and interface validation:
 
 ```python
 @runtime_checkable
@@ -49,6 +51,19 @@ class NSEDataFetcherProtocol(Protocol):
     def get_live_quote(self, symbol: str) -> Dict[str, Any]: ...
     def get_market_status(self) -> Dict[str, Any]: ...
     def get_historical_data(self, symbol: str, start: str, end: str) -> List[Dict[str, Any]]: ...
+
+@runtime_checkable
+class NSEClientProtocol(Protocol):
+    def historical(self, symbol: str, start: str, end: str) -> Dict[str, Any]: ...
+
+@runtime_checkable
+class NSEClientFactoryProtocol(Protocol):
+    def __call__(
+        self,
+        download_folder: Path,
+        server: bool = True,
+        timeout: int = 15,
+    ) -> NSEClientProtocol: ...
 ```
 
 The adapter dynamically inspects the underlying client and exposes capability statuses:

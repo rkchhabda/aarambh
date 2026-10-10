@@ -507,9 +507,32 @@ Milestone 3 delivered the comprehensive Target Engine (`phase7/targets/`), cover
 
 ### 13.2 Milestone 4.7 Verification Summary
 - Prior test suite passing (Milestones 1-4.5 + Safeguards): **184 passing**.
-- New Milestone 4.7 structural audit tests: **5 passing** in 	ests/phase7/test_nse500_structural_audit.py.
-- Complete pytest suite: **189 of 189 passing** (pytest tests/phase7/ test_phase6_safeguards.py -v).
+- New Milestone 4.7 structural audit tests: **5 passing** in `tests/phase7/test_nse500_structural_audit.py`.
+- Complete pytest suite: **189 of 189 passing** (`pytest tests/phase7/ test_phase6_safeguards.py -v`).
 - Pilot Outcome: **PILOT_FAILED**.
 - Research Status: **NSE_CONNECTOR_PILOT_FAILED**.
+- Blocker Status: BLK-01, BLK-02, and BLK-04 remain strictly **OPEN** (STILL_BLOCKED).
+- Milestone 5 Status: Strictly **BLOCKED**.
+
+---
+
+## 14. Milestone 4.9B NSE Pilot Client Factory Interface Alignment Deliverables
+
+### 14.1 Delivered Code and Test Artifacts
+
+| Capability / Requirement | Technical Description | Source Module | Test Module | Status |
+|---|---|---|---|---|
+| **Canonical Factory Interface** | Enforces `create_real_nse_client(download_folder: Path, server: bool = True, timeout: int = 15)`; validates path outside repo; rejects legacy `data_dir` and `server_mode` | `phase7/sources/client_factory.py` | `tests/phase7/test_source_client_factory_contract.py` | **VERIFIED** |
+| **Factory Protocol Definition** | `@runtime_checkable class NSEClientFactoryProtocol(Protocol)` defining canonical client factory interface | `phase7/sources/client_protocol.py`<br/>`phase7/sources/__init__.py` | `tests/phase7/test_source_client_factory_contract.py` | **VERIFIED** |
+| **Pilot Invocation Alignment** | Calls `client_factory(download_folder=staging/"raw", server=True, timeout=15)` without obsolete args | `phase7/sources/pilot.py` | `tests/phase7/test_source_client_factory_contract.py`<br/>`tests/phase7/test_source_authorization.py` | **VERIFIED** |
+| **Sanitized Error Handling** | Converts client-construction `TypeError` into `CLIENT_FACTORY_PARAMETER_MISMATCH_HALT` | `phase7/sources/pilot.py` | `tests/phase7/test_source_client_factory_contract.py` | **VERIFIED** |
+| **Regression Verification** | Reproduces legacy parameter mismatch error and proves canonical alignment resolution | `phase7/sources/client_factory.py` | `tests/phase7/test_source_client_factory_contract.py` | **VERIFIED** |
+
+### 14.2 Milestone 4.9B Verification Summary
+- Prior approved test baseline: **263 passing**.
+- New client factory contract & regression tests: **13 passing** in `tests/phase7/test_source_client_factory_contract.py`.
+- Complete pytest suite: **276 of 276 passing** (`pytest tests/phase7/ test_phase6_safeguards.py -q`).
+- Factory Interface Status: **ALIGNED**.
+- Research Status: **`NSE_PILOT_CLIENT_FACTORY_ALIGNED_LIVE_EXECUTION_NOT_AUTHORIZED`**.
 - Blocker Status: BLK-01, BLK-02, and BLK-04 remain strictly **OPEN** (STILL_BLOCKED).
 - Milestone 5 Status: Strictly **BLOCKED**.
