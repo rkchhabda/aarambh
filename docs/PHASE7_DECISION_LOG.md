@@ -595,6 +595,30 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261010-25: Re-Authorized Milestone 4.9 Five-Stock Pilot Failed on Incomplete Retrieval Loop in Pilot CLI
+- **Date:** 2026-10-10
+- **Decision Authority:** Project Owner & Lead Quantitative Research Engineer
+- **Context & Motivation:** Following HTTP/2 runtime dependency resolution in `3f49367`, a third single execution of the five-stock live pilot was re-authorized. A fresh single-use marker (`b6f65c768dc00545bc7322b5560cbd3d95d62f8dd5a79bd815e266e2b938ef7c`) was created outside Git and consumed atomically (`pilot_authorization.consumed.20261010T072920Z.json`). Client initialized cleanly over HTTP/2, saving initial session cookies in staging (`raw/nse_cookies_httpx.json`). However, `phase7.sources.pilot` exited at Step 14 without invoking the per-symbol historical retrieval pipeline.
+- **Exact Decision:**
+  1. **Document Defect & Record Status:** Adhere strictly to governance directives ("Do not modify source code during this execution. If another defect is found: Document it. Do not repair it during this execution."). Record outcome as `NSE_FIVE_STOCK_PILOT_FAILED` based on 0/5 securities completed and 0.0% date coverage.
+  2. **Zero Code Modification in Checkpoint:** No source code was modified during pilot execution.
+  3. **Zero Market Data In Repository:** Zero market data was written to repository or staged.
+  4. **Marker Remains Consumed:** The marker remains consumed; zero marker reuse permitted.
+  5. **Wiring Patch Required:** Subsequent checkpoint must authorize wiring the sequential symbol retrieval loop into `phase7.sources.pilot` before pilot re-authorization.
+- **Impacted Modules:**
+  - `docs/PHASE7_NSE_FIVE_STOCK_PILOT_REPORT.md`
+  - `docs/PHASE7_NSE_FIVE_STOCK_STRUCTURAL_AUDIT.md`
+  - `docs/PHASE7_NSE_FIVE_STOCK_GAP_ANALYSIS.md`
+  - `docs/PHASE7_BLOCKERS.md`
+  - `docs/PHASE7_DECISION_LOG.md`
+  - `docs/PHASE7_IMPLEMENTATION_MAP.md`
+- **Verification Criteria:**
+  - Working tree remains clean after documentation commit.
+  - All 285 tests continue to pass in `.venv-phase7`.
+  - Zero market data files in repository.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:

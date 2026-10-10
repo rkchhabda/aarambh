@@ -536,3 +536,23 @@ Milestone 3 delivered the comprehensive Target Engine (`phase7/targets/`), cover
 - Research Status: **`NSE_FIVE_STOCK_PILOT_HALTED_ON_SAFETY_CONTROL`** (Attempt 2 halted on upstream `httpx[http2]` missing `h2` defect; factory interface verified aligned).
 - Blocker Status: BLK-01, BLK-02, and BLK-04 remain strictly **OPEN** (STILL_BLOCKED).
 - Milestone 5 Status: Strictly **BLOCKED**.
+
+---
+
+## 15. Milestone 4.9C HTTP/2 Runtime Dependencies Deliverables & Attempt 3 Outcome
+
+### 15.1 Delivered Code and Test Artifacts
+
+| Capability / Requirement | Technical Description | Source Module | Test Module | Status |
+|---|---|---|---|---|
+| **Governed Requirements Update** | `nse[server]==4.0.1` pin; resolves `h2==4.4.1`, `hpack==4.2.0`, `hyperframe==6.1.0` | `requirements-phase7.txt` | `tests/phase7/test_source_runtime_dependencies.py` | **VERIFIED** |
+| **HTTP/2 Transport Verification** | HTTPX client and NSE client construct over HTTP/2 without error under mocking | `phase7/sources/client_factory.py` | `tests/phase7/test_source_runtime_dependencies.py` | **VERIFIED** |
+| **Regression Verification** | Reproduces missing-`h2` error under simulation and confirms resolution | `phase7/sources/client_factory.py` | `tests/phase7/test_source_runtime_dependencies.py` | **VERIFIED** |
+
+### 15.2 Milestone 4.9 Attempt 3 Execution Summary
+- Prior approved test baseline: **276 passing**.
+- New runtime dependency tests: **9 passing** in `tests/phase7/test_source_runtime_dependencies.py`.
+- Complete pytest suite: **285 of 285 passing** (`pytest tests/phase7/ test_phase6_safeguards.py -q`).
+- Live Pilot Attempt 3 Outcome: **`NSE_FIVE_STOCK_PILOT_FAILED`** (Client initialized over HTTP/2; `pilot.py` exited at Step 14 without invoking symbol retrieval loop; 0/5 symbols completed).
+- Blocker Status: BLK-01, BLK-02, and BLK-04 remain strictly **OPEN** (STILL_BLOCKED).
+- Milestone 5 Status: Strictly **BLOCKED**.

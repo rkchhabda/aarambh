@@ -1,22 +1,25 @@
-# Phase 7 Report: Milestone 4.9 Five-Stock NSE Pilot Execution (Attempt 2 Post Factory Alignment)
+# Phase 7 Report: Milestone 4.9 Five-Stock NSE Pilot Execution (Attempt 3 Post HTTP/2 Dependency Resolution)
 
 ## 1. Executive Summary
 
-- **Milestone:** Milestone 4.9 (Re-Authorized Five-Stock NSE Live Pilot — Post Factory Fix)
+- **Milestone:** Milestone 4.9 (Re-Authorized Five-Stock NSE Live Pilot — Post HTTP/2 Dependency Resolution)
 - **Status Date:** 2026-10-10
-- **Final Milestone Status:** `NSE_FIVE_STOCK_PILOT_HALTED_ON_SAFETY_CONTROL`
-- **Starting Commit:** `30265b5ccf8391856a4c9ec5c7fb8f34f594403f`
-- **Live Requests Executed:** **0 (Zero)**
+- **Final Milestone Status:** `NSE_FIVE_STOCK_PILOT_FAILED`
+- **Starting Commit:** `3f4936709b8f5f2e8067c03d735ff7eb37683b94`
+- **Historical Data Requests Executed:** **0 (Zero)**
+- **Session Handshake Requests Executed:** 1 (HTTP/2 transport session setup during `create_real_nse_client`, fetching initial session cookies)
 - **Market Data Files Downloaded:** **0 (Zero)**
-- **Prior Consumed Marker:** `C:\Users\r_chh\gaurvideep_phase7_staging\nse500\pilot_4_9\authorization\pilot_authorization.consumed.20261010T063226Z.json` (remains safely consumed)
-- **New Authorization Marker Creation Timestamp:** `2026-10-10T06:57:16.463537+00:00`
-- **New Authorization Marker Consumption Timestamp:** `2026-10-10T06:57:59Z`
-- **New Consumed Marker Path:** `C:\Users\r_chh\gaurvideep_phase7_staging\nse500\pilot_4_9\authorization\pilot_authorization.consumed.20261010T065759Z.json`
-- **New Nonce:** `c10243be-616d-4616-adf0-f1185b74d9ca`
-- **New Authorization Hash:** `a24805c88651d347aaf643c79fa38aee11465845e9ecc19fb6cac1d3bf86ea84`
-- **Factory Invocation Verification:** `create_real_nse_client(download_folder=Path("C:\\Users\\r_chh\\gaurvideep_phase7_staging\\nse500\\pilot_4_9\\raw"), server=True, timeout=15)` was invoked with canonical keywords. Obsolete keywords (`data_dir`, `server_mode`) were strictly absent.
-- **Halting Trigger:** Upstream dependency runtime defect during client instantiation inside `nse==4.0.1`:
-  `PILOT VALIDATION ERROR: Using http2=True, but the 'h2' package is not installed. Make sure to install httpx using 'pip install httpx[http2]'.`
+- **Prior Consumed Markers:**
+  1. `C:\Users\r_chh\gaurvideep_phase7_staging\nse500\pilot_4_9\authorization\pilot_authorization.consumed.20261010T063226Z.json`
+  2. `C:\Users\r_chh\gaurvideep_phase7_staging\nse500\pilot_4_9\authorization\pilot_authorization.consumed.20261010T065759Z.json`
+- **New Authorization Marker Creation Timestamp:** `2026-10-10T07:28:55.336437+00:00`
+- **New Authorization Marker Consumption Timestamp:** `2026-10-10T07:29:20Z`
+- **New Consumed Marker Path:** `C:\Users\r_chh\gaurvideep_phase7_staging\nse500\pilot_4_9\authorization\pilot_authorization.consumed.20261010T072920Z.json`
+- **New Nonce:** `585d551f-2b82-4db0-81e5-b4091fbdccc3`
+- **New Authorization Hash:** `b6f65c768dc00545bc7322b5560cbd3d95d62f8dd5a79bd815e266e2b938ef7c`
+- **Factory Invocation Verification:** `create_real_nse_client(download_folder=Path("C:\\Users\\r_chh\\gaurvideep_phase7_staging\\nse500\\pilot_4_9\\raw"), server=True, timeout=15)` executed cleanly with canonical keywords. Client construction succeeded over HTTP/2 without error.
+- **Halting / Failure Condition:** `PILOT_SYMBOL_RETRIEVAL_PIPELINE_NOT_WIRED`. `phase7/sources/pilot.py` completed preflight, scope validation, atomic marker consumption, and client initialization (Step 14) and exited with code 0 without invoking the per-symbol historical retrieval, normalization, and manifest generation loop.
+- **Acceptance Outcome:** Failed Criteria 1 (0 of 5 securities returned records) and Criteria 2 (0.0% date coverage).
 
 ---
 
@@ -30,23 +33,26 @@ All mandatory pre-flight checks were executed and passed prior to marker creatio
 | 2 | Current Branch | `phase7-research` | `phase7-research` | **PASS** |
 | 3 | Working Tree Status | 100% clean | Clean (0 modified, 0 untracked) | **PASS** |
 | 4 | Staged Files | None | 0 staged files | **PASS** |
-| 5 | HEAD SHA | `30265b5` | `30265b5ccf8391856a4c9ec5c7fb8f34f594403f` | **PASS** |
+| 5 | HEAD SHA | `3f49367` | `3f4936709b8f5f2e8067c03d735ff7eb37683b94` | **PASS** |
 | 6 | Remote Tracking | Verified tracking | Tracking `origin/phase7-research` | **PASS** |
 | 7 | Python Executable | `.venv-phase7\Scripts\python.exe` | Verified | **PASS** |
 | 8 | Python Version | 3.12.10 | Python 3.12.10 | **PASS** |
 | 9 | Installed `nse` Version | 4.0.1 | 4.0.1 | **PASS** |
-| 10 | `pip check` Result | Clean | No broken requirements found | **PASS** |
-| 11 | Complete Test Baseline | 276 tests passing | 276 passed in 17.41s | **PASS** |
-| 12 | External Staging Root | Dedicated directory | `C:\Users\r_chh\gaurvideep_phase7_staging\nse500\pilot_4_9` | **PASS** |
-| 13 | Staging Location Check | Outside Git repository | Verified outside repository root | **PASS** |
-| 14 | Repository Data Isolation | Zero repository writes | Confirmed zero writes to repo `data/` | **PASS** |
-| 15 | Prior Active Marker | None existing | Verified 0 active markers prior to creation | **PASS** |
-| 16 | Prior Consumed Marker | Intact | `pilot_authorization.consumed.20261010T063226Z.json` exists | **PASS** |
-| 17 | Phase 6 Closure Tag | `phase6-closed-2026-10-04` | Intact | **PASS** |
-| 18 | BLK-01 Status | Open | `STILL_BLOCKED` (Constituent history absent) | **PASS** |
-| 19 | BLK-02 Status | Open | `STILL_BLOCKED` (Historical OHLCV unverified live)| **PASS** |
-| 20 | BLK-04 Status | Open | `STILL_BLOCKED` (Sector classification absent) | **PASS** |
-| 21 | Full NIFTY 500 Pull | Not authorized | Confirmed strictly unauthorized | **PASS** |
+| 10 | Installed `httpx` Version | 0.28.1 | 0.28.1 | **PASS** |
+| 11 | Installed `h2` Version | 4.4.1 | 4.4.1 | **PASS** |
+| 12 | Installed `hpack` Version | 4.2.0 | 4.2.0 | **PASS** |
+| 13 | Installed `hyperframe` Version | 6.1.0 | 6.1.0 | **PASS** |
+| 14 | `pip check` Result | Clean | No broken requirements found | **PASS** |
+| 15 | Complete Test Baseline | 285 tests passing | 285 passed in 11.76s | **PASS** |
+| 16 | External Staging Root | Dedicated directory | `C:\Users\r_chh\gaurvideep_phase7_staging\nse500\pilot_4_9` | **PASS** |
+| 17 | Staging Location Check | Outside Git repository | Verified outside repository root | **PASS** |
+| 18 | Repository Data Isolation | Zero repository writes | Confirmed zero writes to repo `data/` | **PASS** |
+| 19 | Prior Consumed Markers | 2 existing consumed | Verified 2 consumed markers intact | **PASS** |
+| 20 | Phase 6 Closure Tag | `phase6-closed-2026-10-04` | Intact | **PASS** |
+| 21 | BLK-01 Status | Open | `STILL_BLOCKED` (Constituent history absent) | **PASS** |
+| 22 | BLK-02 Status | Open | `STILL_BLOCKED` (Historical OHLCV unverified live)| **PASS** |
+| 23 | BLK-04 Status | Open | `STILL_BLOCKED` (Sector classification absent) | **PASS** |
+| 24 | Full NIFTY 500 Pull | Not authorized | Confirmed strictly unauthorized | **PASS** |
 
 ---
 
@@ -58,15 +64,15 @@ All mandatory pre-flight checks were executed and passed prior to marker creatio
        --staging-root "C:\Users\r_chh\gaurvideep_phase7_staging\nse500\pilot_4_9" `
        --expires-minutes 30
    ```
-   - **Issued Timestamp:** `2026-10-10T06:57:16.463537+00:00`
-   - **Nonce:** `c10243be-616d-4616-adf0-f1185b74d9ca`
+   - **Issued Timestamp:** `2026-10-10T07:28:55.336437+00:00`
+   - **Nonce:** `585d551f-2b82-4db0-81e5-b4091fbdccc3`
    - **Staging Root Hash:** `126f001a548b054bff73c218b02e781d42a0af7c647532b68718db8c73d61df3`
-   - **Authorization Hash:** `a24805c88651d347aaf643c79fa38aee11465845e9ecc19fb6cac1d3bf86ea84`
+   - **Authorization Hash:** `b6f65c768dc00545bc7322b5560cbd3d95d62f8dd5a79bd815e266e2b938ef7c`
    - **Active Path:** `C:\Users\r_chh\gaurvideep_phase7_staging\nse500\pilot_4_9\authorization\pilot_authorization.json`
 
 2. **Atomic Consumption:**
    During canonical invocation, `phase7.sources.pilot` validated the scope, dates, interval, staging root hash, and authorization hash. It then executed an atomic `os.replace` rename to:
-   `pilot_authorization.consumed.20261010T065759Z.json`
+   `pilot_authorization.consumed.20261010T072920Z.json`
    The active marker was verified removed before client creation.
 
 ---
@@ -85,23 +91,31 @@ In accordance with owner instructions:
     --execute-live
 ```
 
-### Execution Result & Halt Condition
+### Execution Output
 ```text
-PILOT VALIDATION ERROR: Using http2=True, but the 'h2' package is not installed. Make sure to install httpx using `pip install httpx[http2]`.
-Exit Code: 1
+Executing authorized live pilot with single-use authorization...
+Consumed Marker: C:\Users\r_chh\gaurvideep_phase7_staging\nse500\pilot_4_9\authorization\pilot_authorization.consumed.20261010T072920Z.json
+Client Initialized: NSE
+Exit Code: 0
 ```
 
 ---
 
-## 5. Defect Analysis: Upstream Dependency Defect (`httpx[http2]`)
+## 5. Defect Analysis: Missing Per-Symbol Historical Retrieval Loop in Pilot CLI
 
-1. **Defect Location:** Upstream library `nse==4.0.1` client initialization (`from nse import NSE`).
-2. **Mechanism:** The upstream `NSE` class constructor initializes an internal `httpx.Client(http2=True, ...)`. In `httpx`, setting `http2=True` requires the optional `h2` package (`httpx[http2]`). Because `h2` is not installed in `.venv-phase7`, `httpx` raises a runtime exception before any network connection or socket creation is attempted.
-3. **Safety Consequence:** Execution halted safely and fail-closed prior to issuing any network requests to NSE or any external server. Exactly zero HTTP requests were made.
+1. **Defect Location:** [`phase7/sources/pilot.py`](file:///C:/Users/r_chh/OneDrive%20-%20optgbrc/Apps/GaurviDEEP/phase7/sources/pilot.py) lines 223–227:
+   ```python
+   # Step 14: Only then permit network retrieval
+   print("Executing authorized live pilot with single-use authorization...")
+   print(f"Consumed Marker: {consumed_marker}")
+   print(f"Client Initialized: {type(client).__name__}")
+   return 0
+   ```
+2. **Mechanism:** In Milestones 4.9A and 4.9B, `phase7.sources.pilot` was hardened for authorization marker management, path boundary validation, and canonical client factory invocation. However, the downstream sequential symbol retrieval loop (invoking `NSEDataFetcherAdapter.get_historical_data` or `client.fetch_equity_historical_data`, validating rows, normalizing payloads, and building `RequestManifest` records for each symbol) was not wired into `run_pilot()`.
+3. **Outcome:** The pilot initialized the client and exited cleanly with code 0 without executing the historical data retrieval procedure.
 4. **Governing Rule Applied:**
-   > *"If a connector defect is discovered: Document it. Do not fix it. Stop if it affects safety or validity."*
-   > *"If the program crashes after consuming the marker: Do not restore the marker. Do not rerun. Document the failure. Stop."*
-5. **Action Taken:** Execution halted immediately. The marker remains safely consumed. Zero network requests occurred. Code modified: None.
+   > *"Do not modify source code during this execution. If another defect is found: Document it. Do not repair it during this execution. Stop when it affects safety or validity."*
+5. **Action Taken:** Execution finished; marker remains consumed; zero historical market data was downloaded; zero repository files were touched.
 
 ---
 
@@ -110,7 +124,7 @@ Exit Code: 1
 - **Requested Symbol Count:** 5 (`RELIANCE`, `TCS`, `HDFCBANK`, `INFY`, `ICICIBANK`)
 - **Completed Symbol Count:** 0
 - **Failed / Stopped Symbol:** Halted prior to symbol 1 (`RELIANCE`)
-- **First Stop Condition:** `UPSTREAM_DEPENDENCY_DEFECT_HALT` (`Using http2=True, but the 'h2' package is not installed`)
+- **First Stop Condition:** `PILOT_SYMBOL_RETRIEVAL_PIPELINE_NOT_WIRED` (CLI exited at Step 14 without invoking symbol retrieval loop)
 - **Factory Invocation Parameters:**
   - `download_folder`: `Path("C:\\Users\\r_chh\\gaurvideep_phase7_staging\\nse500\\pilot_4_9\\raw")`
   - `server`: `True`
@@ -129,12 +143,11 @@ Exit Code: 1
 - **ConnectionError Count:** 0
 - **TimeoutError Count:** 0
 - **Access Denied / CAPTCHA Count:** 0
-- **Safety Stop Count:** 1 (`UPSTREAM_DEPENDENCY_DEFECT_HALT`)
+- **Safety Stop Count:** 1 (`PILOT_SYMBOL_RETRIEVAL_PIPELINE_NOT_WIRED`)
 
 ---
 
 ## 7. Corrective Recommendation
 
-1. The factory interface mismatch between `pilot.py` and `client_factory.py` has been completely solved; canonical keywords were passed cleanly.
-2. The remaining blocker to live execution is that `nse==4.0.1` requires `httpx[http2]` (`h2`) at runtime.
-3. Owner authorization is required to install `h2` (or evaluate dependency resolution) in `.venv-phase7` before a subsequent re-authorized pilot attempt.
+1. Authorize a corrective patch to wire the sequential symbol retrieval loop (`phase7/sources/pilot.py`) to the adapter retrieval pipeline (`NSEDataFetcherAdapter` or `NSEClientProtocol`), including per-symbol rate limiting (2.0s delay), manifest writing, rejection logging, and data staging.
+2. Following the wiring patch and contract testing, request explicit owner re-authorization to generate a fresh single-use marker and execute the live pilot.
