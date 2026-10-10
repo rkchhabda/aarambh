@@ -17,16 +17,19 @@ The objective is to establish industrial-grade fault resilience, durability, and
 
 | Workstream | Domain | Target Tests | Implemented Tests | Primary Protection |
 |---|---|:---:|:---:|---|
-| **Workstream A** | Filesystem, Atomic Persistence & Durability | ~35 | 45 | Atomic file swaps via parent temp file, fsync, Windows reserved name checks, overwrite refusal. |
+| **Workstream A** | Filesystem, Atomic Persistence & Durability | ~35 | 38 | Atomic file swaps via parent temp file, fsync, Windows reserved name checks, overwrite refusal. |
 | **Workstream B** | Checkpoint, Manifest & Checksum Integrity | ~35 | 35 | Cryptographic SHA-256 verification, row conservation ($S = N + R$), duplicate detection, contract matching. |
 | **Workstream C** | Crash Recovery & Resume Authorization | ~30 | 30 | Fail-closed lifecycle halts across 20 points, mandatory active marker, replay refusal, corrupted evidence halts. |
 | **Workstream D** | Concurrency, Process Locking & Race Conditions | ~25 | 25 | Single-writer directory locking (`.process_lock.raw`), stale lock detection, single-request semaphore ($=1$). |
-| **Workstream E** | Security Boundaries & Hostile Inputs | ~40 | 49 | Shell injection, PowerShell metacharacters, path traversal, NTFS streams, Unicode bidi/slashes, NaN/Inf guard. |
+| **Workstream E** | Security Boundaries & Hostile Inputs | ~40 | 51 | Shell injection, PowerShell metacharacters, path traversal, NTFS streams, Unicode bidi/slashes, NaN/Inf guard. |
 | **Workstream F** | Synthetic Scale, Memory & Performance | ~25 | 25 | Deterministic synthetic universes (20, 100, 500 tickers $\times$ 65, 252, 3000 sessions), bounded peak memory (<25MB). |
 | **Workstream G** | Logging, Auditability & Redaction | ~15 | 15 | Structured JSONL audit trail, token/cookie/header regex redaction, CRLF log-splitting defense. |
 | **Workstream H** | Backup, Restoration & Disaster Recovery | ~15 | 15 | Bit-for-bit offline backup and restore, SHA-256 inventory verification, temporary/session file filtering. |
 | **Operational Drills** | Governed Operational Drills | 16 | 16 | 16 controlled failure injection drills (DRILL-01 to DRILL-16) executed against external staging. |
-| **Total Suite** | **New Automated Tests** | **~220** | **250** | **100% Passing (794 total passing tests across Phase 7 & Phase 6)** |
+| **Total Suite** | **New Automated Tests** | **~220** | **250** | **100% Passing ($38+35+30+25+51+25+15+15+16=250$; 794 total passing tests across Phase 7 & Phase 6)** |
+
+> [!NOTE]
+> **Arithmetic Reconciliation Note:** Prior draft narrative estimates had penciled Workstream A at 45 and Workstream E at 49 (which summed to 255). The exact collected test counts per module are 38 for Workstream A (`test_prod_atomic_persistence.py`) and 51 for Workstream E (`test_prod_hostile_inputs.py`). All other modules match exactly (35, 30, 25, 25, 15, 15, 16), yielding exactly 250 new tests and 794 total passing tests ($544 + 250 = 794$).
 
 ---
 

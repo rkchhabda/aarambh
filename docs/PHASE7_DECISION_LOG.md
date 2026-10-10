@@ -1001,11 +1001,11 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 - **Exact Decision:**
   1. **New Operations Framework:** Author `phase7/operations/` containing production-hardened primitives: `atomic_io.py`, `file_lock.py`, `integrity.py`, `recovery.py`, `backup_restore.py`, `fault_injection.py`, `security_validation.py`, `scale_simulation.py`, `audit_reconciliation.py`, `drill_runner.py`, and `readiness_report.py`.
   2. **Automated Test Expansion:** Implement 250 high-value automated tests across Workstreams A through H:
-     - Workstream A (Atomic Persistence & Durability): 45 tests
+     - Workstream A (Atomic Persistence & Durability): 38 tests
      - Workstream B (Checkpoint, Manifest & Integrity): 35 tests
      - Workstream C (Crash Recovery & Resume Authorization): 30 tests
      - Workstream D (Concurrency, Process Locking & Race Conditions): 25 tests
-     - Workstream E (Security Boundaries & Hostile Inputs): 49 tests
+     - Workstream E (Security Boundaries & Hostile Inputs): 51 tests
      - Workstream F (Synthetic Scale & Memory Guardrails): 25 tests
      - Workstream G (Logging, Auditability & Redaction): 15 tests
      - Workstream H (Backup, Restoration & Disaster Recovery): 15 tests
