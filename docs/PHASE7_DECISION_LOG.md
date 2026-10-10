@@ -657,6 +657,31 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261010-27: Milestone 4.9 Five-Stock NSE Live Pilot Attempt 4 Outcome & Normalization Schema Disparity
+- **Date:** 2026-10-10
+- **Decision Authority:** Project Owner & Lead Quantitative Research Engineer
+- **Context & Motivation:** Following pipeline wiring in `1dec29b`, a fourth single execution of the five-stock live pilot was authorized. A fresh single-use marker (`860461fd7227519c6e724dada2baf4122390d5477aa08bd6dc20faac41628e38`) was created outside Git and consumed atomically (`pilot_authorization.consumed.20261010T081013Z.json`). Governed client initialized over HTTP/2 and requested Symbol 1 (`RELIANCE`). Upstream NSE returned 22 daily trading records for Jan 2024. Raw JSON was persisted outside Git (`raw/historical/RELIANCE_...json`) with SHA-256 hash `59af0e392d7bb9073a49603115e11150a8adbab59e0619c6a0608d19ffcbef63`. However, normalization rejected all 22 rows due to field key casing (`mtimestamp` vs `mTIMESTAMP`), triggering safety halt on `PARTIAL` manifest, clean client disposal, and exit code 6.
+- **Exact Decision:**
+  1. **Document Defect & Record Status:** Adhere strictly to governance directives ("Do not modify source code during this execution. If another defect is found: Document it. Do not repair it during this execution."). Record outcome as `NSE_FIVE_STOCK_PILOT_HALTED_ON_SAFETY_CONTROL`.
+  2. **Raw Retrieval Milestone Achievement:** First successful end-to-end historical data retrieval from NSE in Phase 7. 22 real daily rows acquired, validated safe (no HTML/CAPTCHA), and persisted outside Git.
+  3. **Zero Code Modification in Checkpoint:** No source code was modified during pilot execution.
+  4. **Zero Market Data In Repository:** Zero market data was written to repository or staged in Git.
+  5. **Marker Remains Consumed:** The marker remains consumed; zero marker reuse permitted.
+  6. **Schema Normalization Patch Required:** Subsequent checkpoint (Milestone 4.9E) must authorize aligning `phase7/sources/normalization.py` field key extraction (`mtimestamp`, `chOpeningPrice`, etc.) before pilot re-authorization.
+- **Impacted Modules:**
+  - `docs/PHASE7_NSE_FIVE_STOCK_PILOT_REPORT.md`
+  - `docs/PHASE7_NSE_FIVE_STOCK_STRUCTURAL_AUDIT.md`
+  - `docs/PHASE7_NSE_FIVE_STOCK_GAP_ANALYSIS.md`
+  - `docs/PHASE7_BLOCKERS.md`
+  - `docs/PHASE7_DECISION_LOG.md`
+  - `docs/PHASE7_IMPLEMENTATION_MAP.md`
+- **Verification Criteria:**
+  - Working tree remains clean after documentation commit.
+  - All 318 tests continue to pass in `.venv-phase7`.
+  - Staging area contains 4 consumed markers and 1 raw historical payload outside Git.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:

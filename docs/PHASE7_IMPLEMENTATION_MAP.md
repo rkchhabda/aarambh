@@ -584,3 +584,26 @@ Milestone 3 delivered the comprehensive Target Engine (`phase7/targets/`), cover
 - Checkpoint Status: **`NSE_PILOT_RETRIEVAL_PIPELINE_WIRED_LIVE_EXECUTION_NOT_AUTHORIZED`**.
 - Blocker Status: BLK-01, BLK-02, and BLK-04 remain strictly **OPEN** (STILL_BLOCKED).
 - Milestone 5 Status: Strictly **BLOCKED**.
+
+---
+
+## 17. Milestone 4.9 Attempt 4 Five-Stock NSE Live Pilot Execution Deliverables & Outcome
+
+### 17.1 Runtime Execution Summary
+
+| Capability / Requirement | Technical Description | Source Module | Staging Artifact | Status |
+|---|---|---|---|---|
+| **Single-Use Authorization Lifecycle** | Marker `860461fd...` created outside Git; atomically renamed to consumed state | `phase7/sources/authorization.py` | `authorization/pilot_authorization.consumed.20261010T081013Z.json` | **VERIFIED** |
+| **HTTP/2 Client Bootstrap** | Governed factory instantiated `nse.NSE`; session cookies persisted externally | `phase7/sources/client_factory.py` | `raw/nse_cookies_httpx.json` | **VERIFIED** |
+| **Historical Upstream Retrieval** | `fetch_equity_historical_data` called for `RELIANCE` (2024-01-01 to 2024-01-31) | `phase7/sources/pilot.py` | External network call | **VERIFIED (22 ROWS)** |
+| **External Raw Persistence** | Raw payload serialized cleanly without credentials; SHA-256 computed | `phase7/sources/persistence.py` | `raw/historical/RELIANCE_2024-01-01_2024-01-31_1d_...json` | **VERIFIED** |
+| **Audit Conservation & Safety Halt** | Normalization schema mismatch on `mtimestamp` halted pilot on `PARTIAL` status; remaining symbols safely skipped | `phase7/sources/pilot.py`<br/>`phase7/sources/manifest.py` | `manifests/manifest_RELIANCE_...json` | **VERIFIED** |
+| **Deterministic Client Cleanup** | `client.exit()` executed cleanly in `finally` block | `phase7/sources/pilot.py` | Audit counter `client_close_count=1` | **VERIFIED** |
+
+### 17.2 Attempt 4 Verification Summary
+- Complete pytest suite: **318 of 318 passing** (`pytest tests/phase7/ test_phase6_safeguards.py -q`).
+- `pip check`: Clean (no broken requirements).
+- `git diff --check`: Clean (zero whitespace errors).
+- Live Pilot Attempt 4 Outcome: **`NSE_FIVE_STOCK_PILOT_HALTED_ON_SAFETY_CONTROL`** (Raw retrieval proven; halted on `mtimestamp` key casing in normalization; exit code 6).
+- Blocker Status: BLK-01, BLK-02, and BLK-04 remain strictly **OPEN** (STILL_BLOCKED).
+- Milestone 5 Status: Strictly **BLOCKED**.
