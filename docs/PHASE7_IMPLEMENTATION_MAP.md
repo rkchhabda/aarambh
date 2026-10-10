@@ -533,6 +533,6 @@ Milestone 3 delivered the comprehensive Target Engine (`phase7/targets/`), cover
 - New client factory contract & regression tests: **13 passing** in `tests/phase7/test_source_client_factory_contract.py`.
 - Complete pytest suite: **276 of 276 passing** (`pytest tests/phase7/ test_phase6_safeguards.py -q`).
 - Factory Interface Status: **ALIGNED**.
-- Research Status: **`NSE_PILOT_CLIENT_FACTORY_ALIGNED_LIVE_EXECUTION_NOT_AUTHORIZED`**.
+- Research Status: **`NSE_FIVE_STOCK_PILOT_HALTED_ON_SAFETY_CONTROL`** (Attempt 2 halted on upstream `httpx[http2]` missing `h2` defect; factory interface verified aligned).
 - Blocker Status: BLK-01, BLK-02, and BLK-04 remain strictly **OPEN** (STILL_BLOCKED).
 - Milestone 5 Status: Strictly **BLOCKED**.

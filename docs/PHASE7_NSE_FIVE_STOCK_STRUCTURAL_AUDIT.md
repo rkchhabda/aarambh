@@ -1,12 +1,12 @@
-# Phase 7 Structural Audit: Milestone 4.9 Five-Stock NSE Pilot
+# Phase 7 Structural Audit: Milestone 4.9 Five-Stock NSE Pilot (Attempt 2 Post Factory Alignment)
 
 ## 1. Executive Summary
 
-This structural audit evaluates the technical architecture and compliance of the Five-Stock NSE Live Pilot framework under Milestone 4.9. 
+This structural audit evaluates the technical architecture and compliance of the Five-Stock NSE Live Pilot framework under Milestone 4.9 following the factory interface alignment.
 
 - **Audited Target:** `phase7.sources.pilot`, `phase7.sources.authorization`, and `phase7.sources.client_factory`
-- **Execution Event:** Single-use marker created outside Git; pre-flight validation passed; active marker atomically renamed to consumed state; execution safely halted during client factory invocation on parameter keyword mismatch.
-- **Audit Outcome:** Structural safety controls and atomic consumption functioned deterministically. Zero unintended network requests, zero data contamination, zero repository writes, and zero marker reuse occurred.
+- **Execution Event:** Fresh single-use marker created outside Git (`a24805c88651d347aaf643c79fa38aee11465845e9ecc19fb6cac1d3bf86ea84`); pre-flight validation passed; active marker atomically renamed to consumed state (`pilot_authorization.consumed.20261010T065759Z.json`); factory invoked with canonical keyword arguments; execution safely halted during `nse.NSE` construction due to missing `h2` dependency required by `httpx[http2]`.
+- **Audit Outcome:** Structural safety controls, factory parameter validation, and atomic consumption functioned deterministically. Zero unintended network requests, zero data contamination, zero repository writes, and zero marker reuse occurred.
 
 ---
 
@@ -41,8 +41,8 @@ This structural audit evaluates the technical architecture and compliance of the
 ## 3. Structural Evaluation of Safety Invariants
 
 ### 3.1 Single-Use Authorization Marker Lifecycle
-- The authorization marker was successfully generated under `C:\Users\r_chh\gaurvideep_phase7_staging\nse500\pilot_4_9\authorization\pilot_authorization.json` via `phase7.sources.authorization`.
-- During live pilot invocation, the marker was verified against scope, dates, interval, staging root hash, and expiration, and was atomically renamed via `os.replace` to `pilot_authorization.consumed.20261010T063226Z.json`.
+- The fresh authorization marker was generated under `C:\Users\r_chh\gaurvideep_phase7_staging\nse500\pilot_4_9\authorization\pilot_authorization.json` via `phase7.sources.authorization`.
+- During live pilot invocation, the marker was verified against scope, dates, interval, staging root hash, and expiration, and was atomically renamed via `os.replace` to `pilot_authorization.consumed.20261010T065759Z.json`.
 - The active marker ceased to exist before client construction was attempted.
 - The consumed marker cannot be reused.
 
@@ -50,10 +50,13 @@ This structural audit evaluates the technical architecture and compliance of the
 - The configured staging root `C:\Users\r_chh\gaurvideep_phase7_staging\nse500\pilot_4_9` is located strictly outside the Git repository tree.
 - `validate_staging_root` and `validate_authorization_marker_path` strictly verified external paths; zero files were written to `C:\Users\r_chh\OneDrive - optgbrc\Apps\GaurviDEEP`.
 
-### 3.3 Fail-Closed Halt on Client Factory Signature Mismatch
-- `phase7/sources/pilot.py` invoked `client_factory(data_dir=str(valid_staging), server_mode=True)`.
-- `phase7/sources/client_factory.py` declares `create_real_nse_client(download_folder: Path, server: bool = True, timeout: int = 15)`.
-- The resulting `TypeError` halted execution prior to client creation or network connection.
+### 3.3 Factory Interface Compliance
+- `phase7/sources/pilot.py` invoked `client_factory(download_folder=download_folder, server=True, timeout=15)`.
+- No obsolete keywords (`data_dir`, `server_mode`) were passed.
+- Factory parameter validation passed without error.
+
+### 3.4 Upstream Runtime Dependency Defect
+- Client creation failed inside upstream library `nse==4.0.1` because `httpx` was called with `http2=True` without the required `h2` package installed.
 - In strict adherence to governance directives:
   - The failure was documented rather than hot-fixed.
   - The marker was not regenerated or restored.

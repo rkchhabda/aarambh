@@ -545,6 +545,30 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261010-23: Re-Authorized Milestone 4.9 Five-Stock Pilot Halted on Upstream Dependency Defect (`httpx[http2]`)
+- **Date:** 2026-10-10
+- **Decision Authority:** Project Owner & Lead Quantitative Research Engineer
+- **Context & Motivation:** Following the client factory interface alignment in `30265b5`, a single execution of the five-stock live pilot was re-authorized. A fresh single-use marker (`a24805c88651d347aaf643c79fa38aee11465845e9ecc19fb6cac1d3bf86ea84`) was created outside Git and atomically consumed. The pilot invoked `create_real_nse_client(download_folder=staging/"raw", server=True, timeout=15)` using canonical keywords. Client initialization safely halted inside `nse.NSE.__init__` due to missing `h2` dependency required by `httpx[http2]`.
+- **Exact Decision:**
+  1. **Fail-Closed Halt Prior to Socket Creation:** Adhere strictly to governance directives ("If a connector defect is discovered: Document it. Do not fix it. Stop if it affects safety or validity. If the program crashes after consuming the marker: Do not restore the marker. Do not rerun. Document the failure. Stop.").
+  2. **Zero Code Modification in Checkpoint:** No source code in `phase7/sources/` was modified during execution.
+  3. **Zero Network Requests:** Exactly 0 live network calls made to NSE.
+  4. **Document Defect & Status:** Record the defect in audit documentation and mark the milestone `NSE_FIVE_STOCK_PILOT_HALTED_ON_SAFETY_CONTROL`.
+  5. **Dependency Evaluation Required:** Subsequent milestone must request owner authorization to evaluate installing `h2` (or resolving `httpx[http2]`) in `.venv-phase7`.
+- **Impacted Modules:**
+  - `docs/PHASE7_NSE_FIVE_STOCK_PILOT_REPORT.md`
+  - `docs/PHASE7_NSE_FIVE_STOCK_STRUCTURAL_AUDIT.md`
+  - `docs/PHASE7_NSE_FIVE_STOCK_GAP_ANALYSIS.md`
+  - `docs/PHASE7_BLOCKERS.md`
+  - `docs/PHASE7_DECISION_LOG.md`
+  - `docs/PHASE7_IMPLEMENTATION_MAP.md`
+- **Verification Criteria:**
+  - Working tree remains clean after documentation commit.
+  - All 276 tests continue to pass in `.venv-phase7`.
+  - Zero market data files in repository.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:
