@@ -43,6 +43,24 @@ class BatchStatus(str, Enum):
     HALTED = "HALTED"
 
 
+class BatchOutcomeMode(str, Enum):
+    TWENTY_DATA_BEARING_SECURITIES = "TWENTY_DATA_BEARING_SECURITIES"
+    TWENTY_SELECTED_SECURITY_OUTCOMES = "TWENTY_SELECTED_SECURITY_OUTCOMES"
+
+
+class BatchSymbolOutcome(str, Enum):
+    DATA_AVAILABLE = "DATA_AVAILABLE"
+    NOT_LISTED_DURING_REQUESTED_PERIOD_VERIFIED = "NOT_LISTED_DURING_REQUESTED_PERIOD_VERIFIED"
+    EMPTY_RESPONSE_UNEXPLAINED = "EMPTY_RESPONSE_UNEXPLAINED"
+    SOURCE_DENIED = "SOURCE_DENIED"
+    SOURCE_TIMEOUT = "SOURCE_TIMEOUT"
+    SOURCE_ERROR = "SOURCE_ERROR"
+    SCHEMA_REJECTED = "SCHEMA_REJECTED"
+    PARTIAL_DATA = "PARTIAL_DATA"
+    INVALID_DATA = "INVALID_DATA"
+    NOT_ATTEMPTED = "NOT_ATTEMPTED"
+
+
 @dataclass(frozen=True)
 class BatchContract:
     batch_id: str
@@ -64,14 +82,18 @@ class BatchContract:
     classification: str
     batch_status: str
     created_timestamp: str
+    outcome_mode: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
-        return asdict(self)
+        d = asdict(self)
+        if self.outcome_mode is None:
+            d.pop("outcome_mode", None)
+        return d
 
     def compute_contract_hash(self) -> str:
         d = self.to_dict()
         # Exclude batch_status from immutable contract identity
-        identity_dict = {k: v for k, v in d.items() if k != "batch_status"}
+        identity_dict = {k: v for k, v in d.items() if k != "batch_status" and v is not None}
         serialized = json.dumps(identity_dict, sort_keys=True)
         return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
@@ -141,3 +163,9 @@ def validate_batch_contract(contract: BatchContract) -> None:
         raise ValueError(
             f"Invalid classification: {contract.classification} != {REQUIRED_CLASSIFICATION}"
         )
+    if contract.outcome_mode is not None:
+        valid_modes = [m.value for m in BatchOutcomeMode]
+        if contract.outcome_mode not in valid_modes:
+            raise ValueError(
+                f"Invalid outcome_mode: {contract.outcome_mode}. Expected one of {valid_modes}"
+            )

@@ -721,3 +721,31 @@ Milestone 3 delivered the comprehensive Target Engine (`phase7/targets/`), cover
   - `BLK-04` (Point-in-Time Sector Classification History): **`STILL_BLOCKED`**
 - **Next Authorized Milestone:** **`MILESTONE 4.10C: 20-STOCK THREE-MONTH LIVE BATCH PILOT`**.
 - **Milestone 5 Quarantine:** Strictly **BLOCKED**.
+
+---
+
+## 22. Milestone 4.10C & 4.10C-1 Pre-Listing Interval Classification Deliverables
+
+### 22.1 Delivered Code, Test, and Protocol Artifacts
+
+| Capability / Requirement | Technical Description | Source Module | Test Module / Artifact | Status |
+|---|---|---|---|---|
+| **Live Batch Execution & Fail-Closed Halt** | Single-use token consumed; live request for PREMIERENE yielded empty list; halted fail closed with Exit Code 5 | `phase7/sources/batch_pilot.py` | `batch_4_10c/runs/...`<br/>`batch_4_10c/authorization/...` | **VERIFIED** |
+| **Listing Evidence Contract & Verification** | Immutable `ListingEvidenceRecord` dataclass; Priority 1–3 source hierarchy; checksum and exact symbol validation | `phase7/sources/listing_evidence.py` | `tests/phase7/test_source_listing_evidence.py` | **VERIFIED** |
+| **Governed Pre-Listing Outcome Rules** | Empty response alone never proves listing date; verified $\text{listing\_date} > \text{end\_date}$ required for pre-listing | `phase7/sources/listing_evidence.py` | `tests/phase7/test_source_prelisting_classification.py` | **VERIFIED** |
+| **Batch Acceptance Modes (Mode 1 vs Mode 2)** | Mode 1 (`TWENTY_DATA_BEARING_SECURITIES`) vs Mode 2 (`TWENTY_SELECTED_SECURITY_OUTCOMES`); Mode 2 preferred | `phase7/sources/batch_contract.py`<br/>`phase7/sources/batch_checkpoint.py` | `tests/phase7/test_source_batch_outcome_modes.py` | **VERIFIED** |
+| **Halted Run Immutability Controls** | Strict verification that halted run, consumed token, and original contract remain 100% immutable | `phase7/sources/batch_checkpoint.py` | `tests/phase7/test_source_halted_run_immutability.py` | **VERIFIED** |
+| **Retrospective Classification Record** | Retrospective classification of PREMIERENE as `EMPTY_RESPONSE_UNEXPLAINED` stored externally | N/A (External Staging) | `batch_4_10c/retrospective_classification/` | **VERIFIED** |
+
+### 22.2 Verification Summary
+- **Complete Test Baseline:** **447 of 447 passing** (`pytest tests/phase7/ test_phase6_safeguards.py -q`).
+- **`pip check` Result:** Clean (no broken requirements).
+- **`git diff --check` Result:** Clean (zero whitespace errors).
+- **Milestone Outcome Status:** `NSE_PRELISTING_OUTCOME_POLICY_READY_EVIDENCE_ACQUISITION_NOT_AUTHORIZED`.
+- **Classification:** `DETERMINISTIC_CURRENT_PANEL_OPERATIONAL_SAMPLE`.
+- **Blocker Status Registry:**
+  - `BLK-01` (Point-in-Time NIFTY 500 Constituent Membership History): **`STILL_BLOCKED`**
+  - `BLK-02` (Historical OHLCV Prices and Daily Traded Value / Turnover): **`PILOT_CAPABILITY_CONFIRMED_GATE1_NOT_PASSED`**
+  - `BLK-04` (Point-in-Time Sector Classification History): **`STILL_BLOCKED`**
+- **Recommended Next Decision:** **`AUTHORIZE MILESTONE 4.10C-2: OFFICIAL LISTING-DATE EVIDENCE PILOT`**.
+- **Milestone 5 Quarantine:** Strictly **BLOCKED**.

@@ -98,3 +98,17 @@ Following the owner's authorization of Milestone 4.8, the authoritative `NSEData
    - **Gap 1 (Constituents):** `NSEDataFetcher` has no constituent method. `phase7.sources.nse_constituents` returns `SOURCE_UNAVAILABLE`. BLK-01 remains open.
    - **BLK-04 (Sector History):** Point-in-time sector reclassifications are not available.
    - **Live Pilot:** Prepared under `phase7.sources.pilot`, but blocked pending Milestone 4.9 authorization. Status: `NSE_DATA_FETCHER_ADAPTED_LIVE_PILOT_NOT_AUTHORIZED`.
+
+---
+
+## 5. Milestone 4.10C & 4.10C-1 Listing-Date Inception Gap Update
+
+During Milestone 4.10C, the 20-stock historical batch harness executed its first live request for `PREMIERENE` across Q1 2024 (`2024-01-01` to `2024-03-31`), receiving an empty data list (`[]`):
+
+1. **Gap 6 — Current Panel Inception Discrepancy:** Sampling from a current index snapshot (`CURRENT_NIFTY500_09Oct2026_8F4C439F`) inevitably selects companies listed subsequent to historical query windows. `PREMIERENE` listed on NSE in September 2024.
+2. **Governed Remediation (Milestone 4.10C-1):**
+   - Prohibited inferring listing date from empty responses or current panel membership.
+   - Built `ListingEvidenceRecord` and established Priority 1–3 source hierarchy.
+   - Defined 10-state symbol outcome model.
+   - Designed Mode 1 (`TWENTY_DATA_BEARING_SECURITIES`) vs Mode 2 (`TWENTY_SELECTED_SECURITY_OUTCOMES`). Mode 2 is preferred to maintain deterministic sampling and measure survivorship gap.
+   - Enforced strict immutability of the original halted run.

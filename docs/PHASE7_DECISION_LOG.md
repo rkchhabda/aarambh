@@ -841,6 +841,55 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261010-32: Milestone 4.10C 20-Stock Historical Live Pilot Execution & Fail-Closed Empty Response Halt
+- **Date:** 2026-10-10
+- **Decision Authority:** Project Owner (`AUTHORIZE MILESTONE 4.10C: 20-STOCK THREE-MONTH LIVE BATCH PILOT`)
+- **Context & Motivation:** Execute exactly one governed live historical acquisition run for 20 deterministically selected operational equities from the current NIFTY 500 panel over Q1 2024 (`2024-01-01` through `2024-03-31`) at `1d` interval.
+- **Exact Decision:**
+  1. **Single-Use Authorization Consumption:** Single-use marker created under `batch_4_10c/authorization/batch_authorization.json` binding contract `BATCH_4_10C_HISTORICAL_20STOCK_2024Q1`, selection checksum `60dd0358...`, ordered hash `26e4be7c...`, and staging root hash `b7442791...`. Consumed atomically to `batch_authorization.consumed.20261010T112814Z.json` before client initialization.
+  2. **Immutable Run Directory:** Allocated run `runs/BATCH_4_10C_HISTORICAL_20STOCK_2024Q1_20261010T112814Z` with raw, normalized, manifests, rejected, checkpoints, audit, and logs.
+  3. **Operational Result:** Upstream historical endpoint returned empty data array (`[]`) for first symbol `PREMIERENE`. Under fail-closed policy, harness rejected empty payload, executed zero retries, skipped zero symbols, closed client cleanly (`client_closed: true`), updated checkpoint to `HALTED`, and returned exit code 5 (`RETRIEVAL_ERROR`).
+  4. **Root Cause Analysis:** `PREMIERENE` (Premier Energies Limited) listed on NSE in September 2024. In Q1 2024, it had no trading history on NSE.
+  5. **Integrity & Blockers:** Original halted run preserved immutably. BLK-01 (`STILL_BLOCKED`), BLK-02 (`PILOT_CAPABILITY_CONFIRMED_GATE1_NOT_PASSED`), BLK-04 (`STILL_BLOCKED`). Milestone 5 remains unopened.
+
+---
+
+### DEC-20261010-33: Milestone 4.10C-1 Pre-Listing Interval Classification Governance & Listing Evidence Contract
+- **Date:** 2026-10-10
+- **Decision Authority:** Project Owner (`AUTHORIZE MILESTONE 4.10C-1: GOVERN PRE-LISTING INTERVAL CLASSIFICATION`)
+- **Context & Motivation:** Establish a governed, fail-closed policy distinguishing between unexplained empty source responses and independently verified pre-listing intervals without retrospective sample replacement.
+- **Exact Decision:**
+  1. **Empty Response Rule:** An empty historical response alone never establishes a listing date. Prohibit inference from current panel membership, company name, ticker pattern, search snippets, or missing price rows.
+  2. **Pre-Listing Proof Rule:** An empty response may be classified as `NOT_LISTED_DURING_REQUESTED_PERIOD_VERIFIED` only when independently sourced, verified listing evidence proves $\text{listing\_date} > \text{requested\_end\_date}$ with verification status `VERIFIED_SINGLE_SOURCE` or `VERIFIED_MULTI_SOURCE`. Without such proof, the outcome remains `EMPTY_RESPONSE_UNEXPLAINED` (fatal batch halt).
+  3. **Approved Source Hierarchy:** Priority 1 (Official NSE security master, official circular, exchange record); Priority 2 (SEBI-hosted prospectus or final offer document); Priority 3 (Official cross-exchange record with explicit NSE listing date). Disallow news, blogs, screeners, Wikipedia, brokerage summaries, search snippets, and AI-generated dates.
+  4. **No Retrospective Sample Tampering:** The frozen 20-symbol selection (`60dd0358...`) and ordered hash (`26e4be7c...`) remain strictly unaltered. PREMIERENE is NOT removed or replaced.
+  5. **Symbol Outcome Model:** Establish 10-state outcome model (`DATA_AVAILABLE`, `NOT_LISTED_DURING_REQUESTED_PERIOD_VERIFIED`, `EMPTY_RESPONSE_UNEXPLAINED`, `SOURCE_DENIED`, `SOURCE_TIMEOUT`, `SOURCE_ERROR`, `SCHEMA_REJECTED`, `PARTIAL_DATA`, `INVALID_DATA`, `NOT_ATTEMPTED`).
+  6. **Batch Acceptance Modes:** Formulate Mode 1 (`TWENTY_DATA_BEARING_SECURITIES`) and Mode 2 (`TWENTY_SELECTED_SECURITY_OUTCOMES`). Mode 2 is preferred for Phase 7 source qualification as it preserves the deterministic sample and measures current-panel survivorship bias.
+  7. **Halted Run Immutability:** Original halted run `BATCH_4_10C_HISTORICAL_20STOCK_2024Q1_20261010T112814Z` and its checkpoint remain immutable. Future execution requires a new contract, new authorization marker, and separate run directory.
+  8. **PREMIERENE Retrospective Outcome:** In the absence of local approved listing evidence, PREMIERENE is classified `LISTING_DATE_UNVERIFIED` and retains `EMPTY_RESPONSE_UNEXPLAINED`.
+- **Impacted Modules:**
+  - `phase7/sources/listing_evidence.py`
+  - `phase7/sources/batch_contract.py`
+  - `phase7/sources/batch_checkpoint.py`
+  - `phase7/sources/batch_audit.py`
+  - `phase7/sources/__init__.py`
+  - `tests/phase7/test_source_listing_evidence.py`
+  - `tests/phase7/test_source_batch_outcome_modes.py`
+  - `tests/phase7/test_source_prelisting_classification.py`
+  - `tests/phase7/test_source_halted_run_immutability.py`
+  - `docs/PHASE7_NSE500_LISTING_EVIDENCE_PROTOCOL.md`
+  - `docs/PHASE7_NSE500_PRELISTING_CLASSIFICATION_POLICY.md`
+  - `docs/PHASE7_NSE500_20_STOCK_BATCH_PILOT_REPORT.md`
+  - `docs/PHASE7_NSE500_20_STOCK_BATCH_STRUCTURAL_AUDIT.md`
+  - `docs/PHASE7_NSE500_20_STOCK_BATCH_LIMITATIONS.md`
+- **Verification Criteria:**
+  - 447 tests pass offline (26 new tests).
+  - Zero live network requests or authorization markers created.
+  - Zero repository data writes.
+  - Halted run and original contract remain 100% immutable.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:

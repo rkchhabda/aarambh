@@ -38,10 +38,13 @@ class SymbolCheckpoint:
     rejected_rows: int = 0
     error_message: Optional[str] = None
     last_updated: str = ""
+    outcome: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         d = asdict(self)
         d["status"] = self.status.value
+        if self.outcome is not None:
+            d["outcome"] = self.outcome
         return d
 
 
@@ -63,6 +66,10 @@ class BatchCheckpoint:
     last_checkpoint_timestamp: str
     stop_reason: Optional[str]
     final_status: BatchStatus
+    data_bearing_count: int = 0
+    verified_prelisting_count: int = 0
+    source_failure_count: int = 0
+    unresolved_count: int = 0
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -84,6 +91,10 @@ class BatchCheckpoint:
             "last_checkpoint_timestamp": self.last_checkpoint_timestamp,
             "stop_reason": self.stop_reason,
             "final_status": self.final_status.value,
+            "data_bearing_count": self.data_bearing_count,
+            "verified_prelisting_count": self.verified_prelisting_count,
+            "source_failure_count": self.source_failure_count,
+            "unresolved_count": self.unresolved_count,
         }
 
 
@@ -160,6 +171,7 @@ def load_checkpoint(checkpoint_file: Path) -> BatchCheckpoint:
             rejected_rows=s_data.get("rejected_rows", 0),
             error_message=s_data.get("error_message"),
             last_updated=s_data.get("last_updated", ""),
+            outcome=s_data.get("outcome"),
         )
 
     return BatchCheckpoint(
@@ -179,6 +191,10 @@ def load_checkpoint(checkpoint_file: Path) -> BatchCheckpoint:
         last_checkpoint_timestamp=data["last_checkpoint_timestamp"],
         stop_reason=data.get("stop_reason"),
         final_status=BatchStatus(data["final_status"]),
+        data_bearing_count=data.get("data_bearing_count", 0),
+        verified_prelisting_count=data.get("verified_prelisting_count", 0),
+        source_failure_count=data.get("source_failure_count", 0),
+        unresolved_count=data.get("unresolved_count", 0),
     )
 
 

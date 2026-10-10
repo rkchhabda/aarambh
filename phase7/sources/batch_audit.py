@@ -75,6 +75,11 @@ def generate_batch_audit_payload(
         "stop_reason": checkpoint.stop_reason,
         "duration_seconds": duration_seconds,
         "timestamp": now_ts,
+        "outcome_mode": contract.outcome_mode,
+        "data_bearing_count": checkpoint.data_bearing_count,
+        "verified_prelisting_count": checkpoint.verified_prelisting_count,
+        "source_failure_count": checkpoint.source_failure_count,
+        "unresolved_count": checkpoint.unresolved_count,
     }
 
 
