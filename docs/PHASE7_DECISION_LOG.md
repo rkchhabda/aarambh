@@ -1041,7 +1041,29 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
   - 794 total passing tests (544 existing + 250 new) with zero failures.
   - Exactly 16 operational drills passing with external JSON records.
   - `pip check` clean.
-  - Zero live network requests, zero active authorization markers, zero repo data writes.
+
+### DEC-20261010-38: Milestone 4.12 Internal Offline Application Integration
+- **Date:** 2026-10-10
+- **Decision Authority:** Project Owner / Research Governance Officer
+- **Context & Motivation:** Provide a unified, read-only offline operator console integrating the verified Phase 7 evidence-management and acquisition-control framework without adding external dependencies, without starting web servers, without exposing network interfaces, and without lifting any Milestone 5 or external acquisition quarantines.
+- **Exact Decision:**
+  1. **Application Boundaries:** Implement a local, offline, internal, non-distributed, single-instance operator application with runtime network quarantine.
+  2. **Mandatory Banners:** Prominently render the four required banners on all views: `INTERNAL NON-DISTRIBUTED USE ONLY`, `EXTERNAL ACQUISITION DEFERRED BY OWNER`, `GATE 1 NOT PASSED`, and `MILESTONE 5 BLOCKED`.
+  3. **Read-Only Invariants:** Strictly refuse file edits, unlinking, overwriting, automatic repairs, checkpoint modification, marker restoration/consumption, automatic resume, and fallback generation on preserved evidence.
+  4. **10 Governed Views:** Implement Readiness Dashboard, Evidence Inventory, Manifest Verifier, Batch-State Viewer, Operational-Drill Viewer, Backup & Restore Verifier, Governance & Blockers, Authorization Registry, Metadata Audit Export, and Synthetic Demonstration Mode.
+  5. **Dual Presentation:** Support standard-library offline CLI/TUI and Tkinter desktop GUI.
+  6. **Automated Verification:** Implement an automated test battery verifying all views and fail-closed invariants.
+- **Impacted Modules:**
+  - `phase7/operator/` (package created with `__init__.py`, `constants.py`, `network_quarantine.py`, `single_instance.py`, `read_only_guard.py`, `core.py`, `cli.py`, `gui.py`, `app.py`, `__main__.py`)
+  - `tests/phase7/test_operator_app.py` (created with 17 tests)
+  - `docs/PHASE7_OPERATOR_APPLICATION_SPECIFICATION.md` (created)
+  - `docs/PHASE7_DECISION_LOG.md`
+  - `docs/PHASE7_IMPLEMENTATION_MAP.md`
+- **Verification Criteria:**
+  - All 811 automated tests passing (544 baseline + 250 Milestone 4.11 + 17 Milestone 4.12).
+  - All 16 operational drills passing.
+  - Zero network calls made; runtime quarantine verified.
+  - Zero market data files or secrets written to repository or exported.
 
 ---
 

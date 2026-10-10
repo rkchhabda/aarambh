@@ -860,3 +860,36 @@ Milestone 3 delivered the comprehensive Target Engine (`phase7/targets/`), cover
 - Gating Scorecard Classification: **`INTERNAL_NON_DISTRIBUTED_PRODUCTION_LIKE_READINESS_CONFIRMED`** (all 15 domains PASS).
 - Blocker Status: `BLK-01`, `BLK-02`, and `BLK-04` remain **STILL_BLOCKED** / **OPEN**.
 - Milestone 5 Quarantine: Strictly **BLOCKED**.
+
+---
+
+## 27. Milestone 4.12 Internal Offline Application Integration Deliverables
+
+### 27.1 Unified Operator Console Architecture
+- Created `phase7/operator/` package providing a unified, local, offline, read-only operator console:
+  - `constants.py`: Mandatory governance banners and readiness classification constants.
+  - `network_quarantine.py`: Runtime network denial intercepting `socket.socket.connect`, `socket.create_connection`, `httpx.Client.send`, `urllib.request.urlopen`, and `requests.Session.send`; logs sanitized audit events and displays `NETWORK_OPERATION_BLOCKED_BY_INTERNAL_OFFLINE_POLICY`.
+  - `single_instance.py`: Single-instance exclusive filesystem lock (`.process_lock` / `.operator_app.lock`) preventing concurrent application instances.
+  - `read_only_guard.py`: Fail-closed immutability guard refusing file mutations, unlinks, overwrites, automatic repairs, and fallback generation on preserved evidence.
+  - `core.py`: Coordinating backend implementing all 10 required views and data aggregations.
+  - `cli.py`: Standard-library offline CLI/TUI interface supporting `--screen 1..10`, `--all`, `--demo`, `--export`, and interactive menus.
+  - `gui.py`: Tkinter desktop GUI featuring bold banner alerts, tabbed notebook navigation (`ttk.Notebook`), Treeview evidence grids, and simulated network quarantine verification.
+  - `app.py`: Unified application runner managing network quarantine and single-instance locks.
+  - `__main__.py`: Direct module execution entry point (`python -m phase7.operator`).
+
+### 27.2 Implemented Operator Views
+1. **Readiness Dashboard:** Classification `INTERNAL_NON_DISTRIBUTED_PRODUCTION_LIKE_READINESS_CONFIRMED`, 811 total passing tests, 16 drills, 15-domain scorecard.
+2. **Evidence Inventory:** Indexes 98 preserved evidence assets across staging with SHA-256 digests and immutability flags.
+3. **Manifest Verifier:** Cryptographic verification of manifests, checksum validation, and mathematical row conservation ($S = N + R$).
+4. **Batch-State Viewer:** Halted batch `batch_4_10c` inspection, checkpoint progress (0 completed, 1 failed, 19 pending), and non-resume enforcement.
+5. **Operational-Drill Viewer:** 16 drills loaded with exit-code disambiguation (runner exit 0, SUT exits 1, 28, 13, 9, 0).
+6. **Backup and Restore Verifier:** Bit-for-bit SHA-256 archive verification, zero data loss, and temporary file exclusion.
+7. **Governance and Blocker View:** Displays DEC-20261010-36, Gate 1 NOT PASSED, Milestone 5 BLOCKED, and blocker statuses.
+8. **Authorization Registry:** Verifies consumed markers, confirms 0 active markers, and prohibits marker generation.
+9. **Metadata-Only Audit Export:** Exports sanitized JSON bundle; verifies zero trade prices, raw market quotes, or credentials leaked.
+10. **Synthetic Demonstration Mode:** Isolated 5-symbol simulation verifying clean generation and fail-closed tamper detection.
+
+### 27.3 Automated Test Suite
+- New automated tests added: **17 passing** in `tests/phase7/test_operator_app.py`.
+- Total test suite: **811 of 811 passing** (`pytest tests/phase7/ test_phase6_safeguards.py -q`).
+- Network Quarantine: Verified 100% offline. Zero socket/HTTP calls made.
