@@ -53,6 +53,7 @@
 - **Resolution Test:** Automated check asserting `Open`, `High`, `Low`, `Close`, `Volume`, and `TradedValue` are non-null for all active universe securities on trading days.
 - **Current Status:** **CONTRACT_READY_REAL_DATA_BLOCKED.** Canonical contracts and streaming fail-closed loaders implemented. Real complete historical OHLCV and daily traded value remain unavailable.
 - **Milestone 4.7 Audit (2026-10-10):** Audited existing connectors for 10-year OHLCV and turnover. Result: **`STILL_BLOCKED`** / **`NSE_CONNECTOR_PILOT_FAILED`**. Existing connector caps at trailing 365 days, omits turnover in INR, and fails runtime import in `.venv-phase7`. Status remains strictly blocked.
+- **Milestone 4.9 Re-Authorized Pilot Execution (2026-10-10):** Re-authorized single execution of five-stock live pilot. Created single-use marker; consumed marker atomically. Execution halted prior to network retrieval on client factory parameter signature mismatch (create_real_nse_client() got an unexpected keyword argument 'data_dir'). Status: **STILL_BLOCKED** / **NSE_FIVE_STOCK_PILOT_HALTED_ON_SAFETY_CONTROL**. Zero network requests executed; real OHLCV data remains unprocured.
 
 ---
 

@@ -483,6 +483,29 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261010-21: Re-Authorized Milestone 4.9 Five-Stock Pilot Halted on Client Factory Signature Mismatch
+- **Date:** 2026-10-10
+- **Decision Authority:** Project Owner & Lead Quantitative Research Engineer
+- **Context & Motivation:** During re-authorized single execution of the five-stock live pilot in Milestone 4.9, the single-use marker was created outside Git and consumed atomically before client initialization. Execution safely halted on a client factory parameter mismatch (`create_real_nse_client() got an unexpected keyword argument 'data_dir'`).
+- **Exact Decision:**
+  1. **Fail-Closed Halt Prior to Client Creation:** Adhere strictly to governance directives ("If a connector defect is discovered: Document it. Do not fix it. Stop if it affects safety or validity. If the program crashes after consuming the marker: Do not restore the marker. Do not rerun. Document the failure. Stop.").
+  2. **Zero Code Modification in Checkpoint:** No source code in `phase7/sources/` was modified.
+  3. **Zero Network Requests:** Exactly 0 live network calls made to NSE.
+  4. **Document Defect & Status:** Record the defect in audit documentation and mark the milestone `NSE_FIVE_STOCK_PILOT_HALTED_ON_SAFETY_CONTROL`.
+  5. **Corrective Patch Required:** Subsequent milestone must authorize a corrective patch to align calling arguments between `phase7/sources/pilot.py` and `phase7/sources/client_factory.py`.
+- **Impacted Modules:**
+  - `docs/PHASE7_NSE_FIVE_STOCK_PILOT_REPORT.md`
+  - `docs/PHASE7_NSE_FIVE_STOCK_STRUCTURAL_AUDIT.md`
+  - `docs/PHASE7_NSE_FIVE_STOCK_GAP_ANALYSIS.md`
+  - `docs/PHASE7_BLOCKERS.md`
+  - `docs/PHASE7_DECISION_LOG.md`
+- **Verification Criteria:**
+  - Working tree remains clean after documentation commit.
+  - All 263 tests continue to pass in `.venv-phase7`.
+  - Zero market data files in repository.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:
