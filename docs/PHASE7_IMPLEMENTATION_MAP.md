@@ -489,3 +489,26 @@ Milestone 3 delivered the comprehensive Target Engine (`phase7/targets/`), cover
 2. **Blockers BLK-01, BLK-02, BLK-04:** Remain formally **OPEN** and fail-closed.
 3. **Zero Real Target / Fold Generation:** Real historical targets, folds, and feature matrices are prohibited until Gate 1 clearance is attained.
 4. **Environment & Safeguard Stability:** Verified runtime Python 3.12.10 (`.venv-phase7`); 184/184 automated tests passing; Phase 6 vaults remain 100% quarantined and untouched.
+---
+
+## 13. Milestone 4.7 Existing Connector Audit & Pilot Deliverables
+
+### 13.1 Milestone 4.7 Documentation & Verification Artifacts
+
+| Document / Artifact | Scope & Core Purpose | Target Blockers | Key Standards & Constraints | Status |
+|---|---|---|---|---|
+| [docs/PHASE7_NSE500_PULL_REPORT.md](file:///C:/Users/r_chh/OneDrive%20-%20optgbrc/Apps/GaurviDEEP/docs/PHASE7_NSE500_PULL_REPORT.md) | Milestone 4.7 execution report and pilot audit | BLK-01<br/>BLK-02<br/>BLK-04 | Pre-flight verification (16 items), Phase A discovery, Phase B safety audit (17 rules), 5-security pilot evaluation, halt of full acquisition. | **DELIVERED** |
+| [docs/PHASE7_NSE500_STRUCTURAL_AUDIT.md](file:///C:/Users/r_chh/OneDrive%20-%20optgbrc/Apps/GaurviDEEP/docs/PHASE7_NSE500_STRUCTURAL_AUDIT.md) | Technical structural audit of candidate connectors | Data Pipeline Safety | Field-by-field mapping against DailyPriceRecord, CorporateActionRecord, PITMembershipRecord; safety rule violations; runtime import failures in .venv-phase7. | **DELIVERED** |
+| [docs/PHASE7_NSE500_COVERAGE_REPORT.md](file:///C:/Users/r_chh/OneDrive%20-%20optgbrc/Apps/GaurviDEEP/docs/PHASE7_NSE500_COVERAGE_REPORT.md) | Universe and temporal coverage analysis | Survivorship Discipline | 138 surviving tickers vs 500 constituents; 365-day limit vs 10-year window; 0% pilot session coverage; classified as CURRENT_PANEL_HISTORICAL_PRICES_SURVIVORSHIP_BIASED. | **DELIVERED** |
+| [docs/PHASE7_NSE500_GAP_ANALYSIS.md](file:///C:/Users/r_chh/OneDrive%20-%20optgbrc/Apps/GaurviDEEP/docs/PHASE7_NSE500_GAP_ANALYSIS.md) | Gap breakdown and technical remediation plan | Governance & Planning | Analysis of 5 architectural gaps; evaluation of Path A (Commercial Vendor) vs Path B (Formal Ingestion Adapter Milestone). | **DELIVERED** |
+| [docs/PHASE7_NSE500_MANIFEST_REFERENCE.md](file:///C:/Users/r_chh/OneDrive%20-%20optgbrc/Apps/GaurviDEEP/docs/PHASE7_NSE500_MANIFEST_REFERENCE.md) | External staging directory reference and manifest schemas | Data Provenance | Structure of C:\Users\r_chh\gaurvideep_phase7_staging\nse500\; schemas for ingestion manifests, SHA-256 manifests, rejected record ledgers. | **DELIVERED** |
+| [	ests/phase7/test_nse500_structural_audit.py](file:///C:/Users/r_chh/OneDrive%20-%20optgbrc/Apps/GaurviDEEP/tests/phase7/test_nse500_structural_audit.py) | Automated safety and structural audit test suite | Safety Enforcement | 5 tests asserting static universe rejection, retry ceilings, throttling delay thresholds, traded value classification, and survivorship labeling. | **DELIVERED** |
+
+### 13.2 Milestone 4.7 Verification Summary
+- Prior test suite passing (Milestones 1-4.5 + Safeguards): **184 passing**.
+- New Milestone 4.7 structural audit tests: **5 passing** in 	ests/phase7/test_nse500_structural_audit.py.
+- Complete pytest suite: **189 of 189 passing** (pytest tests/phase7/ test_phase6_safeguards.py -v).
+- Pilot Outcome: **PILOT_FAILED**.
+- Research Status: **NSE_CONNECTOR_PILOT_FAILED**.
+- Blocker Status: BLK-01, BLK-02, and BLK-04 remain strictly **OPEN** (STILL_BLOCKED).
+- Milestone 5 Status: Strictly **BLOCKED**.

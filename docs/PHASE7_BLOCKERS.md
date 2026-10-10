@@ -34,6 +34,7 @@
 - **Safe Interim Work Possible:** Implement canonical schema (`PITMembershipRecord`), universe validator, exclusion reason codes (`NOT_IN_PIT_UNIVERSE`), fail-closed builder (`PointInTimeUniverseBuilder`), and unit-test fixtures. (Completed in Milestone 2).
 - **Resolution Test:** Verification script testing that the universe for date $t$ excludes securities added to Nifty 500 at $t+k$ and includes securities active at $t$ even if later delisted.
 - **Current Status:** **CONTRACT_READY_REAL_DATA_BLOCKED.** Canonical contract (`PITMembershipRecord`) and universe builder interface implemented. Real historical Nifty 500 constituent addition/deletion records are unavailable; Gate 1 real-data evaluation cannot proceed until genuine point-in-time data is ingested.
+- **Milestone 4.7 Audit (2026-10-10):** Audited existing connectors for NIFTY 500 retrieval capability. Result: **`STILL_BLOCKED`** / **`NSE_CONNECTOR_PILOT_FAILED`**. GaurviDEEP possesses zero internal application functions for NIFTY 500 constituent retrieval; pilot failed. Status remains strictly blocked.
 
 ---
 
@@ -51,6 +52,7 @@
 - **Safe Interim Work Possible:** Build `DailyPriceRecord` data contract, volume-weighted liquidity filter interface, fail-closed loaders (`CSVDataLoader`, `JSONLinesDataLoader`), and synthetic unit-test fixtures. (Completed in Milestone 2).
 - **Resolution Test:** Automated check asserting `Open`, `High`, `Low`, `Close`, `Volume`, and `TradedValue` are non-null for all active universe securities on trading days.
 - **Current Status:** **CONTRACT_READY_REAL_DATA_BLOCKED.** Canonical contracts and streaming fail-closed loaders implemented. Real complete historical OHLCV and daily traded value remain unavailable.
+- **Milestone 4.7 Audit (2026-10-10):** Audited existing connectors for 10-year OHLCV and turnover. Result: **`STILL_BLOCKED`** / **`NSE_CONNECTOR_PILOT_FAILED`**. Existing connector caps at trailing 365 days, omits turnover in INR, and fails runtime import in `.venv-phase7`. Status remains strictly blocked.
 
 ---
 
@@ -79,6 +81,7 @@
 - **Safe Interim Work Possible:** Implement `PITSectorClassificationRecord` contract supporting temporal validity ranges (`effective_from`, `effective_to`).
 - **Resolution Test:** Unit test asserting that sector assignments query against `effective_date`.
 - **Current Status:** **BLOCKED.** Static current sector mappings are prohibited as historical fallback. Historical sector-relative research remains blocked without valid point-in-time classification or an approved preregistration amendment.
+- **Milestone 4.7 Audit (2026-10-10):** Audited existing connectors for point-in-time sector classification history. Result: **`STILL_BLOCKED`** / **`NSE_CONNECTOR_PILOT_FAILED`**. Zero connectors exist in the codebase. Status remains strictly blocked.
 
 ---
 

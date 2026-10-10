@@ -347,6 +347,35 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261010-01: Milestone 4.7 Existing Connector NIFTY 500 Capability Audit & Pilot Failure
+- **Date:** 2026-10-10
+- **Decision Authority:** Project Owner & Lead Quantitative Research Engineer (AUTHORIZE MILESTONE 4.7: EXISTING CONNECTOR NIFTY 500 DATA ACQUISITION)
+- **Context & Motivation:** Prior to pursuing external commercial vendor procurement, conduct an empirical capability audit and tightly controlled 5-security pilot of GaurviDEEP's existing data connectors (`features/data_provider.py`, `scripts/phase6/harvest_corporate_actions.py`, etc.) to determine whether they can safely retrieve the NIFTY 500 dataset from NSE-compatible sources in compliance with Phase 7 Gate 1 standards.
+- **Exact Decision:**
+  1. **Audit Phase A (Connector Discovery):** Confirmed that GaurviDEEP possesses **zero** internal application functions or classes for retrieving NIFTY 500 constituents. The application contains only a static 138-stock list (`features/universe.py`), which is strictly forbidden from being substituted for historical or current NIFTY 500 membership.
+  2. **Audit Phase B (Connector Safety Review):** Existing connectors violate multiple mandatory safety rules: excessive retries (3 vs max 2), insufficient delay (1.0s vs min 2.0s), zero exponential backoff, silent failover to unadjusted third-party sources on errors instead of failing closed on HTTP 401/403/429/CAPTCHA, zero SHA-256 checksum generation, and lack of schema validation.
+  3. **Runtime Incompatibility:** Existing connectors require `requests` and `nse`, which are not installed in `.venv-phase7` (Python 3.12.10). Attempted imports raise `ModuleNotFoundError`. Modifying `requirements-phase7.txt` or installing packages is strictly prohibited.
+  4. **Phase D Pilot Evaluation Outcome:** Five-security pilot (RELIANCE, TCS, HDFCBANK, INFY, ICICIBANK) for 2024-01-01 to 2024-01-31 failed all preconditions and safety gates. Existing connectors hardcode trailing-only dates (days=365) and omit turnover in INR and VWAP.
+  5. **Halt of Full Acquisition:** In strict accordance with the pilot acceptance protocol, Phase E full-dataset acquisition was **halted**. Zero raw market data was downloaded into the repository.
+  6. **Blocker & Milestone Status:** BLK-01, BLK-02, and BLK-04 remain OPEN (STILL_BLOCKED). Milestone 5 remains strictly BLOCKED. Research status set to `NSE_CONNECTOR_PILOT_FAILED`.
+- **Impacted Modules:**
+  - `docs/PHASE7_NSE500_PULL_REPORT.md`
+  - `docs/PHASE7_NSE500_STRUCTURAL_AUDIT.md`
+  - `docs/PHASE7_NSE500_COVERAGE_REPORT.md`
+  - `docs/PHASE7_NSE500_GAP_ANALYSIS.md`
+  - `docs/PHASE7_NSE500_MANIFEST_REFERENCE.md`
+  - `tests/phase7/test_nse500_structural_audit.py`
+  - `docs/PHASE7_BLOCKERS.md`
+  - `docs/PHASE7_DECISION_LOG.md`
+  - `docs/PHASE7_EXECUTION_PLAN.md`
+  - `docs/PHASE7_IMPLEMENTATION_MAP.md`
+- **Verification Criteria:**
+  - 189/189 automated tests passing in `.venv-phase7` (185 Phase 7 tests, 4 Phase 6 safeguards).
+  - External staging path created and preserved outside repository.
+  - Zero Phase 6 file changes; zero production code changes; zero market data committed.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:

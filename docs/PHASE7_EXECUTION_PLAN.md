@@ -65,6 +65,12 @@ flowchart TD
 - **Strict Boundary:** No data downloaded or scraped; no vendors contacted; no model training; Milestone 5 remains strictly BLOCKED until real data passes Gate 1 acceptance.
 - **Required Authorization Phrase:** `AUTHORIZE MILESTONE 4.5: GATE 1 DATA READINESS SPECIFICATION` (Received).
 
+### Milestone 4.7: Existing Connector NIFTY 500 Capability Audit & Pilot (COMPLETED - NSE_CONNECTOR_PILOT_FAILED)
+- **Objective:** Discover existing application connectors for NIFTY 500 constituent and historical data retrieval, conduct a 17-point safety review, and execute a tightly controlled 5-security pilot for 2024-01-01 to 2024-01-31.
+- **Pilot Outcome:** Pilot failed preconditions and safety gates. The application contains zero NIFTY 500 constituent retrieval code, hardcodes trailing 365-day dates, omits traded value turnover in INR, and fails runtime import in .venv-phase7.
+- **Safety Halt:** Full acquisition halted per pilot acceptance protocol. Zero raw market data committed. BLK-01, BLK-02, and BLK-04 remain strictly blocked. Research status set to NSE_CONNECTOR_PILOT_FAILED.
+- **Required Authorization Phrase:** AUTHORIZE MILESTONE 4.7: EXISTING CONNECTOR NIFTY 500 DATA ACQUISITION (Received).
+
 ### Milestone 5: Non-ML Baselines (BLOCKED PENDING GATE 1 REAL DATA)
 - **Objective:** Evaluate Equal-Weight universe, Sector-Neutral Equal-Weight, 12-1 Momentum, and simple SUE composite across walk-forward folds.
 - **Leaderboard:** Record frozen baseline metrics (Rank IC, Sharpe, Drawdown, Monotonicity) at 25, 50, and 75 bps costs.
