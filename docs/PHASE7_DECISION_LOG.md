@@ -890,6 +890,44 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261010-34: Milestone 4.10C-2 Controlled Official Listing-Date Evidence Pilot & Safety Control Halt
+- **Date:** 2026-10-10
+- **Decision Authority:** Project Owner (`AUTHORIZE MILESTONE 4.10C-2: OFFICIAL LISTING-DATE EVIDENCE PILOT`)
+- **Context & Motivation:** Authorize one controlled official listing-date evidence acquisition pilot specifically for `PREMIERENE` (Premier Energies Limited) on the NSE to verify whether its listing date occurred after the requested historical period end (`2024-03-31`).
+- **Exact Decision:**
+  1. **Governed Evidence Engine Architecture:** Implemented `phase7.sources.listing_evidence_authorization`, `phase7.sources.listing_evidence_persistence`, and `phase7.sources.listing_evidence_acquisition`. Enforced date-semantic classification distinguishing expected (`EXPECTED_TRADING_COMMENCEMENT_DATE`) from confirmed actual trading dates (`CONFIRMED_TRADING_COMMENCEMENT_DATE`).
+  2. **Single-Use Marker Lifecycle:** Created single-use marker `listing_evidence_authorization.json` in external staging bound to symbol `PREMIERENE`, exchange `NSE`, requested end `2024-03-31`, approved domains `['bseindia.com', 'nsearchives.nseindia.com', 'nseindia.com', 'sebi.gov.in']`, and max 5 requests. Atomically consumed prior to network dispatch (`listing_evidence_authorization.consumed.20261010T120840Z.json`).
+  3. **Pre-Request Safety Control Halt:** Pre-request URL validation checked candidate URL `https://www.sebi.gov.in/...` against the bound exact domain whitelist. Detected that subdomain `www.sebi.gov.in` differed from `sebi.gov.in`. In accordance with fail-closed governance, execution halted immediately with exit code 5 (`RETRIEVAL_ERROR`).
+  4. **Zero Network Transmission:** Exactly zero HTTP requests were dispatched. Zero unapproved hostnames reached. Zero market prices requested.
+  5. **Marker Consumption Invariant:** Per single-use policy, the consumed marker cannot be recreated or reused.
+  6. **Retrospective Status Retained:** In the absence of completed documentary evidence, `PREMIERENE` listing date remains `LISTING_DATE_UNVERIFIED` and retrospective outcome remains `EMPTY_RESPONSE_UNEXPLAINED`.
+  7. **Halted Run & Sample Integrity:** Original halted run `BATCH_4_10C_HISTORICAL_20STOCK_2024Q1_20261010T112814Z`, selection checksum `60dd0358...`, and ordered-symbol hash `26e4be7c...` remain 100% immutable. Milestone 5 remains unopened.
+  8. **Final Milestone Status:** `PREMIERENE_LISTING_EVIDENCE_PILOT_HALTED_ON_SAFETY_CONTROL`.
+- **Impacted Modules:**
+  - `phase7/sources/listing_evidence.py`
+  - `phase7/sources/listing_evidence_authorization.py`
+  - `phase7/sources/listing_evidence_persistence.py`
+  - `phase7/sources/listing_evidence_acquisition.py`
+  - `phase7/sources/__init__.py`
+  - `tests/phase7/test_source_listing_evidence_authorization.py`
+  - `tests/phase7/test_source_listing_evidence_acquisition.py`
+  - `tests/phase7/test_source_listing_evidence_persistence.py`
+  - `tests/phase7/test_source_listing_evidence_semantics.py`
+  - `tests/phase7/test_source_listing_evidence_identity.py`
+  - `docs/PHASE7_NSE500_LISTING_EVIDENCE_PROTOCOL.md`
+  - `docs/PHASE7_PREMIERENE_LISTING_EVIDENCE_PILOT_REPORT.md`
+  - `docs/PHASE7_PREMIERENE_LISTING_EVIDENCE_MANIFEST_REFERENCE.md`
+  - `docs/PHASE7_PREMIERENE_PRELISTING_CLASSIFICATION.md`
+  - `docs/PHASE7_NSE500_20_STOCK_BATCH_LIMITATIONS.md`
+  - `docs/PHASE7_BLOCKERS.md`
+- **Verification Criteria:**
+  - 496 passing tests in `.venv-phase7` (49 new tests).
+  - Single-use marker consumed atomically before network activity.
+  - Zero repository data or market data files added.
+  - Fail-closed exit code 5 recorded.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:

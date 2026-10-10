@@ -719,7 +719,35 @@ Milestone 3 delivered the comprehensive Target Engine (`phase7/targets/`), cover
   - `BLK-01` (Point-in-Time NIFTY 500 Constituent Membership History): **`STILL_BLOCKED`**
   - `BLK-02` (Historical OHLCV Prices and Daily Traded Value / Turnover): **`PILOT_CAPABILITY_CONFIRMED_GATE1_NOT_PASSED`**
   - `BLK-04` (Point-in-Time Sector Classification History): **`STILL_BLOCKED`**
-- **Next Authorized Milestone:** **`MILESTONE 4.10C: 20-STOCK THREE-MONTH LIVE BATCH PILOT`**.
+- **Next Authorized Milestone:** **`MILESTONE 4.10C-2: OFFICIAL LISTING-DATE EVIDENCE PILOT`**.
+- **Milestone 5 Quarantine:** Strictly **BLOCKED**.
+
+---
+
+## 23. Milestone 4.10C-2 Official Listing-Date Evidence Pilot Deliverables & Outcome
+
+### 23.1 Delivered Code, Test, and Protocol Artifacts
+
+| Capability / Requirement | Technical Description | Source Module | Test Module / Artifact | Status |
+|---|---|---|---|---|
+| **Single-Use Evidence Authorization** | Scoped single-use marker (`OFFICIAL_LISTING_DATE_EVIDENCE_PILOT`) bound to PREMIERENE, NSE, Q1 2024 end, approved domains, max 5 requests | `phase7/sources/listing_evidence_authorization.py` | `tests/phase7/test_source_listing_evidence_authorization.py` | **VERIFIED** |
+| **Atomic Evidence Persistence** | Storage layout outside Git (`authorization`, `raw`, `extracted`, `manifests`, `audit`, `logs`); immutable writes; no Git storage | `phase7/sources/listing_evidence_persistence.py` | `tests/phase7/test_source_listing_evidence_persistence.py` | **VERIFIED** |
+| **Date-Semantic Classification Engine** | Distinguishes expected vs confirmed actual dates; ancillary prospectus and offer dates; zero date conflation | `phase7/sources/listing_evidence.py` | `tests/phase7/test_source_listing_evidence_semantics.py` | **VERIFIED** |
+| **Issuer Identity Matching** | Exact symbol, security name, exchange matching; source-reported ISIN/CIN only; conflict detection | `phase7/sources/listing_evidence_acquisition.py` | `tests/phase7/test_source_listing_evidence_identity.py` | **VERIFIED** |
+| **Governed Acquisition Runner & Safety Halt** | Atomic token consumption before request; fail-closed domain check halts on unapproved exact hostnames; zero network leakage | `phase7/sources/listing_evidence_acquisition.py` | `tests/phase7/test_source_listing_evidence_acquisition.py` | **VERIFIED** |
+
+### 23.2 Runtime Execution & Verification Summary
+- **Complete Test Baseline:** **496 of 496 passing** (`pytest tests/phase7/ test_phase6_safeguards.py -q`).
+- **`pip check` Result:** Clean (no broken requirements).
+- **`git diff --check` Result:** Clean (zero whitespace errors).
+- **Execution Outcome:** Halted on fail-closed pre-request domain safety check (`www.sebi.gov.in` vs `sebi.gov.in`). Zero network requests dispatched. Exit code: 5.
+- **Marker Status:** Single-use marker consumed atomically (`listing_evidence_authorization.consumed.20261010T120840Z.json`). Cannot be recreated or reused.
+- **Retrospective Status:** PREMIERENE listing date remains `LISTING_DATE_UNVERIFIED`; retrospective outcome remains `EMPTY_RESPONSE_UNEXPLAINED`.
+- **Milestone Outcome Status:** `PREMIERENE_LISTING_EVIDENCE_PILOT_HALTED_ON_SAFETY_CONTROL`.
+- **Blocker Status Registry:**
+  - `BLK-01` (Point-in-Time NIFTY 500 Constituent Membership History): **`STILL_BLOCKED`**
+  - `BLK-02` (Historical OHLCV Prices and Daily Traded Value / Turnover): **`PILOT_CAPABILITY_CONFIRMED_GATE1_NOT_PASSED`**
+  - `BLK-04` (Point-in-Time Sector Classification History): **`STILL_BLOCKED`**
 - **Milestone 5 Quarantine:** Strictly **BLOCKED**.
 
 ---

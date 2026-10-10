@@ -2,7 +2,7 @@
 
 ## 1. Scope of Limitations
 
-This document formally records the methodological limitations and structural constraints identified during the 20-stock historical batch pilot under Milestones 4.10B, 4.10C, and 4.10C-1.
+This document formally records the methodological limitations and structural constraints identified during the 20-stock historical batch pilot under Milestones 4.10B, 4.10C, 4.10C-1, and 4.10C-2.
 
 ---
 
@@ -25,6 +25,11 @@ This document formally records the methodological limitations and structural con
 ### 2.4 Mode 1 vs Mode 2 Trade-Off
 - **Mode 1 (`TWENTY_DATA_BEARING_SECURITIES`):** Forces pre-selection eligibility filtering, which excludes newly listed securities and risks introducing survivorship bias into the selection process.
 - **Mode 2 (`TWENTY_SELECTED_SECURITY_OUTCOMES`):** Preserves the raw deterministic sample from the current panel and explicitly reports pre-listing intervals as `NOT_LISTED_DURING_REQUESTED_PERIOD_VERIFIED`. This mode accurately measures the data coverage of the current panel.
+
+### 2.5 Official Listing-Date Evidence Acquisition Boundaries
+- **Finding:** In Milestone 4.10C-2, controlled official evidence acquisition was authorized for `PREMIERENE`. Prior to network dispatch, pre-request domain safety validation detected that candidate URL `https://www.sebi.gov.in/...` carried subdomain `www.sebi.gov.in`, which differed from exact domain `sebi.gov.in` in the single-use marker whitelist.
+- **Impact:** In accordance with fail-closed governance, execution halted immediately with exit code 5, consuming the single-use token and blocking all network activity.
+- **Governance Mandate:** The marker is single-use and cannot be recreated or reused. Without acquired official documentary proof, PREMIERENE remains `LISTING_DATE_UNVERIFIED` and `EMPTY_RESPONSE_UNEXPLAINED`.
 
 ---
 

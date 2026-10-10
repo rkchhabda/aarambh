@@ -98,9 +98,16 @@ flowchart TD
 - **Classification:** `DETERMINISTIC_CURRENT_PANEL_OPERATIONAL_SAMPLE`.
 - **Required Authorization Phrase:** `AUTHORIZE MILESTONE 4.10B: BUILD GOVERNED 20-STOCK HISTORICAL BATCH HARNESS` (Received).
 
-### Milestone 4.10C: 20-Stock Three-Month Live Batch Pilot (RECOMMENDED NEXT)
+### Milestone 4.10C: 20-Stock Three-Month Live Batch Pilot (COMPLETED - HALTED ON PREMIERENE)
 - **Objective:** Execute single controlled live historical batch acquisition for the 20 selected operational equities over Q1 2024 with pacing $\ge 2.0$s and 1-fail threshold.
-- **Required Authorization Phrase:** `AUTHORIZE MILESTONE 4.10C: 20-STOCK THREE-MONTH LIVE BATCH PILOT`.
+- **Outcome:** Halted fail-closed on Symbol 1 (`PREMIERENE`) due to upstream returning empty data `[]` for Q1 2024. Zero retries executed. Checkpoint preserved immutably.
+
+### Milestone 4.10C-1: Pre-Listing Interval Classification Governance (COMPLETED)
+- **Objective:** Establish strict governance separating unexplained empty responses from independently verified pre-listing intervals (`NOT_LISTED_DURING_REQUESTED_PERIOD_VERIFIED`). Enforce approved source hierarchy and 10-state symbol outcome model.
+
+### Milestone 4.10C-2: Official Listing-Date Evidence Pilot (COMPLETED - HALTED ON SAFETY CONTROL)
+- **Objective:** Acquire, checksum, and validate official documentary listing evidence for `PREMIERENE`.
+- **Outcome:** Single-use marker created and consumed atomically. Pre-request domain safety check detected exact domain mismatch on candidate URL (`www.sebi.gov.in` vs `sebi.gov.in`). Halted immediately with exit code 5; zero network calls dispatched. Status: `PREMIERENE_LISTING_EVIDENCE_PILOT_HALTED_ON_SAFETY_CONTROL`.
 
 ### Milestone 5: Non-ML Baselines (BLOCKED PENDING GATE 1 REAL DATA)
 - **Objective:** Evaluate Equal-Weight universe, Sector-Neutral Equal-Weight, 12-1 Momentum, and simple SUE composite across walk-forward folds.
