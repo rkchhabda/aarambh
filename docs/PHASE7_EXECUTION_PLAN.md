@@ -92,6 +92,16 @@ flowchart TD
 - **Blockers:** BLK-01 remains `STILL_BLOCKED` (current snapshot does not provide historical additions/removals/effective dates). BLK-02 remains `PILOT_CAPABILITY_CONFIRMED_GATE1_NOT_PASSED`. BLK-04 remains `STILL_BLOCKED`.
 - **Required Authorization Phrase:** `AUTHORIZE MILESTONE 4.10A: CURRENT NIFTY 500 CONSTITUENT SNAPSHOT PILOT` (Received).
 
+### Milestone 4.10B: Governed 20-Stock Historical Batch Harness (COMPLETED - NSE_20_STOCK_BATCH_HARNESS_READY_LIVE_EXECUTION_NOT_AUTHORIZED)
+- **Objective:** Build and mock-test governed historical batch harness for 20 deterministically selected operational equities over Q1 2024 (`2024-01-01` to `2024-03-31`) at 1d interval with atomic checkpointing, 10-point resume validation, and 12-state exit code contract.
+- **Outcome:** Offline deterministic selection executed from frozen snapshot; selection checksum frozen (`60dd0358...`); batch contract frozen (`BATCH_4_10C_HISTORICAL_20STOCK_2024Q1`); 32 mocked tests added (421 total passing); zero live requests; zero active authorization markers.
+- **Classification:** `DETERMINISTIC_CURRENT_PANEL_OPERATIONAL_SAMPLE`.
+- **Required Authorization Phrase:** `AUTHORIZE MILESTONE 4.10B: BUILD GOVERNED 20-STOCK HISTORICAL BATCH HARNESS` (Received).
+
+### Milestone 4.10C: 20-Stock Three-Month Live Batch Pilot (RECOMMENDED NEXT)
+- **Objective:** Execute single controlled live historical batch acquisition for the 20 selected operational equities over Q1 2024 with pacing $\ge 2.0$s and 1-fail threshold.
+- **Required Authorization Phrase:** `AUTHORIZE MILESTONE 4.10C: 20-STOCK THREE-MONTH LIVE BATCH PILOT`.
+
 ### Milestone 5: Non-ML Baselines (BLOCKED PENDING GATE 1 REAL DATA)
 - **Objective:** Evaluate Equal-Weight universe, Sector-Neutral Equal-Weight, 12-1 Momentum, and simple SUE composite across walk-forward folds.
 - **Leaderboard:** Record frozen baseline metrics (Rank IC, Sharpe, Drawdown, Monotonicity) at 25, 50, and 75 bps costs.
@@ -144,6 +154,8 @@ flowchart TD
 | Milestone 4.8 | Static Audit & Safe Adapter Built | `AUTHORIZE MILESTONE 4.8: EXISTING NSE DATA FETCHER INTEGRATION AND SAFETY REMEDIATION` |
 | Milestone 4.9 | Five-Stock Live Pilot | `AUTHORIZE MILESTONE 4.9: FIVE-STOCK NSE LIVE PILOT` |
 | Milestone 4.10A | Constituent Snapshot Audit & Pilot | `AUTHORIZE MILESTONE 4.10A: CURRENT NIFTY 500 CONSTITUENT SNAPSHOT PILOT` |
+| Milestone 4.10B | Batch Harness & Offline Selection | `AUTHORIZE MILESTONE 4.10B: BUILD GOVERNED 20-STOCK HISTORICAL BATCH HARNESS` |
+| Milestone 4.10C | 20-Stock Live Batch Pilot | `AUTHORIZE MILESTONE 4.10C: 20-STOCK THREE-MONTH LIVE BATCH PILOT` |
 | Milestone 5 | Gate 1 Real Data Accepted | `APPROVE MILESTONE 5` |
 | Milestone 6 | Baseline Board Frozen | `APPROVE MILESTONE 6` |
 | Milestone 7 | Linear Models Registered | `APPROVE MILESTONE 7` |

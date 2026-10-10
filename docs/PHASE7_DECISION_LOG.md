@@ -803,6 +803,44 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261010-31: Authorization & Implementation of Milestone 4.10B Governed 20-Stock Historical Batch Harness
+- **Date:** 2026-10-10
+- **Decision Authority:** Project Owner (`AUTHORIZE MILESTONE 4.10B: BUILD GOVERNED 20-STOCK HISTORICAL BATCH HARNESS`)
+- **Context & Motivation:** Establish an automated, fail-closed historical batch harness for 20 deterministically selected operational equities across Q1 2024 (`2024-01-01` to `2024-03-31`) at 1d interval, with per-symbol atomic checkpointing, strict resume validation, and comprehensive exit-code mapping, prior to live execution.
+- **Exact Decision:**
+  1. **Deterministic Offline Selection:** Derive 20 operational securities from frozen Milestone 4.10A snapshot (`CURRENT_NIFTY500_09Oct2026_8F4C439F`) using `SHA256(panel_version|symbol|MILESTONE_4_10B)_ASC` excluding the 5 previously tested symbols (`RELIANCE`, `TCS`, `HDFCBANK`, `INFY`, `ICICIBANK`). Selection checksum: `60dd03580442b1f874f364206da5d9bf252a4abf1ff93801d4b58e93fdee7b1d`. Ordered symbols hash: `26e4be7c9cfd366b630b0b714f0afd65a223ffae91edad6e231060e6b95c4ee3`.
+  2. **Classification & Limitations:** Formally classify selection as `DETERMINISTIC_CURRENT_PANEL_OPERATIONAL_SAMPLE`. Under Non-Negotiable Rules and Gate 1 Data Integrity standards, the selection is NOT representative by sector or market cap, NOT survivorship-free, NOT point-in-time, NOT suitable for investment inference, and NOT a research portfolio.
+  3. **Repository Cleanliness:** Forbid committing the complete 20-symbol list into Git. Store selection evidence immutably in `C:\Users\r_chh\gaurvideep_phase7_staging\nse500\batch_4_10c\selection\`.
+  4. **Batch Contract & Exit Codes:** Formally bind contract `BATCH_4_10C_HISTORICAL_20STOCK_2024Q1` with concurrency=1, pacing $\ge 2.0$s, retries=0, failure threshold=1. Implement 12-state exit code contract (0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12).
+  5. **Atomic Checkpointing & 10-Point Resume Rules:** Enforce 10-point resume validation before trusting completed symbols; reject invalid checkpoints (`InvalidResumeCheckpointError`); forbid automatic resumption without owner authorization.
+  6. **Zero Live Request Invariant:** Strictly forbid live network execution or active live authorization marker creation in Milestone 4.10B.
+  7. **Blocker Status:** BLK-01 (`STILL_BLOCKED`), BLK-02 (`PILOT_CAPABILITY_CONFIRMED_GATE1_NOT_PASSED`), BLK-04 (`STILL_BLOCKED`). Milestone 5 remains unopened.
+  8. **Next Step:** Milestone status set to `NSE_20_STOCK_BATCH_HARNESS_READY_LIVE_EXECUTION_NOT_AUTHORIZED`. Recommend owner authorization phrase `AUTHORIZE MILESTONE 4.10C: 20-STOCK THREE-MONTH LIVE BATCH PILOT`.
+- **Impacted Modules:**
+  - `phase7/sources/batch_contract.py`
+  - `phase7/sources/batch_selection.py`
+  - `phase7/sources/batch_authorization.py`
+  - `phase7/sources/batch_checkpoint.py`
+  - `phase7/sources/batch_pilot.py`
+  - `phase7/sources/batch_audit.py`
+  - `phase7/sources/__init__.py`
+  - `tests/phase7/test_source_batch_selection.py`
+  - `tests/phase7/test_source_batch_contract.py`
+  - `tests/phase7/test_source_batch_authorization.py`
+  - `tests/phase7/test_source_batch_checkpoint.py`
+  - `tests/phase7/test_source_batch_execution.py`
+  - `tests/phase7/test_source_batch_resume.py`
+  - `docs/PHASE7_NSE500_BATCH_PILOT_PROTOCOL.md`
+  - `docs/PHASE7_NSE500_BATCH_SELECTION_PROTOCOL.md`
+  - `docs/PHASE7_NSE500_BATCH_RESUME_PROTOCOL.md`
+- **Verification Criteria:**
+  - Full test suite passes: 421 of 421 tests passing offline.
+  - Zero live network requests issued.
+  - Zero active authorization markers created.
+  - Zero market data in Git repository.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:

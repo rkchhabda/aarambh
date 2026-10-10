@@ -692,3 +692,32 @@ Milestone 3 delivered the comprehensive Target Engine (`phase7/targets/`), cover
   - `BLK-02` (Historical OHLCV Prices and Daily Traded Value / Turnover): **`PILOT_CAPABILITY_CONFIRMED_GATE1_NOT_PASSED`**
   - `BLK-04` (Point-in-Time Sector Classification History): **`STILL_BLOCKED`**
 - **Milestone 5 Quarantine:** Strictly **BLOCKED**.
+
+---
+
+## 21. Milestone 4.10B Governed 20-Stock Historical Batch Harness Deliverables
+
+### 21.1 Delivered Code, Test, and Protocol Artifacts
+
+| Capability / Requirement | Technical Description | Source Module | Test Module / Artifact | Status |
+|---|---|---|---|---|
+| **Deterministic 20-Symbol Selection** | SHA256 ranking of snapshot symbols excluding 5 prior pilot equities; frozen outside Git | `phase7/sources/batch_selection.py` | `tests/phase7/test_source_batch_selection.py`<br/>`batch_4_10c/selection/` | **VERIFIED** |
+| **Governed Batch Contract** | Binds exact selection hash, Q1 2024 dates, 1d interval, concurrency=1, pacing $\ge 2.0$s | `phase7/sources/batch_contract.py` | `tests/phase7/test_source_batch_contract.py`<br/>`batch_4_10c/contracts/` | **VERIFIED** |
+| **Single-Use Batch Authorization** | Milestone 4.10C scope-bound marker validation and atomic consumption logic | `phase7/sources/batch_authorization.py` | `tests/phase7/test_source_batch_authorization.py` | **VERIFIED** |
+| **Atomic Checkpointing & Resume Engine** | Tracks per-symbol states; enforces 10-point resume validation before trusting completed symbols | `phase7/sources/batch_checkpoint.py` | `tests/phase7/test_source_batch_checkpoint.py`<br/>`tests/phase7/test_source_batch_resume.py` | **VERIFIED** |
+| **Batch Orchestrator & Exit Codes** | Coordinates sequential retrieval with 1-fail halt policy and 12-state exit code contract | `phase7/sources/batch_pilot.py` | `tests/phase7/test_source_batch_execution.py` | **VERIFIED** |
+| **Batch Quality & Conservation Audit** | Audits row conservation across batch symbols without computing return/alpha metrics | `phase7/sources/batch_audit.py` | `tests/phase7/test_source_batch_execution.py` | **VERIFIED** |
+
+### 21.2 Verification Summary
+- **Complete Test Baseline:** **421 of 421 passing** (`pytest tests/phase7/ test_phase6_safeguards.py -q`).
+- **`pip check` Result:** Clean (no broken requirements).
+- **`git diff --check` Result:** Clean (zero whitespace errors).
+- **Milestone Outcome Status:** `NSE_20_STOCK_BATCH_HARNESS_READY_LIVE_EXECUTION_NOT_AUTHORIZED`.
+- **Classification:** `DETERMINISTIC_CURRENT_PANEL_OPERATIONAL_SAMPLE`.
+- **Negative Governance Declarations:** The 20-symbol selection is strictly an operational capability harness sample. It is NOT representative by sector/market cap, NOT survivorship-free, NOT point-in-time, DOES NOT resolve BLK-01, DOES NOT satisfy Gate 1, and DOES NOT authorize model training.
+- **Blocker Status Registry:**
+  - `BLK-01` (Point-in-Time NIFTY 500 Constituent Membership History): **`STILL_BLOCKED`**
+  - `BLK-02` (Historical OHLCV Prices and Daily Traded Value / Turnover): **`PILOT_CAPABILITY_CONFIRMED_GATE1_NOT_PASSED`**
+  - `BLK-04` (Point-in-Time Sector Classification History): **`STILL_BLOCKED`**
+- **Next Authorized Milestone:** **`MILESTONE 4.10C: 20-STOCK THREE-MONTH LIVE BATCH PILOT`**.
+- **Milestone 5 Quarantine:** Strictly **BLOCKED**.

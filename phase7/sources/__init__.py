@@ -5,6 +5,41 @@ Zero top-level imports of third-party NSE packages.
 """
 
 from phase7.sources.audit import StructuralQualityAudit
+from phase7.sources.batch_audit import (
+    BatchAuditSummary,
+    generate_batch_audit_payload,
+    save_batch_audit,
+    verify_batch_conservation,
+)
+from phase7.sources.batch_authorization import (
+    BatchAuthorizationRecord,
+    consume_batch_authorization_marker,
+    create_batch_authorization_marker,
+    validate_batch_authorization,
+)
+from phase7.sources.batch_checkpoint import (
+    BatchCheckpoint,
+    BatchSymbolStatus,
+    InvalidResumeCheckpointError,
+    SymbolCheckpoint,
+    create_initial_batch_checkpoint,
+    load_checkpoint,
+    save_checkpoint,
+    validate_resume_checkpoint,
+)
+from phase7.sources.batch_contract import (
+    BatchContract,
+    BatchExitCode,
+    BatchStatus,
+    validate_batch_contract,
+)
+from phase7.sources.batch_pilot import run_batch_pilot
+from phase7.sources.batch_selection import (
+    SelectionResult,
+    load_selection_manifest,
+    perform_deterministic_selection,
+    save_selection_evidence,
+)
 from phase7.sources.client_factory import create_real_nse_client
 from phase7.sources.client_protocol import NSEClientFactoryProtocol, NSEClientProtocol
 from phase7.sources.contracts import (
@@ -160,6 +195,31 @@ __all__ = [
     "validate_staging_root",
     "validate_symbol",
     "write_manifest",
+    "BatchContract",
+    "BatchExitCode",
+    "BatchStatus",
+    "BatchSymbolStatus",
+    "validate_batch_contract",
+    "SelectionResult",
+    "perform_deterministic_selection",
+    "save_selection_evidence",
+    "load_selection_manifest",
+    "BatchAuthorizationRecord",
+    "create_batch_authorization_marker",
+    "validate_batch_authorization",
+    "consume_batch_authorization_marker",
+    "BatchCheckpoint",
+    "SymbolCheckpoint",
+    "create_initial_batch_checkpoint",
+    "save_checkpoint",
+    "load_checkpoint",
+    "validate_resume_checkpoint",
+    "InvalidResumeCheckpointError",
+    "BatchAuditSummary",
+    "verify_batch_conservation",
+    "generate_batch_audit_payload",
+    "save_batch_audit",
+    "run_batch_pilot",
 ]
 
 
