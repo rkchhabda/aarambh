@@ -1,6 +1,6 @@
-# Phase 7 Report: Milestone 4.9 Five-Stock NSE Pilot Execution (Attempt 4 Post Pipeline Wiring)
+# Phase 7 Report: Milestone 4.9 Five-Stock NSE Pilot Execution & Final Closure
 
-## 1. Executive Summary
+## 1. Executive Summary (Historical Attempt 4 Baseline)
 
 - **Milestone:** Milestone 4.9 (Re-Authorized Five-Stock NSE Live Pilot — Post Historical Retrieval Pipeline Wiring)
 - **Status Date:** 2026-10-10
@@ -238,3 +238,71 @@ In Milestone 4.9E, explicit source-field mappings and locale-independent date pa
 - **Normalized Checksum:** `be10e3ca0fc0298c751457aaa822b05c1254839634b7958f6e16aab9e1759a0b`
 - **Replay Output Directory:** `C:\Users\r_chh\gaurvideep_phase7_staging\nse500\pilot_4_9\offline_replay_4_9e\`
 - **Original Evidence Integrity:** Preserved unchanged; original raw file hash intact; live `manifest_RELIANCE_*.json` preserved with `status: PARTIAL`.
+
+---
+
+## 9. Milestone 4.9 Successful Five-Stock Live Pilot Execution (Attempt 5 Post Schema Alignment)
+
+### 9.1 Attempt 5 Executive Summary
+- **Execution Event:** Re-authorized governed live pilot execution following Milestone 4.9E schema alignment.
+- **Status Date:** 2026-10-10
+- **Final Outcome Code:** `NSE_FIVE_STOCK_PILOT_PASSED`
+- **Milestone Closure Status:** `NSE_FIVE_STOCK_PILOT_CLOSED_SUCCESSFULLY`
+- **Process Exit Code:** `0` (`PilotExitCode.SUCCESS`)
+- **Symbols Completed:** 5 / 5 (`RELIANCE`, `TCS`, `HDFCBANK`, `INFY`, `ICICIBANK`)
+- **Client Initializations:** 1
+- **Client Closures:** 1 (`client.exit()` executed cleanly in `finally` block; 0 errors)
+- **Session Bootstrap:** Confirmed (`raw/nse_cookies_httpx.json`)
+- **Historical Requests:** 5 (1 request per symbol; 0 retries)
+- **Historical Responses:** 5 (all HTTP 200)
+- **Historical Source Rows:** 110 (22 rows per symbol across Jan 2024)
+- **Normalized Rows:** 110
+- **Rejected Rows:** 0
+- **Conservation Status:** $110 = 110 + 0$ (100% Conserved across all symbols)
+- **Trading Date Coverage:** 100.0% (all 22 NSE trading sessions in January 2024)
+- **Duplicate Keys:** 0
+- **Invalid OHLC Bounds:** 0
+- **Negative Values:** 0
+- **Manifest Statuses:** All 5 manifests finalized with `status: SUCCEEDED`
+
+### 9.2 Attempt 5 Authorization Marker Lifecycle
+- **Creation Command:** `.venv-phase7\Scripts\python.exe -m phase7.sources.authorization create --staging-root "C:\Users\r_chh\gaurvideep_phase7_staging\nse500\pilot_4_9" --expires-minutes 30`
+- **Issued Timestamp:** `2026-10-10T08:41:11.045436+00:00`
+- **Nonce:** `cdb8421c-caa0-4e05-ba88-071c557eb894`
+- **Authorization Hash:** `4cab467108bd2830b817015faccce0832e51fce6e3d6e6b4367895195629a7a3`
+- **Atomic Consumption Timestamp:** `2026-10-10T08:42:13Z`
+- **Consumed Marker Path:** `C:\Users\r_chh\gaurvideep_phase7_staging\nse500\pilot_4_9\authorization\pilot_authorization.consumed.20261010T084213Z.json`
+- **Active Marker Status:** Atomically removed; `pilot_authorization.json` does not exist.
+- **Total Consumed Markers Preserved:** Exactly 5 consumed markers outside Git.
+
+### 9.3 Attempt 5 Symbol Execution Metrics & Verification Table
+
+| Symbol | Status | Source Rows | Normalized Rows | Rejected Rows | Conservation | Raw Checksum (SHA-256) | Normalized Checksum (SHA-256) | Date Range | Coverage | Dups | Invalid OHLC | Neg Vals |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **RELIANCE** | `SUCCEEDED` | 22 | 22 | 0 | $22 = 22 + 0$ | `59af0e392d7bb9073a49603115e11150a8adbab59e0619c6a0608d19ffcbef63` | `5ec58018253227a893fd2c551dc5581408314a74748867f970c8a8004abd4e4b` | 2024-01-01 to 2024-01-31 | 100.0% | 0 | 0 | 0 |
+| **TCS** | `SUCCEEDED` | 22 | 22 | 0 | $22 = 22 + 0$ | `353beb31b7ed737a952621fb6e5c8f09eaa812fa0d793575b64ea07e8b9d61eb` | `60c56dfd6684c413e9ad32a1bf6873d5c41d08660712f91419ad46ebebbbdd17` | 2024-01-01 to 2024-01-31 | 100.0% | 0 | 0 | 0 |
+| **HDFCBANK** | `SUCCEEDED` | 22 | 22 | 0 | $22 = 22 + 0$ | `234c028f393978854d9253c549be921b25a3b95aaa85e7fa4656ae149a3d5aea` | `090ff2af9794f86b978f7e9e5af9fd2ea4c5fd04f6753caf9bad1fcd2f017215` | 2024-01-01 to 2024-01-31 | 100.0% | 0 | 0 | 0 |
+| **INFY** | `SUCCEEDED` | 22 | 22 | 0 | $22 = 22 + 0$ | `0a6611aa8ad70b69b6d2d08a2741385722181b7c5ce6b1e02f0f03d87f0d29c4` | `5dd6031f1ecef8235b169523d6bc9c9328d76c526d79d06184e069275646e58b` | 2024-01-01 to 2024-01-31 | 100.0% | 0 | 0 | 0 |
+| **ICICIBANK** | `SUCCEEDED` | 22 | 22 | 0 | $22 = 22 + 0$ | `22838751d58eca9a89d421717b6dbdd1fe25942c3372ad9cc4dab23abb833ebe` | `40992f803628250cb1cf41522c3717822cdc7df3ec5fc3c62dd9433c87910a49` | 2024-01-01 to 2024-01-31 | 100.0% | 0 | 0 | 0 |
+| **TOTAL** | **ALL SUCCEEDED** | **110** | **110** | **0** | **$110 = 110 + 0$** | **5 Valid Checksums** | **5 Valid Checksums** | **2024-01-01 to 2024-01-31** | **100.0%** | **0** | **0** | **0** |
+
+### 9.4 Governed Dataset Classification & Strict Negative Claims
+- **Exact Dataset Classification:**
+  `FIVE_STOCK_LIVE_CAPABILITY_SAMPLE_NOT_RESEARCH_DATASET`
+- **Explicit Research & Governance Boundaries:**
+  The 110 records acquired and normalized during this pilot serve exclusively to verify the technical runtime functionality of the upstream NSE data fetcher adapter, network session bootstrap, camelCase schema normalization, external persistence, and audit logging. Under Non-Negotiable Rules and Gate 1 Data Integrity standards, this sample:
+  1. **IS NOT survivorship-free:** The 5 securities were selected as a fixed live smoke test;
+  2. **IS NOT a point-in-time NIFTY 500 panel:** Index constituents and historical additions/deletions were not acquired;
+  3. **DOES NOT pass Gate 1:** Real research data across the required cross-section and full history remains unprocured;
+  4. **IS NOT production-ready;**
+  5. **DOES NOT constitute validated alpha;**
+  6. **IS NOT suitable for model training, feature generation, or cross-validation;**
+  7. **DOES NOT provide evidence of investment performance or strategy returns.**
+
+### 9.5 Blocker Registry Status Post-Pilot
+- **BLK-01 (PIT NIFTY 500 Constituent Membership):** `STILL_BLOCKED` (The fetcher has no constituent history endpoint).
+- **BLK-02 (Historical Daily OHLCV & Turnover):** `PILOT_CAPABILITY_CONFIRMED_GATE1_NOT_PASSED` (Technical retrieval and normalization pipeline verified in production; Gate 1 real-data evaluation across full panel not passed).
+- **BLK-04 (PIT Sector Classification):** `STILL_BLOCKED` (Sector classification history absent).
+
+### 9.6 Recommended Next Milestone
+- **Milestone 4.10A:** `CURRENT NIFTY 500 CONSTITUENT SNAPSHOT PILOT` (Governed static audit and single-symbol/index constituent snapshot capability assessment).

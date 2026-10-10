@@ -631,3 +631,34 @@ Milestone 3 delivered the comprehensive Target Engine (`phase7/targets/`), cover
 - Checkpoint Status: **`NSE_401_SCHEMA_ALIGNED_OFFLINE_REPLAY_PASSED_LIVE_EXECUTION_NOT_AUTHORIZED`**.
 - Blocker Status: BLK-01, BLK-02, and BLK-04 remain strictly **OPEN** (STILL_BLOCKED).
 - Milestone 5 Status: Strictly **BLOCKED**.
+
+---
+
+## 19. Milestone 4.9 Five-Stock NSE Live Pilot Execution Deliverables & Closure
+
+### 19.1 Runtime Execution Summary (Attempt 5 Live Execution)
+
+| Capability / Requirement | Technical Description | Source Module | Staging Artifact | Status |
+|---|---|---|---|---|
+| **Single-Use Authorization Lifecycle** | Marker `4cab4671...` created outside Git; atomically renamed to consumed state | `phase7/sources/authorization.py` | `authorization/pilot_authorization.consumed.20261010T084213Z.json` | **VERIFIED** |
+| **HTTP/2 Client Bootstrap** | Governed factory instantiated `nse.NSE`; session cookies refreshed externally | `phase7/sources/client_factory.py` | `raw/nse_cookies_httpx.json` | **VERIFIED** |
+| **Historical Upstream Retrieval** | `fetch_equity_historical_data` executed sequentially for 5 symbols (Jan 2024, $\ge 2$s pacing) | `phase7/sources/pilot.py` | 5 external network calls (0 retries) | **VERIFIED (110 ROWS)** |
+| **External Raw Persistence** | 5 raw JSON payloads serialized cleanly without credentials; SHA-256 computed | `phase7/sources/persistence.py` | `raw/historical/<SYMBOL>_...json` (5 files) | **VERIFIED** |
+| **Canonical Normalization** | Mapped via `NSE_4_0_1_HISTORICAL_CAMELCASE_V1`; 110 rows normalized; 0 rejected | `phase7/sources/normalization.py` | `normalized/historical/<SYMBOL>_...jsonl` (5 files) | **VERIFIED** |
+| **Audit Conservation & Manifests** | Conservation verified: $110 = 110 + 0$; all 5 manifests finalized with `status: SUCCEEDED` | `phase7/sources/pilot.py`<br/>`phase7/sources/manifest.py` | `manifests/manifest_<SYMBOL>_...json` (5 files) | **VERIFIED** |
+| **Deterministic Client Cleanup** | `client.exit()` executed cleanly in `finally` block | `phase7/sources/pilot.py` | Audit counter `client_close_count=1` | **VERIFIED** |
+
+### 19.2 Final Milestone 4.9 Verification Summary
+- **Complete Test Baseline:** **339 of 339 passing** (`pytest tests/phase7/ test_phase6_safeguards.py -q`).
+- **`pip check` Result:** Clean (no broken requirements).
+- **`git diff --check` Result:** Clean (zero whitespace errors).
+- **Process Outcome Code:** `NSE_FIVE_STOCK_PILOT_PASSED` (Exit code 0).
+- **Milestone Closure Status:** **`NSE_FIVE_STOCK_PILOT_CLOSED_SUCCESSFULLY`**.
+- **Dataset Classification:** **`FIVE_STOCK_LIVE_CAPABILITY_SAMPLE_NOT_RESEARCH_DATASET`**.
+- **Negative Governance Declarations:** The pilot data is strictly a technical capability sample; it is NOT survivorship-free, NOT a point-in-time NIFTY 500 panel, DOES NOT pass Gate 1, is NOT production-ready, DOES NOT constitute validated alpha, is NOT suitable for model training, and DOES NOT provide evidence of investment performance.
+- **Blocker Status Registry:**
+  - `BLK-01` (Point-in-Time NIFTY 500 Constituent Membership History): **`STILL_BLOCKED`**
+  - `BLK-02` (Historical OHLCV Prices and Daily Traded Value / Turnover): **`PILOT_CAPABILITY_CONFIRMED_GATE1_NOT_PASSED`**
+  - `BLK-04` (Point-in-Time Sector Classification History): **`STILL_BLOCKED`**
+- **Next Authorized Milestone:** **`MILESTONE 4.10A: CURRENT NIFTY 500 CONSTITUENT SNAPSHOT PILOT`**.
+- **Milestone 5 Quarantine:** Strictly **BLOCKED**.

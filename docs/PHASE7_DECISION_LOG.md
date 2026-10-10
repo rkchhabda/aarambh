@@ -716,6 +716,45 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261010-29: Milestone 4.9 Five-Stock NSE Live Pilot Closure & Classification
+- **Date:** 2026-10-10
+- **Decision Authority:** Project Owner (`AUTHORIZE MILESTONE 4.9 CLOSURE: RECORD SUCCESSFUL FIVE-STOCK NSE PILOT`)
+- **Context & Motivation:** Live five-stock pilot Attempt 5 executed cleanly following `NSE_4_0_1_HISTORICAL_CAMELCASE_V1` schema alignment and offline replay verification. The pilot acquired, normalized, and persisted all 5 authorized equities (`RELIANCE`, `TCS`, `HDFCBANK`, `INFY`, `ICICIBANK`) across January 2024 with zero rejections, zero duplicates, zero invalid OHLC bounds, and 100% session coverage.
+- **Exact Decision:**
+  1. **Milestone Closure:** Formally close Milestone 4.9 with status `NSE_FIVE_STOCK_PILOT_CLOSED_SUCCESSFULLY`.
+  2. **Dataset Classification:** Classify the acquired 110-row dataset strictly as `FIVE_STOCK_LIVE_CAPABILITY_SAMPLE_NOT_RESEARCH_DATASET`.
+  3. **Strict Negative Claims:** Under Non-Negotiable Rules and Gate 1 Data Integrity standards, the pilot dataset:
+     - Is NOT survivorship-free;
+     - Is NOT a point-in-time NIFTY 500 panel;
+     - DOES NOT pass Gate 1;
+     - Is NOT production-ready;
+     - DOES NOT constitute validated alpha;
+     - Is NOT suitable for model training, feature extraction, or walk-forward cross-validation;
+     - DOES NOT provide evidence of investment performance or strategy returns.
+  4. **Preservation of Evidence:** Preserve all 5 immutable raw files, 5 normalized files, 5 manifests, and 5 consumed markers outside Git in `C:\Users\r_chh\gaurvideep_phase7_staging\nse500\pilot_4_9`.
+  5. **Blocker Registry Update:**
+     - BLK-01 (PIT NIFTY 500 Membership): `STILL_BLOCKED`
+     - BLK-02 (Historical Daily OHLCV & Turnover): `PILOT_CAPABILITY_CONFIRMED_GATE1_NOT_PASSED`
+     - BLK-04 (PIT Sector Classification): `STILL_BLOCKED`
+  6. **Next Authorized Milestone:** Authorize preparation for `MILESTONE 4.10A: CURRENT NIFTY 500 CONSTITUENT SNAPSHOT PILOT` (static audit and single snapshot capability evaluation).
+  7. **Milestone 5 Quarantine:** Milestone 5 (non-ML baselines and model training) remains strictly blocked until authentic point-in-time panel data passes Gate 1.
+- **Impacted Modules:**
+  - `docs/PHASE7_NSE_FIVE_STOCK_PILOT_REPORT.md`
+  - `docs/PHASE7_NSE_FIVE_STOCK_STRUCTURAL_AUDIT.md`
+  - `docs/PHASE7_NSE_FIVE_STOCK_GAP_ANALYSIS.md`
+  - `docs/PHASE7_BLOCKERS.md`
+  - `docs/PHASE7_DECISION_LOG.md`
+  - `docs/PHASE7_EXECUTION_PLAN.md`
+  - `docs/PHASE7_IMPLEMENTATION_MAP.md`
+- **Verification Criteria:**
+  - Process exit code 0 (`NSE_FIVE_STOCK_PILOT_PASSED`).
+  - 5/5 manifests report `status: SUCCEEDED`.
+  - Conservation verified: $110 = 110 + 0$.
+  - All 339 tests pass offline.
+  - Zero market-data files inside Git working tree.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:

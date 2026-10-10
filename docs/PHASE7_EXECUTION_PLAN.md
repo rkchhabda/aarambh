@@ -19,7 +19,10 @@ flowchart TD
     M2 -->|APPROVE MILESTONE 3| M3["M3: Target Engine<br/>(TARGET_ENGINE_READY_REAL_DATA_BLOCKED)"]
     M3 -->|APPROVE MILESTONE 4| M4["M4: Walk-Forward CV<br/>(VALIDATION_FRAMEWORK_READY_REAL_DATA_BLOCKED)"]
     M4 -->|AUTHORIZE MILESTONE 4.5| M45["M4.5: Gate 1 Data Readiness Spec<br/>(SPECIFICATION_COMPLETE_GATE1_DATA_PROCUREMENT_PENDING)"]
-    M45 -->|APPROVE MILESTONE 5| M5["M5: Non-ML Baselines<br/>(Frozen Benchmark Board - BLOCKED)"]
+    M45 -->|AUTHORIZE MILESTONE 4.8| M48["M4.8: Safe NSE Adapter<br/>(COMPLETED)"]
+    M48 -->|AUTHORIZE MILESTONE 4.9| M49["M4.9: 5-Stock Live Pilot<br/>(NSE_FIVE_STOCK_PILOT_CLOSED_SUCCESSFULLY)"]
+    M49 -->|AUTHORIZE MILESTONE 4.10A| M410A["M4.10A: Constituent Snapshot Pilot<br/>(RECOMMENDED NEXT)"]
+    M410A -->|APPROVE MILESTONE 5| M5["M5: Non-ML Baselines<br/>(Frozen Benchmark Board - BLOCKED)"]
     M5 -->|APPROVE MILESTONE 6| M6["M6: Linear Models<br/>(Ridge / ElasticNet)"]
     M6 -->|APPROVE MILESTONE 7| M7["M7: Tree & Ranking Models<br/>(LightGBM / XGBoost)"]
     M7 -->|APPROVE MILESTONE 8| M8["M8: Portfolio & Cost Engine<br/>(25, 50, 75 bps Staged Costs)"]
@@ -70,6 +73,21 @@ flowchart TD
 - **Pilot Outcome:** Pilot failed preconditions and safety gates. The application contains zero NIFTY 500 constituent retrieval code, hardcodes trailing 365-day dates, omits traded value turnover in INR, and fails runtime import in .venv-phase7.
 - **Safety Halt:** Full acquisition halted per pilot acceptance protocol. Zero raw market data committed. BLK-01, BLK-02, and BLK-04 remain strictly blocked. Research status set to NSE_CONNECTOR_PILOT_FAILED.
 - **Required Authorization Phrase:** AUTHORIZE MILESTONE 4.7: EXISTING CONNECTOR NIFTY 500 DATA ACQUISITION (Received).
+
+### Milestone 4.8: Safe NSE Data Fetcher Adapter Integration (COMPLETED)
+- **Objective:** Integrate upstream `nse==4.0.1` historical data fetcher wrapped in strict fail-closed safeguards (isolated external staging root, atomic single-use authorization markers, SHA-256 row hashes, zero repo writes).
+- **Required Authorization Phrase:** `AUTHORIZE MILESTONE 4.8: EXISTING NSE DATA FETCHER INTEGRATION AND SAFETY REMEDIATION` (Received).
+
+### Milestone 4.9: Five-Stock NSE Live Pilot Execution (COMPLETED - NSE_FIVE_STOCK_PILOT_CLOSED_SUCCESSFULLY)
+- **Objective:** Execute single-use authorized live pilot for 5 equities (`RELIANCE`, `TCS`, `HDFCBANK`, `INFY`, `ICICIBANK`) across January 2024 with HTTP/2 transport and camelCase schema normalization.
+- **Outcome:** Process exit code 0 (`NSE_FIVE_STOCK_PILOT_PASSED`); 110 source rows $\to$ 110 normalized rows $\to$ 0 rejected rows ($110 = 110 + 0$ conserved); 100% January 2024 session coverage; 0 duplicates; 0 invalid OHLC; 0 negative values. All 5 manifests finalized with `status: SUCCEEDED`.
+- **Classification:** `FIVE_STOCK_LIVE_CAPABILITY_SAMPLE_NOT_RESEARCH_DATASET`. Gate 1 is NOT passed; full panel unprocured.
+- **Status:** Formally closed as `NSE_FIVE_STOCK_PILOT_CLOSED_SUCCESSFULLY`.
+- **Required Authorization Phrase:** `AUTHORIZE MILESTONE 4.9: FIVE-STOCK NSE LIVE PILOT` (Received).
+
+### Milestone 4.10A: Current NIFTY 500 Constituent Snapshot Pilot (RECOMMENDED NEXT)
+- **Objective:** Perform static audit and single controlled snapshot acquisition of current NIFTY 500 constituent symbols to evaluate official index constituent feeds.
+- **Required Authorization Phrase:** `AUTHORIZE MILESTONE 4.10A: CURRENT NIFTY 500 CONSTITUENT SNAPSHOT PILOT`.
 
 ### Milestone 5: Non-ML Baselines (BLOCKED PENDING GATE 1 REAL DATA)
 - **Objective:** Evaluate Equal-Weight universe, Sector-Neutral Equal-Weight, 12-1 Momentum, and simple SUE composite across walk-forward folds.
@@ -122,6 +140,7 @@ flowchart TD
 | Milestone 4.5 | Validation Framework Ready | `AUTHORIZE MILESTONE 4.5: GATE 1 DATA READINESS SPECIFICATION` |
 | Milestone 4.8 | Static Audit & Safe Adapter Built | `AUTHORIZE MILESTONE 4.8: EXISTING NSE DATA FETCHER INTEGRATION AND SAFETY REMEDIATION` |
 | Milestone 4.9 | Five-Stock Live Pilot | `AUTHORIZE MILESTONE 4.9: FIVE-STOCK NSE LIVE PILOT` |
+| Milestone 4.10A | Constituent Snapshot Audit & Pilot | `AUTHORIZE MILESTONE 4.10A: CURRENT NIFTY 500 CONSTITUENT SNAPSHOT PILOT` |
 | Milestone 5 | Gate 1 Real Data Accepted | `APPROVE MILESTONE 5` |
 | Milestone 6 | Baseline Board Frozen | `APPROVE MILESTONE 6` |
 | Milestone 7 | Linear Models Registered | `APPROVE MILESTONE 7` |

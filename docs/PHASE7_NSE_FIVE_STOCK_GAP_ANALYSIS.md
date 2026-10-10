@@ -2,18 +2,18 @@
 
 ## 1. Blocker Status Re-Evaluation
 
-The outcome of the Milestone 4.9 Attempt 4 live pilot execution leaves the core research blockers in their formal, fail-closed state:
+Following the successful execution and closure of the Milestone 4.9 Five-Stock NSE Live Pilot (Attempt 5 post schema alignment), the core research blockers stand as follows:
 
 | Blocker ID | Description | Pre-Milestone Status | Post-Milestone Status | Technical Capability Status |
 | :---: | :--- | :--- | :--- | :--- | :---: |
-| **BLK-01** | Point-in-Time NIFTY 500 Constituent Membership History | `OPEN` | **OPEN / STILL BLOCKED** | `SOURCE_UNAVAILABLE` |
-| **BLK-02** | Historical OHLCV Prices and Daily Traded Value (Turnover) | `OPEN` | **OPEN / STILL BLOCKED** | `RAW_RETRIEVAL_VERIFIED_SCHEMA_HALT` |
-| **BLK-04** | Point-in-Time Sector Classification History | `OPEN` | **OPEN / STILL BLOCKED** | `SOURCE_UNAVAILABLE` |
+| **BLK-01** | Point-in-Time NIFTY 500 Constituent Membership History | `OPEN / STILL_BLOCKED` | **STILL_BLOCKED** | `SOURCE_UNAVAILABLE` |
+| **BLK-02** | Historical OHLCV Prices and Daily Traded Value (Turnover) | `OPEN / STILL_BLOCKED` | **PILOT_CAPABILITY_CONFIRMED_GATE1_NOT_PASSED** | `LIVE_RETRIEVAL_AND_NORMALIZATION_PROVEN_PILOT_SAMPLE_ONLY` |
+| **BLK-04** | Point-in-Time Sector Classification History | `OPEN / STILL_BLOCKED` | **STILL_BLOCKED** | `SOURCE_UNAVAILABLE` |
 
 ### Detailed Assessment:
-1. **BLK-01 (PIT Constituents):** `NSEDataFetcher` contains no constituent methods. The adapter strictly classifies constituent retrieval as `SOURCE_UNAVAILABLE`. Survivorship-biased fallbacks remain strictly prohibited.
-2. **BLK-02 (Historical OHLCV):** Upstream retrieval is now **proven functional in production**: 22 trading session records for RELIANCE were successfully retrieved over HTTP/2, verified safe, and written to external staging (`raw/historical/RELIANCE_...json`). However, normalized records were not produced due to key casing mismatch in `phase7/sources/normalization.py` (`mtimestamp` vs `mTIMESTAMP`). BLK-02 remains formally open until normalized, accepted records pass Gate 1.
-3. **BLK-04 (Sector Classification):** The data fetcher provides only live snapshot industry tags without historical reclassification timestamps. Point-in-time sector-relative target research remains blocked.
+1. **BLK-01 (PIT Constituents):** `NSEDataFetcher` contains no constituent methods. The adapter strictly classifies constituent retrieval as `SOURCE_UNAVAILABLE`. Survivorship-biased fallbacks remain strictly prohibited. Status: **STILL_BLOCKED**.
+2. **BLK-02 (Historical OHLCV):** Upstream retrieval and normalization are now **proven fully functional in production**: All 5 authorized stocks (`RELIANCE`, `TCS`, `HDFCBANK`, `INFY`, `ICICIBANK`) were successfully retrieved over HTTP/2, normalized under `NSE_4_0_1_HISTORICAL_CAMELCASE_V1`, cryptographically verified, and persisted outside Git (110 rows, 0 rejected, 100% coverage). The sample is classified strictly as `FIVE_STOCK_LIVE_CAPABILITY_SAMPLE_NOT_RESEARCH_DATASET`. Gate 1 real-data evaluation across the full historical cross-section is NOT passed. Status: **PILOT_CAPABILITY_CONFIRMED_GATE1_NOT_PASSED**.
+3. **BLK-04 (Sector Classification):** The data fetcher provides only live snapshot industry tags without historical reclassification timestamps. Point-in-time sector-relative target research remains blocked. Status: **STILL_BLOCKED**.
 
 ---
 
@@ -29,10 +29,10 @@ flowchart TD
     R2 --> G4[Gap: Normalization Schema Key Disparity mtimestamp]
     G4 --> H2[Safety Halt: PARTIAL Manifest & Exit Code 6]
     H2 --> B1[BLK-02 Remains Open Pending Normalization Alignment]
-    
+
     G1[Gap: Missing Constituent History] --> B3[BLK-01 Remains Blocked]
     G2[Gap: Missing Sector History] --> B4[BLK-04 Remains Blocked]
-    
+
     style D1 fill:#d5e8d4,stroke:#82b366
     style F1 fill:#d5e8d4,stroke:#82b366
     style H1 fill:#d5e8d4,stroke:#82b366
@@ -66,11 +66,15 @@ flowchart TD
 
 ## 3. Recommended Next Actions
 
-1. **Milestone 4.9E Schema Normalization Alignment (COMPLETED):**
-   Explicit source mappings, versioning (`NSE_4_0_1_HISTORICAL_CAMELCASE_V1`), and locale-independent date parsing implemented in `phase7/sources/schema_mappings.py` and `phase7/sources/normalization.py`. Offline replay of preserved RELIANCE payload confirmed 22/22 rows normalized with 0 rejections and conservation verified.
-2. **Re-authorize Five-Stock Live Pilot:**
-   Following the schema alignment and replay verification, request owner re-authorization (`RE-AUTHORIZE MILESTONE 4.9 AFTER NSE 4.0.1 SCHEMA FIX`) to create a fresh single-use marker and execute the live pilot.
+1. **Milestone 4.9 Five-Stock Live Pilot Closure (COMPLETED):**
+   Live pilot Attempt 5 executed with 100% success across all 5 symbols (`RELIANCE`, `TCS`, `HDFCBANK`, `INFY`, `ICICIBANK`), producing 110 normalized rows, 0 rejected rows, 0 duplicate keys, and 100% date coverage in January 2024. Status: `NSE_FIVE_STOCK_PILOT_CLOSED_SUCCESSFULLY`.
+2. **Governed Dataset Classification:**
+   The acquired data is classified strictly as `FIVE_STOCK_LIVE_CAPABILITY_SAMPLE_NOT_RESEARCH_DATASET`. Under strict governance rules, this pilot data is NOT survivorship-free, NOT a point-in-time NIFTY 500 panel, DOES NOT pass Gate 1, is NOT production-ready, DOES NOT constitute validated alpha, is NOT suitable for model training, and DOES NOT provide evidence of investment performance.
 3. **Milestone 5 Quarantine:**
-   Milestone 5 (model training and target generation) remains strictly blocked until real data is procured, normalized, and accepted through Gate 1.
-4. **Blockers BLK-01, BLK-02, and BLK-04:**
-   Remain formally OPEN until authentic point-in-time constituent, price-turnover, and sector history data are procured and accepted across all 5 symbols.
+   Milestone 5 (model training and target generation) remains strictly blocked until authentic point-in-time universe data is procured, normalized, and accepted through Gate 1.
+4. **Blocker Status Registry:**
+   - BLK-01: `STILL_BLOCKED`
+   - BLK-02: `PILOT_CAPABILITY_CONFIRMED_GATE1_NOT_PASSED`
+   - BLK-04: `STILL_BLOCKED`
+5. **Next Authorized Milestone:**
+   `MILESTONE 4.10A: CURRENT NIFTY 500 CONSTITUENT SNAPSHOT PILOT` (Governed static audit and capability evaluation for acquiring official current NIFTY 500 constituent symbols).

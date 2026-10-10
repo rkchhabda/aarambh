@@ -89,3 +89,64 @@ This structural audit evaluates the technical architecture and runtime behavior 
    - SHA-256 normalized checksum generated: `be10e3ca0fc0298c751457aaa822b05c1254839634b7958f6e16aab9e1759a0b`.
    - Zero duplicate keys, zero invalid OHLC bounds, zero negative values.
    - Preserved in `<staging>/offline_replay_4_9e/` without modifying live pilot evidence.
+
+---
+
+## 5. Milestone 4.9 Final Live Pilot Execution & Structural Audit (Attempt 5)
+
+### 5.1 Structural Acceptance Criteria Compliance Matrix (Attempt 5 Live Execution)
+
+| # | Acceptance Criterion | Required Threshold | Observed State | Compliance Status |
+| :---: | :--- | :--- | :--- | :--- | :---: |
+| 1 | Securities returning $\ge 1$ valid record | Exactly 5/5 | 5/5 (`RELIANCE`, `TCS`, `HDFCBANK`, `INFY`, `ICICIBANK`) | **PASS** |
+| 2 | Date session coverage | $\ge 95\%$ | 100.0% (22/22 trading sessions across all 5 symbols) | **PASS** |
+| 3 | Dates within 2024-01-01..2024-01-31 | 100% | 110/110 records within January 2024 | **PASS** |
+| 4 | Duplicate natural keys | Exactly 0 | 0 duplicates across all 5 symbols | **PASS** |
+| 5 | Invalid OHLC relationships | Exactly 0 | 0 invalid bounds (low $\le$ open/close $\le$ high) | **PASS** |
+| 6 | Negative prices | Exactly 0 | 0 negative prices | **PASS** |
+| 7 | Negative volume | Exactly 0 | 0 negative volume | **PASS** |
+| 8 | Empty responses accepted as success | Exactly 0 | 0 accepted | **PASS** |
+| 9 | HTML responses accepted as data | Exactly 0 | 0 accepted | **PASS** |
+| 10 | CAPTCHA responses accepted as data | Exactly 0 | 0 accepted | **PASS** |
+| 11 | ConnectionError events | 0 (or halts pilot) | 0 encountered | **PASS** |
+| 12 | TimeoutError events | 0 (or halts pilot) | 0 encountered | **PASS** |
+| 13 | Access-denied events | 0 (or halts pilot) | 0 encountered | **PASS** |
+| 14 | Raw checksum coverage | 100% | 5/5 retrieved raw payloads hashed (100%) | **PASS** |
+| 15 | Normalized checksum coverage | 100% | 5/5 normalized JSONL files hashed (100%) | **PASS** |
+| 16 | Reason codes for all rejected rows | 100% | 0 rows rejected; conservation holds $110 = 110 + 0$ | **PASS** |
+| 17 | Repository market-data path changes | Exactly 0 | 0 files written to repository | **PASS** |
+| 18 | Downloaded files staged in Git | Exactly 0 | 0 files staged in Git | **PASS** |
+| 19 | Target datasets generated | Exactly 0 | 0 targets generated | **PASS** |
+| 20 | Models trained or fit | Exactly 0 | 0 models trained | **PASS** |
+| 21 | Performance metrics calculated | Exactly 0 | 0 metrics calculated | **PASS** |
+
+### 5.2 Cryptographic Evidence & Conservation Invariants
+- **Source Row Count:** 110
+- **Normalized Row Count:** 110
+- **Rejected Row Count:** 0
+- **Conservation Formula:** $\text{source\_row\_count} (110) = \text{normalized\_row\_count} (110) + \text{rejected\_row\_count} (0)$ (**100% Conserved**)
+- **Verified SHA-256 Checksums:**
+  - `RELIANCE`: Raw `59af0e392d7bb9073a49603115e11150a8adbab59e0619c6a0608d19ffcbef63` / Norm `5ec58018253227a893fd2c551dc5581408314a74748867f970c8a8004abd4e4b`
+  - `TCS`: Raw `353beb31b7ed737a952621fb6e5c8f09eaa812fa0d793575b64ea07e8b9d61eb` / Norm `60c56dfd6684c413e9ad32a1bf6873d5c41d08660712f91419ad46ebebbbdd17`
+  - `HDFCBANK`: Raw `234c028f393978854d9253c549be921b25a3b95aaa85e7fa4656ae149a3d5aea` / Norm `090ff2af9794f86b978f7e9e5af9fd2ea4c5fd04f6753caf9bad1fcd2f017215`
+  - `INFY`: Raw `0a6611aa8ad70b69b6d2d08a2741385722181b7c5ce6b1e02f0f03d87f0d29c4` / Norm `5dd6031f1ecef8235b169523d6bc9c9328d76c526d79d06184e069275646e58b`
+  - `ICICIBANK`: Raw `22838751d58eca9a89d421717b6dbdd1fe25942c3372ad9cc4dab23abb833ebe` / Norm `40992f803628250cb1cf41522c3717822cdc7df3ec5fc3c62dd9433c87910a49`
+- **Request Manifests:** All 5 manifests finalized with status `SUCCEEDED`.
+- **Single-Use Authorization:** Fifth marker atomically consumed to `pilot_authorization.consumed.20261010T084213Z.json`; active marker absent; all 5 consumed markers preserved outside Git.
+
+### 5.3 Governed Dataset Classification & Strict Negative Declarations
+- **Exact Classification:** `FIVE_STOCK_LIVE_CAPABILITY_SAMPLE_NOT_RESEARCH_DATASET`
+- **Strict Constraints:**
+  - NOT survivorship-free
+  - NOT point-in-time NIFTY 500
+  - NOT Gate 1 passed
+  - NOT production-ready
+  - NOT validated alpha
+  - NOT suitable for model training
+  - NOT evidence of investment performance
+
+### 5.4 Blocker Status Post-Pilot
+- **BLK-01:** `STILL_BLOCKED`
+- **BLK-02:** `PILOT_CAPABILITY_CONFIRMED_GATE1_NOT_PASSED`
+- **BLK-04:** `STILL_BLOCKED`
+- **Milestone 4.9 Closure Status:** `NSE_FIVE_STOCK_PILOT_CLOSED_SUCCESSFULLY`
