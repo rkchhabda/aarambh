@@ -196,3 +196,13 @@
   3. **BLK-04 (PIT Sector Classifications):** **STILL BLOCKED.** `NSEDataFetcher` provides only snapshot industry metadata via live quote; historical reclassification timestamps are absent.
 - **Safety Status:** Marked **`UNSAFE_FOR_LIVE_PILOT`** due to upstream transport encapsulation and local directory write behavior. Live pilot is prepared under `phase7.sources.pilot` but blocked pending explicit owner authorization in Milestone 4.9.
 - **Milestone 5 Status:** Strictly **BLOCKED**. Zero model training, target generation, or backtesting authorized.
+
+---
+
+## 8. Milestone 4.9 Five-Stock Pilot Execution & Safety Halt Summary
+
+- **Status:** **NSE_FIVE_STOCK_PILOT_HALTED_ON_SAFETY_CONTROL**
+- **Trigger:** Pre-flight checks passed; canonical pilot command without CLI authorization phrase halted with code 1 due to reusable token design defect in `phase7.sources.pilot`.
+- **Safety Compliance:** In strict adherence to owner instructions, zero network calls were made and no code was modified.
+- **Blockers Status:** BLK-01, BLK-02, and BLK-04 remain completely **OPEN** and fail-closed.
+- **Milestone 5 Status:** Strictly **BLOCKED**. Zero model training, target generation, or backtesting authorized.

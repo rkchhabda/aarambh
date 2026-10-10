@@ -429,6 +429,29 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261010-19: Milestone 4.9 Five-Stock Pilot Halted on Reusable Token Requirement Defect
+- **Date:** 2026-10-10
+- **Decision Authority:** Project Owner & Lead Quantitative Research Engineer
+- **Context & Motivation:** During Milestone 4.9 live pilot execution, the canonical command was run without passing the owner-authorization phrase on the CLI in accordance with strict owner directives. The CLI halted with exit code 1 because `phase7.sources.pilot` mandates `--owner-authorization`.
+- **Exact Decision:**
+  1. **Strict Fail-Closed Halt:** Adhere to owner instruction ("If the implementation still requires the phrase as a command-line argument: Do not execute. Report that the reusable authorization-token design remains present. Stop and request a corrective patch.").
+  2. **Zero Code Modification in Checkpoint:** In accordance with milestone rules ("Do not repair it during this milestone. Document the defect."), no source code in `phase7/sources/` was modified.
+  3. **Zero Network Requests:** Exactly 0 live network calls were made to NSE.
+  4. **Document Defect & Status:** Record the defect in audit documentation and mark the milestone `NSE_FIVE_STOCK_PILOT_HALTED_ON_SAFETY_CONTROL`.
+  5. **Corrective Patch Required:** Subsequent milestone must authorize a corrective patch to decouple live pilot execution from reusable CLI string tokens.
+- **Impacted Modules:**
+  - `docs/PHASE7_NSE_FIVE_STOCK_PILOT_REPORT.md`
+  - `docs/PHASE7_NSE_FIVE_STOCK_STRUCTURAL_AUDIT.md`
+  - `docs/PHASE7_NSE_FIVE_STOCK_GAP_ANALYSIS.md`
+  - `docs/PHASE7_BLOCKERS.md`
+  - `docs/PHASE7_DECISION_LOG.md`
+- **Verification Criteria:**
+  - Working tree remains clean after documentation commit.
+  - 248 tests continue to pass in `.venv-phase7`.
+  - Zero market data files in repository.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:
