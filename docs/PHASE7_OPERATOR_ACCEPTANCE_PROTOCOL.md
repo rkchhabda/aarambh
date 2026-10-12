@@ -9,6 +9,7 @@
 **External Network:** Strictly Prohibited
 **External Evidence Acquisition:** Strictly Prohibited
 **Milestone 5:** Strictly Blocked
+**Acceptance Status:** `INTERNAL_OFFLINE_OPERATOR_ACCEPTANCE_IN_PROGRESS`
 **Readiness Classification:** `INTERNAL_NON_DISTRIBUTED_PRODUCTION_LIKE_READINESS_CONFIRMED`
 
 ---
@@ -117,3 +118,40 @@ All acceptance evidence is persisted outside Git under:
 ```
 
 Upon completion of all 10 sessions, a master reconciliation summary (`acceptance_master_summary.json`) aggregates the cumulative operational hours, verification checks, and final acceptance verdict.
+
+---
+
+## 6. Milestone 4.13A Real-Time Acceptance Evidence Semantics
+
+Under Project Owner Directive **Milestone 4.13A: Correct Operator Acceptance Evidence Semantics**, the acceptance harness and evaluation engine enforce strict real-time audit semantics.
+
+### 6.1 Session Classification Semantics
+To prevent dry-run workflows or pre-written artifacts from masquerading as completed acceptance proof, all sessions are strictly typed:
+1. `ACCEPTANCE_HARNESS_DRY_RUN`: Harness validation and dry-run workflow demonstrations. Preserved in external staging but excluded from acceptance totals.
+2. `SIMULATED_SESSION`: Simulated execution records. Strictly excluded from acceptance totals.
+3. `REAL_OPERATOR_SESSION`: Genuine real-time operator sessions executed on live dates. Only these records contribute to acceptance totals.
+
+### 6.2 Strict Governance Invariants
+The evaluation engine (`OperatorAcceptanceEvaluator`) enforces:
+1. **Measured Duration from Actual Timestamps:** Duration is calculated strictly as `(end_timestamp - start_timestamp).total_seconds()`. Caller-declared duration is rejected as proof of acceptance (`DURATION_MISMATCH_REJECTED`).
+2. **Future Timestamp Rejection:** Any session record or summary dated in the future relative to system execution time is rejected (`FUTURE_TIMESTAMP_REJECTED`).
+3. **Dry-Run & Simulated Exclusion:** Dry-run and simulated sessions are tracked separately and excluded from totals.
+4. **Overlapping Session Interval Rejection:** Overlapping session intervals are rejected (`OVERLAPPING_SESSION_REJECTED`).
+5. **Duplicate Session ID Rejection:** Duplicate session identifiers are rejected (`DUPLICATE_SESSION_REJECTED`).
+6. **Five Distinct Working Dates Required:** Acceptance requires sessions across at least 5 distinct working calendar dates (`FIVE_DISTINCT_DATES_REQUIRED`).
+7. **Ten Real Sessions Required:** Acceptance requires at least 10 `REAL_OPERATOR_SESSION` records (`TEN_REAL_SESSIONS_REQUIRED`).
+8. **18,000 Seconds (5.0 Hours) Required:** Total measured operating time across real sessions must reach at least 18,000.0 seconds (`FIVE_HOURS_REQUIRED`).
+9. **Two Verified Post-Restart Sessions Required:** At least 2 genuine post-restart sessions must be verified (`POST_RESTART_SESSIONS_REQUIRED`).
+10. **Prohibition of Premature Closure:** The acceptance exercise cannot be closed before the authorized end date `2026-10-16` (`PREMATURE_CLOSURE_REJECTED`).
+
+### 6.3 Current Acceptance Status
+As of **2026-10-12**, existing harness demonstration sessions have been preserved and reclassified as `ACCEPTANCE_HARNESS_DRY_RUN`. The acceptance master summary records:
+- `acceptance_status`: **`INTERNAL_OFFLINE_OPERATOR_ACCEPTANCE_IN_PROGRESS`**
+- `acceptance_passed`: **`false`**
+- `real_operator_sessions_count`: **`0`**
+- `dry_run_sessions_count`: **`10`**
+- `total_real_operating_seconds`: **`0.0`**
+
+The final status may become:
+**`INTERNAL_OFFLINE_OPERATOR_ACCEPTANCE_PASSED`**
+strictly on or after **2026-10-16**, after five actual working dates, ten real sessions, five measured operating hours, and two verified post-restart sessions are genuinely completed. Pre-writing or fabricating future sessions is strictly prohibited.

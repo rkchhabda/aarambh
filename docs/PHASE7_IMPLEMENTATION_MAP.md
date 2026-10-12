@@ -931,3 +931,43 @@ Milestone 3 delivered the comprehensive Target Engine (`phase7/targets/`), cover
 - Exactly 0 active authorization markers generated.
 - Exactly 0 market data or session execution records written into Git.
 - Phase 6 vaults sealed; Milestone 5 strictly blocked.
+
+---
+
+## 29. Milestone 4.13A Correct Operator Acceptance Evidence Semantics Deliverables
+
+### 29.1 Architecture and Evaluation Engine
+- Implemented real-time operator acceptance validation in `phase7/operator/acceptance_runner.py`:
+  - `SessionRecordType` enum (`REAL_OPERATOR_SESSION`, `ACCEPTANCE_HARNESS_DRY_RUN`, `SIMULATED_SESSION`).
+  - `AcceptanceStatus` enum (`INTERNAL_OFFLINE_OPERATOR_ACCEPTANCE_IN_PROGRESS`, `INTERNAL_OFFLINE_OPERATOR_ACCEPTANCE_PASSED`, `INTERNAL_OFFLINE_OPERATOR_ACCEPTANCE_REJECTED`).
+  - `OperatorAcceptanceEvaluator` enforcing real-time evidence semantics:
+    1. Measures duration strictly from actual ISO start and end timestamps (`(end_timestamp - start_timestamp).total_seconds()`).
+    2. Future timestamps rejected (`FUTURE_TIMESTAMP_REJECTED`).
+    3. Caller-declared nominal duration rejected as proof (`DURATION_MISMATCH_REJECTED`).
+    4. Dry-run and simulated sessions strictly excluded from acceptance totals.
+    5. Overlapping session intervals rejected (`OVERLAPPING_SESSION_REJECTED`).
+    6. Duplicate session IDs rejected (`DUPLICATE_SESSION_REJECTED`).
+    7. Requires >= 5 distinct actual working calendar dates (`FIVE_DISTINCT_DATES_REQUIRED`).
+    8. Requires >= 10 real operator sessions (`TEN_REAL_SESSIONS_REQUIRED`).
+    9. Requires >= 18,000 seconds (5.0 cumulative hours) of actual elapsed operating time (`FIVE_HOURS_REQUIRED`).
+    10. Requires >= 2 genuine post-restart sessions (`POST_RESTART_SESSIONS_REQUIRED`).
+    11. Prohibits premature closure before authorized end date `2026-10-16` (`PREMATURE_CLOSURE_REJECTED`).
+
+### 29.2 Delivered Code and Test Artifacts
+
+| Capability / Requirement | Technical Description | Source Module | Test Module / Artifact | Status |
+|---|---|---|---|---|
+| **Real-Time Evidence Evaluator** | Validates session typing, ISO timestamps, duration conservation, overlaps, duplicates, dates, restarts, and premature closure | `phase7/operator/acceptance_runner.py` | `tests/phase7/test_operator_acceptance.py` | **VERIFIED** |
+| **Session Typing & State Enums** | `SessionRecordType` and `AcceptanceStatus` enums | `phase7/operator/acceptance_runner.py` | `tests/phase7/test_operator_acceptance.py` | **VERIFIED** |
+| **Existing Records Reclassification** | Preserves all 10 existing records in external staging, reclassifying future dates as `ACCEPTANCE_HARNESS_DRY_RUN` | External Staging | `acceptance_4_13/sessions/session_s*.json` | **VERIFIED** |
+| **Focused Acceptance Test Battery** | 14 focused tests verifying each acceptance rule, edge case, and clean pass | N/A | `tests/phase7/test_operator_acceptance.py` (14 tests) | **VERIFIED** |
+
+### 29.3 Verification and Current Status
+- Prior test baseline: **811 passing**.
+- New acceptance semantics tests added: **14 passing** in `tests/phase7/test_operator_acceptance.py`.
+- Total test suite: **825 of 825 passing** (`pytest tests/phase7/ test_phase6_safeguards.py -q`).
+- `pip check`: Clean (no broken requirements).
+- `git diff --check`: Clean (zero whitespace errors).
+- External staging master summary status: **`INTERNAL_OFFLINE_OPERATOR_ACCEPTANCE_IN_PROGRESS`** (`acceptance_passed: false`, `real_operator_sessions_count: 0`, `dry_run_sessions_count: 10`).
+- Final status may become **`INTERNAL_OFFLINE_OPERATOR_ACCEPTANCE_PASSED`** strictly on or after `2026-10-16` after genuine real-time execution across 5 working dates.
+- Milestone 5 Quarantine: Strictly **BLOCKED**.

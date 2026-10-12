@@ -1133,6 +1133,40 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261012-41: Milestone 4.13A Correction of Operator Acceptance Evidence Semantics
+- **Date:** 2026-10-12
+- **Decision Authority:** Project Owner / Research Governance Officer
+- **Context & Motivation:** The Milestone 4.13 acceptance harness generated session records extending through 2026-10-16 while the current date was 2026-10-12. Those records demonstrated the harness and planned workflow, but they cannot constitute completed five-working-day operator acceptance. This checkpoint corrects operator acceptance evidence semantics to require genuine real-time execution across 5 calendar working dates before acceptance closure can be granted.
+- **Exact Decision:**
+  1. **Preserve Existing Records:** Preserve all 10 existing session records in external staging (`C:\Users\r_chh\gaurvideep_phase7_staging\nse500\acceptance_4_13\sessions\`).
+  2. **Reclassify Future-Dated Records:** Reclassify future-dated records as `ACCEPTANCE_HARNESS_DRY_RUN`.
+  3. **Exclude Dry-Run & Simulated Records:** Exclude dry-run and simulated records from acceptance totals.
+  4. **Count Only Real Sessions:** Count only `REAL_OPERATOR_SESSION` records towards acceptance progress.
+  5. **Timestamp-Derived Duration:** Measure operating duration strictly from actual ISO start and end timestamps (`(end_timestamp - start_timestamp).total_seconds()`).
+  6. **Reject Future Timestamps:** Reject any session record or summary bearing future timestamps relative to system execution time (`FUTURE_TIMESTAMP_REJECTED`).
+  7. **Reject Declared Duration Proof:** Reject caller-declared nominal duration as acceptance proof (`DURATION_MISMATCH_REJECTED`).
+  8. **Require Five Distinct Working Dates:** Enforce that acceptance sessions span at least 5 distinct actual calendar working dates (`FIVE_DISTINCT_DATES_REQUIRED`).
+  9. **Require Ten Real Sessions:** Enforce at least 10 `REAL_OPERATOR_SESSION` executions (`TEN_REAL_SESSIONS_REQUIRED`).
+  10. **Require 18,000 Seconds Operating Time:** Enforce at least 18,000 seconds (5.0 cumulative hours) of actual elapsed operating time (`FIVE_HOURS_REQUIRED`).
+  11. **Require Two Post-Restart Sessions:** Enforce at least 2 genuine post-restart sessions (`POST_RESTART_SESSIONS_REQUIRED`).
+  12. **Prohibit Premature Closure:** Prohibit acceptance closure prior to the authorized acceptance end date `2026-10-16` (`PREMATURE_CLOSURE_REJECTED`).
+  13. **Required Status After Correction:** Set acceptance status to `INTERNAL_OFFLINE_OPERATOR_ACCEPTANCE_IN_PROGRESS`.
+  14. **Final Closure Criterion:** Final status may become `INTERNAL_OFFLINE_OPERATOR_ACCEPTANCE_PASSED` only on or after `2026-10-16`, after five actual working dates, ten real sessions, five measured operating hours, and two verified post-restart sessions are genuinely completed in real time. Do not fabricate or pre-write future session completion.
+- **Impacted Modules:**
+  - `phase7/operator/acceptance_runner.py`
+  - `tests/phase7/test_operator_acceptance.py`
+  - `docs/PHASE7_OPERATOR_ACCEPTANCE_PROTOCOL.md`
+  - `docs/PHASE7_DECISION_LOG.md`
+  - `docs/PHASE7_IMPLEMENTATION_MAP.md`
+- **Verification Criteria:**
+  - 14 focused tests in `tests/phase7/test_operator_acceptance.py` passing without mock tautologies.
+  - Complete test suite passing (825 of 825 tests passing).
+  - External staging master summary reflecting `acceptance_status: INTERNAL_OFFLINE_OPERATOR_ACCEPTANCE_IN_PROGRESS` and `acceptance_passed: false`.
+  - Zero market data or session execution records written into Git.
+  - Zero external network requests; Milestone 5 strictly blocked.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:
