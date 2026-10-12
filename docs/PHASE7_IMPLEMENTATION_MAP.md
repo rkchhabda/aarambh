@@ -893,3 +893,41 @@ Milestone 3 delivered the comprehensive Target Engine (`phase7/targets/`), cover
 - New automated tests added: **17 passing** in `tests/phase7/test_operator_app.py`.
 - Total test suite: **811 of 811 passing** (`pytest tests/phase7/ test_phase6_safeguards.py -q`).
 - Network Quarantine: Verified 100% offline. Zero socket/HTTP calls made.
+
+---
+
+## 28. Milestone 4.13 Internal Offline Operator Acceptance Protocol & Framework
+
+### 28.1 Executive Scope & Authorization
+- **Authority:** Authorized by Project Owner directive (Start Date: 2026-10-12).
+- **Minimum Duration:** 5 working days (`2026-10-12` through `2026-10-16`).
+- **Minimum Operational Sessions:** 10 sessions (2 per working day).
+- **Minimum Operating Time:** 5 cumulative hours (300 minutes).
+- **Operational Mode:** Strictly offline, read-only, internal, non-distributed console.
+- **Governing Protocol:** `docs/PHASE7_OPERATOR_ACCEPTANCE_PROTOCOL.md`.
+- **Classification Invariant:** `INTERNAL_NON_DISTRIBUTED_PRODUCTION_LIKE_READINESS_CONFIRMED`.
+
+### 28.2 Acceptance Session Matrix
+1. **Day 1 (2026-10-12):**
+   - `S01`: Application Lifecycle, Startup & Single-Instance Lock Concurrency (30 min)
+   - `S02`: Screen 1 Readiness Dashboard & 15-Domain Scorecard Integrity (30 min)
+2. **Day 2 (2026-10-13):**
+   - `S03`: Screen 2 Evidence Inventory Indexing & Preserved Checksums (30 min)
+   - `S04`: Screen 3 Manifest Cryptographic Verification & Row Conservation ($S = N + R$) (30 min)
+3. **Day 3 (2026-10-14):**
+   - `S05`: Screen 4 Halted-Batch Invariant Inspection & Replay Prohibition (30 min)
+   - `S06`: Screen 5 Operational Drill Verification & Exit-Code Separation (30 min)
+4. **Day 4 (2026-10-15):**
+   - `S07`: Screen 6 Backup & Restore Disaster Recovery Verification (30 min)
+   - `S08`: Screen 7 Governance Blockers & Owner Decision Quarantine (30 min)
+5. **Day 5 (2026-10-16):**
+   - `S09`: Screen 8 Authorization Registry & Zero Active Marker Verification (30 min)
+   - `S10`: Screen 9 Metadata Audit Bundle Export & Screen 10 Synthetic Demonstration (30 min)
+
+### 28.3 Acceptance Logging & External Staging Isolation
+- Acceptance evidence directory: `C:\Users\r_chh\gaurvideep_phase7_staging\nse500\acceptance_4_13\sessions\`.
+- Exactly 0 external network requests across all sessions.
+- Exactly 0 evidence modifications or in-place overwrites.
+- Exactly 0 active authorization markers generated.
+- Exactly 0 market data or session execution records written into Git.
+- Phase 6 vaults sealed; Milestone 5 strictly blocked.

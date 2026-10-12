@@ -1095,6 +1095,44 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261012-40: Authorization of Milestone 4.13 Internal Offline Operator Acceptance Exercise
+- **Date:** 2026-10-12
+- **Decision Authority:** Project Owner / Research Governance Officer
+- **Context & Motivation:** Following the formal closure of Milestone 4.12, the Project Owner authorizes a structured five-working-day internal operator acceptance exercise to evaluate the unified offline operator console (`phase7.operator`) across extended operational sessions.
+- **Exact Decision:**
+  1. **Authorization Parameters:**
+     - Start Date: `2026-10-12`.
+     - Minimum Duration: 5 working days (`2026-10-12` through `2026-10-16`).
+     - Minimum Sessions: 10 operational sessions (2 per working day).
+     - Minimum Operating Time: 5 cumulative hours (300 minutes).
+     - Permitted Operational Mode: Strictly offline, read-only, internal, non-distributed.
+  2. **Prohibitions & Security Invariants:**
+     - External network requests: Strictly Prohibited (runtime quarantine permanently active).
+     - External evidence acquisition: Strictly Prohibited.
+     - Preserved staging evidence mutations: Strictly Prohibited.
+     - Active authorization marker creation/consumption: Strictly Prohibited.
+     - Halted batch resume: Strictly Prohibited.
+     - Target generation & model training: Strictly Prohibited.
+     - Returns, rankings, backtests, or financial metrics: Strictly Prohibited.
+     - Phase 6 vaults and sealed archives: Strictly Sealed.
+     - Milestone 5: Strictly Blocked.
+  3. **Evidence Isolation:** All session logs, timings, and audit records must be written strictly outside Git to `C:\Users\r_chh\gaurvideep_phase7_staging\nse500\acceptance_4_13\sessions\`. Zero session records written to Git.
+  4. **Acceptance Protocol:** Governed by `docs/PHASE7_OPERATOR_ACCEPTANCE_PROTOCOL.md`.
+- **Impacted Modules:**
+  - `docs/PHASE7_OPERATOR_ACCEPTANCE_PROTOCOL.md`
+  - `docs/PHASE7_IMPLEMENTATION_MAP.md`
+  - `docs/PHASE7_DECISION_LOG.md`
+- **Verification Criteria:**
+  - All 10 operational sessions pass with external JSON logs.
+  - Total operating evaluation time $\ge 300$ minutes.
+  - Exactly 0 external network requests.
+  - Exactly 0 evidence mutations.
+  - Exactly 0 active authorization markers.
+  - All 811 automated regression tests pass continuously.
+  - `pip check` remains clean.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:
