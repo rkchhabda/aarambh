@@ -134,7 +134,7 @@ class OperatorCore:
         for root, _, files in os.walk(self.staging_root):
             for f in sorted(files):
                 # Exclude lock files or transient caches from evidence list
-                if f.startswith(".operator") or f.endswith(".pyc"):
+                if f.startswith(".") or f.endswith(".pyc") or f.endswith(".lock"):
                     continue
                 p = Path(root) / f
                 rel_path = p.relative_to(self.staging_root)
