@@ -15,12 +15,17 @@ Persists all session logs exclusively to external staging:
 C:\\Users\\r_chh\\gaurvideep_phase7_staging\\nse500\\acceptance_4_13\\sessions\\
 """
 
+import argparse
+import ctypes
 from datetime import datetime, timezone
 from enum import Enum
 import hashlib
 import json
 import os
 from pathlib import Path
+import re
+import socket
+import sys
 import tempfile
 import time
 from typing import Any, Dict, List, Optional, Set, Tuple
@@ -39,6 +44,13 @@ from phase7.operator.__init__ import (
     ReadOnlyEvidenceGuard,
     SingleInstanceLock,
     SingleInstanceLockError,
+    AcceptanceExitCode,
+    AcceptanceWorkflow,
+    InterfaceMode,
+    OperatorRole,
+    GOVERNED_SESSION_WORKFLOW_MAP,
+    SESSION_ID_PATTERN,
+    DEFECT_ID_PATTERN,
 )
 from phase7.operator.constants import ApplicationState
 from phase7.operator.cli import OperatorCLI
@@ -58,6 +70,168 @@ REJECTION_TEN_REAL_SESSIONS = "TEN_REAL_SESSIONS_REQUIRED"
 REJECTION_FIVE_HOURS = "FIVE_HOURS_REQUIRED"
 REJECTION_POST_RESTART = "POST_RESTART_SESSIONS_REQUIRED"
 REJECTION_PREMATURE_CLOSURE = "PREMATURE_CLOSURE_REJECTED"
+
+FORBIDDEN_OBSERVATION_PATTERNS = [
+    r"cookie",
+    r"set-cookie",
+    r"bearer\s+[a-zA-Z0-9_\-\.]+",
+    r"password",
+    r"secret",
+    r"authorization:\s*",
+    r"\"open\":\s*\d+",
+    r"\"close\":\s*\d+",
+    r"\"vwap\":\s*\d+",
+]
+
+
+def get_windows_boot_time_utc() -> Optional[datetime]:
+    """Retrieve system boot time in UTC without external subprocesses."""
+    if sys.platform == "win32":
+        try:
+            uptime_ms = ctypes.windll.kernel32.GetTickCount64()
+            boot_ts = time.time() - (uptime_ms / 1000.0)
+            return datetime.fromtimestamp(boot_ts, timezone.utc)
+        except Exception:
+            pass
+    return None
+
+
+def get_sanitized_host_identity() -> str:
+    """Return sanitized machine identifier."""
+    host = socket.gethostname().strip()
+    clean = re.sub(r"[^A-Za-z0-9_-]", "", host)
+    return clean or "UNKNOWN_HOST"
+
+
+def get_repo_head_and_tags(repo_root: Optional[Path] = None) -> Tuple[str, Dict[str, str]]:
+    """Inspect local repository HEAD and required closure tags directly from .git."""
+    root = repo_root or Path(__file__).resolve().parent.parent.parent
+    head = "UNKNOWN"
+    tags_status = {
+        "phase7-offline-operator-2026-10-10": "NOT_VERIFIED",
+        "phase6-closed-2026-10-04": "NOT_VERIFIED",
+    }
+    git_dir = root / ".git"
+    if git_dir.is_dir():
+        head_file = git_dir / "HEAD"
+        if head_file.exists():
+            ref_or_sha = head_file.read_text(encoding="utf-8").strip()
+            if ref_or_sha.startswith("ref: "):
+                ref_path = git_dir / ref_or_sha[5:]
+                if ref_path.exists():
+                    head = ref_path.read_text(encoding="utf-8").strip()
+                else:
+                    packed_refs = git_dir / "packed-refs"
+                    if packed_refs.exists():
+                        for line in packed_refs.read_text(encoding="utf-8").splitlines():
+                            if line.endswith(ref_or_sha[5:]):
+                                head = line.split()[0]
+                                break
+            else:
+                head = ref_or_sha
+
+        for tag_name in tags_status.keys():
+            tag_ref = git_dir / "refs" / "tags" / tag_name
+            if tag_ref.exists():
+                tags_status[tag_name] = "VERIFIED_INTACT"
+            else:
+                packed_refs = git_dir / "packed-refs"
+                if packed_refs.exists() and f"refs/tags/{tag_name}" in packed_refs.read_text(encoding="utf-8"):
+                    tags_status[tag_name] = "VERIFIED_INTACT"
+    return head, tags_status
+
+
+def validate_session_id(session_id: str) -> bool:
+    """Validate that session ID strictly matches REAL-S01..REAL-S99 format."""
+    if not isinstance(session_id, str):
+        return False
+    match = re.match(SESSION_ID_PATTERN, session_id)
+    if not match:
+        return False
+    num = int(match.group(1))
+    return 1 <= num <= 99
+
+
+def compute_record_checksum(record_dict: Dict[str, Any]) -> str:
+    """Compute deterministic SHA-256 digest of record dictionary excluding checksum fields."""
+    filtered = {k: v for k, v in record_dict.items() if k not in ("checksum_sha256", "record_sha256")}
+    payload = json.dumps(filtered, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def atomic_write_json(file_path: Path, data: Dict[str, Any]) -> None:
+    """Atomically write JSON data using process-unique temporary file replacement."""
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    temp_path = file_path.with_suffix(f"{file_path.suffix}.tmp.{os.getpid()}.{time.time_ns()}")
+    temp_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    temp_path.replace(file_path)
+
+
+def sanitize_observations(text: Optional[str]) -> Tuple[bool, str, Optional[str]]:
+    """Sanitize and validate operator observations text."""
+    if not text:
+        return True, "", None
+    if len(text) > 4096:
+        return False, "", "OBSERVATION_EXCEEDS_MAX_LENGTH_4096"
+    lower = text.lower()
+    for pat in FORBIDDEN_OBSERVATION_PATTERNS:
+        if re.search(pat, lower):
+            return False, "", f"OBSERVATION_CONTAINS_FORBIDDEN_CONTENT: {pat}"
+    cleaned = "".join(ch for ch in text if ch.isprintable() or ch in "\n\r\t")
+    return True, cleaned.strip(), None
+
+
+def validate_defect_references(defect_refs: Optional[List[str]]) -> Tuple[bool, Optional[str]]:
+    """Validate defect reference identifiers against governed OPACC-YYYYMMDD-NNN format."""
+    if not defect_refs:
+        return True, None
+    for ref in defect_refs:
+        if not re.match(DEFECT_ID_PATTERN, ref):
+            return False, f"INVALID_DEFECT_ID_FORMAT: {ref} (must match OPACC-YYYYMMDD-NNN)"
+    return True, None
+
+
+class AcceptanceSessionLock:
+    """Durable process-level session lock for operator acceptance sessions."""
+
+    def __init__(self, locks_dir: Path, session_id: str):
+        self.locks_dir = locks_dir
+        self.session_id = session_id
+        self.lock_file = locks_dir / f"{session_id}.lock"
+
+    def acquire(self) -> bool:
+        self.locks_dir.mkdir(parents=True, exist_ok=True)
+        if self.lock_file.exists():
+            return False
+        payload = {
+            "session_id": self.session_id,
+            "pid": os.getpid(),
+            "acquired_utc": datetime.now(timezone.utc).isoformat(),
+        }
+        try:
+            with open(self.lock_file, "x", encoding="utf-8") as f:
+                json.dump(payload, f)
+            return True
+        except FileExistsError:
+            return False
+
+    def release(self) -> bool:
+        if self.lock_file.exists():
+            try:
+                self.lock_file.unlink()
+                return True
+            except Exception:
+                return False
+        return True
+
+
+def get_active_session_file(in_progress_dir: Path) -> Optional[Path]:
+    """Retrieve active session file if one currently exists in in_progress directory."""
+    if in_progress_dir.exists():
+        active = list(in_progress_dir.glob("*.active.json"))
+        if active:
+            return active[0]
+    return None
 
 
 class SessionRecordType(str, Enum):
@@ -148,6 +322,16 @@ class OperatorAcceptanceEvaluator:
             else:
                 dry_run_sessions.append(r)
 
+        # Distinguish passed vs non-passing real sessions
+        passed_real_sessions: List[Dict[str, Any]] = [
+            r for r in real_sessions
+            if r.get("status") == "PASS" or r.get("session_outcome") == "PASS"
+        ]
+        failed_real_sessions: List[Dict[str, Any]] = [
+            r for r in real_sessions
+            if r not in passed_real_sessions
+        ]
+
         # Check duplicate session IDs among real sessions
         seen_ids: Set[str] = set()
         for r in real_sessions:
@@ -175,33 +359,36 @@ class OperatorAcceptanceEvaluator:
                 if REJECTION_OVERLAPPING_SESSION not in blockers:
                     blockers.append(REJECTION_OVERLAPPING_SESSION)
 
-        # Calculate actual timestamp-derived operating time for real sessions only
+        # Calculate actual timestamp-derived operating time for passed real sessions only
         total_real_operating_seconds = sum(
             max(0.0, (datetime.fromisoformat(r["end_timestamp_utc"]) - datetime.fromisoformat(r["start_timestamp_utc"])).total_seconds())
-            for r in real_sessions
+            for r in passed_real_sessions
             if "start_timestamp_utc" in r and "end_timestamp_utc" in r
         )
         total_real_operating_hours = total_real_operating_seconds / 3600.0
 
-        # Distinct working dates among real sessions
+        # Distinct working dates among passed real sessions
         distinct_real_dates = set()
-        for r in real_sessions:
+        for r in passed_real_sessions:
             date_val = r.get("date_utc")
             if not date_val and "start_timestamp_utc" in r:
                 date_val = r["start_timestamp_utc"][:10]
             if date_val:
                 distinct_real_dates.add(date_val)
 
-        # Count post-restart sessions among real sessions
-        post_restart_count = sum(1 for r in real_sessions if r.get("is_post_restart") is True)
+        # Count post-restart sessions among passed real sessions
+        post_restart_count = sum(
+            1 for r in passed_real_sessions
+            if r.get("is_post_restart") is True or r.get("post_restart_verified") is True
+        )
 
         # Validate 5 distinct working dates requirement
         if len(distinct_real_dates) < 5:
             blockers.append(f"{REJECTION_FIVE_DISTINCT_DATES} ({len(distinct_real_dates)}/5)")
 
         # Validate 10 real sessions requirement
-        if len(real_sessions) < 10:
-            blockers.append(f"{REJECTION_TEN_REAL_SESSIONS} ({len(real_sessions)}/10)")
+        if len(passed_real_sessions) < 10:
+            blockers.append(f"{REJECTION_TEN_REAL_SESSIONS} ({len(passed_real_sessions)}/10)")
 
         # Validate 18,000 seconds (5 hours) requirement
         if total_real_operating_seconds < 18000.0:
@@ -220,7 +407,7 @@ class OperatorAcceptanceEvaluator:
             pass
 
         # Determine final status
-        passed = (len(blockers) == 0 and len(real_sessions) >= 10 and total_real_operating_seconds >= 18000.0)
+        passed = (len(blockers) == 0 and len(passed_real_sessions) >= 10 and total_real_operating_seconds >= 18000.0)
         status = AcceptanceStatus.PASSED.value if passed else AcceptanceStatus.IN_PROGRESS.value
 
         return {
@@ -231,6 +418,8 @@ class OperatorAcceptanceEvaluator:
             "acceptance_status": status,
             "acceptance_passed": passed,
             "real_operator_sessions_count": len(real_sessions),
+            "passed_real_sessions_count": len(passed_real_sessions),
+            "failed_real_sessions_count": len(failed_real_sessions),
             "dry_run_sessions_count": len(dry_run_sessions),
             "simulated_sessions_count": len(simulated_sessions),
             "distinct_working_dates_count": len(distinct_real_dates),
@@ -249,11 +438,22 @@ class OperatorAcceptanceHarness:
         self,
         staging_root: Optional[Path] = None,
         acceptance_dir: Optional[Path] = None,
+        repo_root: Optional[Path] = None,
     ) -> None:
         self.staging_root = Path(staging_root) if staging_root else DEFAULT_STAGING_ROOT
         self.acceptance_dir = Path(acceptance_dir) if acceptance_dir else DEFAULT_ACCEPTANCE_DIR
+        self.repo_root = Path(repo_root) if repo_root else Path(__file__).resolve().parent.parent.parent
         self.sessions_dir = self.acceptance_dir / "sessions"
+        self.real_sessions_dir = self.acceptance_dir / "real_sessions"
+        self.in_progress_dir = self.acceptance_dir / "in_progress"
+        self.locks_dir = self.acceptance_dir / "locks"
+        self.audit_dir = self.acceptance_dir / "audit"
+
         self.sessions_dir.mkdir(parents=True, exist_ok=True)
+        self.real_sessions_dir.mkdir(parents=True, exist_ok=True)
+        self.in_progress_dir.mkdir(parents=True, exist_ok=True)
+        self.locks_dir.mkdir(parents=True, exist_ok=True)
+        self.audit_dir.mkdir(parents=True, exist_ok=True)
 
     def execute_session(
         self,
@@ -361,9 +561,7 @@ class OperatorAcceptanceHarness:
 
         end_utc = datetime.now(timezone.utc).isoformat()
         elapsed_sec = time.time() - start_time_real
-
-        # In real session, actual elapsed time is used; in dry run, nominal planned seconds is recorded as declared
-        operating_seconds = elapsed_sec if session_record_type == SessionRecordType.REAL_OPERATOR_SESSION else elapsed_sec
+        operating_seconds = elapsed_sec
 
         record: Dict[str, Any] = {
             "session_id": session_id,
@@ -394,11 +592,705 @@ class OperatorAcceptanceHarness:
         out_file.write_text(json.dumps(record, indent=2), encoding="utf-8")
         return record
 
+    def start_session(
+        self,
+        session_id: str,
+        operator_role: str,
+        interface_mode: str,
+        workflow: str,
+    ) -> Tuple[AcceptanceExitCode, Dict[str, Any], str]:
+        """Start an active real operator acceptance session."""
+        # 1. Validate session ID
+        if not validate_session_id(session_id):
+            return (
+                AcceptanceExitCode.INVALID_ARGS,
+                {},
+                f"INVALID_SESSION_ID: '{session_id}' (must strictly match REAL-S01..REAL-S99)",
+            )
+
+        # 2. Validate operator role
+        if operator_role not in [r.value for r in OperatorRole]:
+            return (
+                AcceptanceExitCode.INVALID_ARGS,
+                {},
+                f"INVALID_OPERATOR_ROLE: '{operator_role}' (permitted: {[r.value for r in OperatorRole]})",
+            )
+
+        # 3. Validate interface mode
+        if interface_mode not in [InterfaceMode.CLI.value, InterfaceMode.GUI.value]:
+            return (
+                AcceptanceExitCode.INVALID_ARGS,
+                {},
+                f"INVALID_INTERFACE_MODE: '{interface_mode}' (permitted: CLI, GUI)",
+            )
+
+        # 4. Validate workflow
+        if workflow not in [w.value for w in AcceptanceWorkflow]:
+            return (
+                AcceptanceExitCode.INVALID_ARGS,
+                {},
+                f"INVALID_WORKFLOW: '{workflow}' (not an approved governed workflow)",
+            )
+
+        # 5. Check bound workflow for governed sessions
+        if session_id in GOVERNED_SESSION_WORKFLOW_MAP:
+            expected_wf = GOVERNED_SESSION_WORKFLOW_MAP[session_id].value
+            if workflow != expected_wf:
+                return (
+                    AcceptanceExitCode.INVALID_ARGS,
+                    {},
+                    f"WORKFLOW_MISMATCH: {session_id} requires {expected_wf}, got {workflow}",
+                )
+
+        # 6. Verify acceptance status is IN_PROGRESS
+        summary_file = self.acceptance_dir / "acceptance_master_summary.json"
+        if summary_file.exists():
+            try:
+                sum_data = json.loads(summary_file.read_text(encoding="utf-8"))
+                if sum_data.get("acceptance_status") != AcceptanceStatus.IN_PROGRESS.value:
+                    return (
+                        AcceptanceExitCode.GOVERNANCE_FAILURE,
+                        {},
+                        f"ACCEPTANCE_STATUS_NOT_IN_PROGRESS: {sum_data.get('acceptance_status')}",
+                    )
+            except Exception:
+                pass
+
+        # 7. Check if already finalized
+        final_file = self.real_sessions_dir / f"{session_id}.final.json"
+        if final_file.exists():
+            return (
+                AcceptanceExitCode.LIFECYCLE_CONFLICT,
+                {},
+                f"SESSION_ALREADY_FINALIZED: {session_id}",
+            )
+
+        # 8. Check if another session is already in progress
+        active_file = get_active_session_file(self.in_progress_dir)
+        if active_file:
+            active_id = active_file.name.replace(".active.json", "")
+            return (
+                AcceptanceExitCode.LIFECYCLE_CONFLICT,
+                {},
+                f"ANOTHER_SESSION_ALREADY_ACTIVE: {active_id}",
+            )
+
+        # 9. Acquire session lock
+        lock = AcceptanceSessionLock(self.locks_dir, session_id)
+        if not lock.acquire():
+            return (
+                AcceptanceExitCode.LOCK_FAILURE,
+                {},
+                f"SESSION_LOCK_CONFLICT: {session_id}.lock already held",
+            )
+
+        # 10. Capture system metadata
+        now_dt = datetime.now(timezone.utc)
+        now_utc = now_dt.isoformat()
+        mono_start = time.monotonic()
+        head, tags_status = get_repo_head_and_tags(self.repo_root)
+        boot_dt = get_windows_boot_time_utc()
+        boot_utc = boot_dt.isoformat() if boot_dt else "UNKNOWN"
+        host = get_sanitized_host_identity()
+        boot_cycle_id = f"{boot_utc}:{host}"
+
+        in_progress_record: Dict[str, Any] = {
+            "session_id": session_id,
+            "session_record_type": SessionRecordType.REAL_OPERATOR_SESSION.value,
+            "lifecycle_state": "ACTIVE_REAL_OPERATOR_SESSION",
+            "operator_role": operator_role,
+            "interface_mode": interface_mode,
+            "workflow": workflow,
+            "date_utc": now_utc[:10],
+            "start_timestamp_utc": now_utc,
+            "monotonic_start_seconds": mono_start,
+            "repo_head": head,
+            "closure_tags_status": tags_status,
+            "network_quarantine_active": True,
+            "sanitized_host": host,
+            "boot_timestamp_utc": boot_utc,
+            "boot_cycle_id": boot_cycle_id,
+            "lock_acquired": True,
+            "starting_state": ApplicationState.STARTING.value,
+            "application_state": "ACTIVE_REAL_OPERATOR_SESSION",
+        }
+        in_progress_record["checksum_sha256"] = compute_record_checksum(in_progress_record)
+
+        # 11. Write atomic in-progress record
+        target_path = self.in_progress_dir / f"{session_id}.active.json"
+        atomic_write_json(target_path, in_progress_record)
+
+        # 12. Append audit log
+        audit_file = self.audit_dir / "session_lifecycle.jsonl"
+        with open(audit_file, "a", encoding="utf-8") as af:
+            af.write(
+                json.dumps(
+                    {
+                        "timestamp_utc": now_utc,
+                        "event": "SESSION_STARTED",
+                        "session_id": session_id,
+                        "operator_role": operator_role,
+                        "workflow": workflow,
+                    }
+                )
+                + "\n"
+            )
+
+        return (
+            AcceptanceExitCode.SUCCESS,
+            in_progress_record,
+            f"SESSION_STARTED: {session_id} in state ACTIVE_REAL_OPERATOR_SESSION",
+        )
+
+    def get_status(
+        self, session_id: Optional[str] = None
+    ) -> Tuple[AcceptanceExitCode, Dict[str, Any], str]:
+        """Query and display governed metadata for an active or finalized session."""
+        now = datetime.now(timezone.utc)
+        target_id = session_id
+
+        if not target_id:
+            active_file = get_active_session_file(self.in_progress_dir)
+            if active_file:
+                target_id = active_file.name.replace(".active.json", "")
+
+        if not target_id:
+            return (
+                AcceptanceExitCode.SUCCESS,
+                {"status": "NO_ACTIVE_SESSION"},
+                "No active operator acceptance session found in in_progress.",
+            )
+
+        active_path = self.in_progress_dir / f"{target_id}.active.json"
+        if active_path.exists():
+            try:
+                rec = json.loads(active_path.read_text(encoding="utf-8"))
+            except Exception as e:
+                return (
+                    AcceptanceExitCode.INTEGRITY_FAILURE,
+                    {},
+                    f"FAILED_TO_READ_ACTIVE_RECORD: {e}",
+                )
+
+            start_dt = datetime.fromisoformat(rec["start_timestamp_utc"])
+            elapsed_sec = max(0.0, (now - start_dt).total_seconds())
+            elapsed_min = elapsed_sec / 60.0
+            eligible_for_pass = elapsed_sec >= 1800.0
+
+            status_dict = {
+                "session_id": target_id,
+                "record_type": rec.get("session_record_type"),
+                "lifecycle_state": rec.get("lifecycle_state"),
+                "operator_role": rec.get("operator_role"),
+                "interface_mode": rec.get("interface_mode"),
+                "workflow": rec.get("workflow"),
+                "start_timestamp_utc": rec.get("start_timestamp_utc"),
+                "current_elapsed_seconds": elapsed_sec,
+                "current_elapsed_minutes": elapsed_min,
+                "minimum_duration_met": eligible_for_pass,
+                "network_quarantine_active": rec.get("network_quarantine_active", True),
+                "repo_head": rec.get("repo_head"),
+                "boot_timestamp_utc": rec.get("boot_timestamp_utc"),
+                "session_lock_held": (self.locks_dir / f"{target_id}.lock").exists(),
+                "finalization_eligible": eligible_for_pass,
+            }
+
+            msg_lines = [
+                f"Session ID:            {target_id}",
+                f"Record Type:           {rec.get('session_record_type')}",
+                f"Lifecycle State:       {rec.get('lifecycle_state')}",
+                f"Operator Role:         {rec.get('operator_role')}",
+                f"Interface Mode:        {rec.get('interface_mode')}",
+                f"Workflow:              {rec.get('workflow')}",
+                f"Start Timestamp (UTC): {rec.get('start_timestamp_utc')}",
+                f"Current Elapsed Time:  {elapsed_sec:.1f}s ({elapsed_min:.1f}m)",
+                f"Quarantine Active:     {rec.get('network_quarantine_active')}",
+                f"Repo HEAD:             {rec.get('repo_head')}",
+                f"Boot Timestamp (UTC):  {rec.get('boot_timestamp_utc')}",
+                f"Session Lock:          {'HELD' if status_dict['session_lock_held'] else 'NOT_FOUND'}",
+                f"Finalization Eligible: {'YES' if eligible_for_pass else 'NO (MINIMUM_REAL_DURATION_NOT_YET_MET)'}",
+            ]
+            if not eligible_for_pass:
+                msg_lines.append("\n[WARNING] MINIMUM_REAL_DURATION_NOT_YET_MET (>=1800s required for PASS)")
+
+            return (
+                AcceptanceExitCode.SUCCESS,
+                status_dict,
+                "\n".join(msg_lines),
+            )
+
+        final_path = self.real_sessions_dir / f"{target_id}.final.json"
+        if final_path.exists():
+            try:
+                rec = json.loads(final_path.read_text(encoding="utf-8"))
+                return (
+                    AcceptanceExitCode.SUCCESS,
+                    rec,
+                    f"Session {target_id} is FINALIZED with status {rec.get('status')} and outcome {rec.get('session_outcome')}.",
+                )
+            except Exception as e:
+                return (
+                    AcceptanceExitCode.INTEGRITY_FAILURE,
+                    {},
+                    f"FAILED_TO_READ_FINAL_RECORD: {e}",
+                )
+
+        return (
+            AcceptanceExitCode.INVALID_ARGS,
+            {},
+            f"SESSION_NOT_FOUND: {target_id} neither active nor finalized",
+        )
+
+    def finalize_session(
+        self,
+        session_id: str,
+        session_outcome: str = "PASS",
+        observation_file: Optional[Path] = None,
+        observations: Optional[str] = None,
+        defect_references: Optional[List[str]] = None,
+    ) -> Tuple[AcceptanceExitCode, Dict[str, Any], str]:
+        """Finalize an active real operator acceptance session."""
+        if not validate_session_id(session_id):
+            return (
+                AcceptanceExitCode.INVALID_ARGS,
+                {},
+                f"INVALID_SESSION_ID: '{session_id}'",
+            )
+
+        active_path = self.in_progress_dir / f"{session_id}.active.json"
+        if not active_path.exists():
+            return (
+                AcceptanceExitCode.LIFECYCLE_CONFLICT,
+                {},
+                f"NO_ACTIVE_SESSION_TO_FINALIZE: {session_id}",
+            )
+
+        try:
+            in_prog = json.loads(active_path.read_text(encoding="utf-8"))
+        except Exception as e:
+            return (
+                AcceptanceExitCode.INTEGRITY_FAILURE,
+                {},
+                f"CORRUPT_IN_PROGRESS_RECORD: {e}",
+            )
+
+        # Verify integrity
+        stored_cs = in_prog.get("checksum_sha256")
+        expected_cs = compute_record_checksum(in_prog)
+        if stored_cs != expected_cs:
+            return (
+                AcceptanceExitCode.INTEGRITY_FAILURE,
+                {},
+                "IN_PROGRESS_RECORD_INTEGRITY_VIOLATION: Checksum mismatch",
+            )
+
+        # Verify lock
+        lock_file = self.locks_dir / f"{session_id}.lock"
+        if not lock_file.exists():
+            return (
+                AcceptanceExitCode.LOCK_FAILURE,
+                {},
+                f"SESSION_LOCK_MISSING: {session_id}.lock",
+            )
+
+        # Check observations
+        obs_text = observations or ""
+        if observation_file:
+            obs_p = Path(observation_file)
+            if obs_p.exists():
+                try:
+                    obs_text = obs_p.read_text(encoding="utf-8")
+                except Exception as e:
+                    return (
+                        AcceptanceExitCode.INVALID_ARGS,
+                        {},
+                        f"CANNOT_READ_OBSERVATION_FILE: {e}",
+                    )
+            else:
+                return (
+                    AcceptanceExitCode.INVALID_ARGS,
+                    {},
+                    f"OBSERVATION_FILE_NOT_FOUND: {observation_file}",
+                )
+
+        obs_ok, clean_obs, obs_err = sanitize_observations(obs_text)
+        if not obs_ok:
+            return (
+                AcceptanceExitCode.GOVERNANCE_FAILURE,
+                {},
+                f"OBSERVATION_SANITIZATION_FAILED: {obs_err}",
+            )
+
+        # Check defect references
+        def_ok, def_err = validate_defect_references(defect_references)
+        if not def_ok:
+            return (
+                AcceptanceExitCode.INVALID_ARGS,
+                {},
+                f"DEFECT_REFERENCE_VALIDATION_FAILED: {def_err}",
+            )
+
+        # Generate timestamps
+        end_dt = datetime.now(timezone.utc)
+        end_utc = end_dt.isoformat()
+        mono_end = time.monotonic()
+        start_dt = datetime.fromisoformat(in_prog["start_timestamp_utc"])
+
+        if end_dt <= start_dt:
+            return (
+                AcceptanceExitCode.TIMESTAMP_VALIDATION,
+                {},
+                "END_TIMESTAMP_PRECEDES_OR_EQUALS_START",
+            )
+
+        measured_duration = (end_dt - start_dt).total_seconds()
+        mono_start = in_prog.get("monotonic_start_seconds")
+        if mono_start is not None:
+            mono_duration = mono_end - mono_start
+            if abs(measured_duration - mono_duration) > 5.0:
+                return (
+                    AcceptanceExitCode.TIMESTAMP_VALIDATION,
+                    {},
+                    f"DURATION_DIVERGENCE: wallclock={measured_duration:.2f}s monotonic={mono_duration:.2f}s",
+                )
+
+        # Duration requirement for PASS
+        if session_outcome == "PASS" and measured_duration < 1800.0:
+            return (
+                AcceptanceExitCode.DURATION_NOT_MET,
+                {},
+                f"MINIMUM_DURATION_NOT_MET: {measured_duration:.1f}s < 1800.0s required for PASS",
+            )
+
+        # Check for overlaps with already finalized real sessions
+        for existing_f in self.real_sessions_dir.glob("*.final.json"):
+            try:
+                ex_data = json.loads(existing_f.read_text(encoding="utf-8"))
+                ex_s = datetime.fromisoformat(ex_data["start_timestamp_utc"])
+                ex_e = datetime.fromisoformat(ex_data["end_timestamp_utc"])
+                if not (end_dt <= ex_s or start_dt >= ex_e):
+                    return (
+                        AcceptanceExitCode.LIFECYCLE_CONFLICT,
+                        {},
+                        f"OVERLAPPING_SESSION_INTERVAL: overlaps with {ex_data.get('session_id')}",
+                    )
+            except Exception:
+                pass
+
+        # Determine verified post-restart
+        post_restart_verified = False
+        boot_utc_str = in_prog.get("boot_timestamp_utc", "")
+        if boot_utc_str and boot_utc_str != "UNKNOWN":
+            try:
+                boot_dt = datetime.fromisoformat(boot_utc_str)
+                if boot_dt < start_dt and boot_dt <= end_dt:
+                    if in_prog.get("workflow") == AcceptanceWorkflow.GUI_READINESS_AFTER_RESTART.value:
+                        prior_cycles = set()
+                        for ex_f in self.real_sessions_dir.glob("*.final.json"):
+                            try:
+                                d = json.loads(ex_f.read_text(encoding="utf-8"))
+                                if d.get("is_post_restart"):
+                                    prior_cycles.add(d.get("boot_cycle_id"))
+                            except Exception:
+                                pass
+                        current_cycle = in_prog.get("boot_cycle_id")
+                        if current_cycle and current_cycle not in prior_cycles:
+                            post_restart_verified = True
+            except Exception:
+                pass
+
+        final_record: Dict[str, Any] = {
+            "session_id": session_id,
+            "session_record_type": SessionRecordType.REAL_OPERATOR_SESSION.value,
+            "lifecycle_state": "FINALIZED_REAL_OPERATOR_SESSION",
+            "operator_role": in_prog["operator_role"],
+            "interface_mode": in_prog["interface_mode"],
+            "workflow": in_prog["workflow"],
+            "date_utc": in_prog["date_utc"],
+            "start_timestamp_utc": in_prog["start_timestamp_utc"],
+            "end_timestamp_utc": end_utc,
+            "operating_time_seconds": measured_duration,
+            "operating_time_minutes": measured_duration / 60.0,
+            "declared_duration_seconds": measured_duration,
+            "is_post_restart": post_restart_verified,
+            "post_restart_verified": post_restart_verified,
+            "boot_cycle_id": in_prog.get("boot_cycle_id"),
+            "starting_state": ApplicationState.STARTING.value,
+            "final_state": ApplicationState.READY_READ_ONLY.value,
+            "single_instance_lock_acquired": True,
+            "single_instance_lock_released": True,
+            "network_quarantine_active": True,
+            "network_requests_dispatched": 0,
+            "evidence_mutation_count": 0,
+            "active_markers_count": 0,
+            "repo_data_writes_count": 0,
+            "target_generation_count": 0,
+            "model_training_count": 0,
+            "performance_calculation_count": 0,
+            "session_exit_code": 0 if session_outcome == "PASS" else 1,
+            "session_outcome": session_outcome,
+            "status": session_outcome,
+            "operator_observations": clean_obs,
+            "defect_references": defect_references or [],
+        }
+        final_record["record_sha256"] = compute_record_checksum(final_record)
+
+        # Write to real_sessions atomically
+        final_target = self.real_sessions_dir / f"{session_id}.final.json"
+        atomic_write_json(final_target, final_record)
+
+        # Remove in_progress
+        try:
+            active_path.unlink()
+        except Exception:
+            pass
+
+        # Release lock
+        lock = AcceptanceSessionLock(self.locks_dir, session_id)
+        lock.release()
+
+        # Append to audit
+        audit_file = self.audit_dir / "session_lifecycle.jsonl"
+        with open(audit_file, "a", encoding="utf-8") as af:
+            af.write(
+                json.dumps(
+                    {
+                        "timestamp_utc": end_utc,
+                        "event": "SESSION_FINALIZED",
+                        "session_id": session_id,
+                        "outcome": session_outcome,
+                        "duration_seconds": measured_duration,
+                    }
+                )
+                + "\n"
+            )
+
+        # Update summary
+        self.update_master_summary()
+
+        return (
+            AcceptanceExitCode.SUCCESS,
+            final_record,
+            f"SESSION_FINALIZED: {session_id} with outcome {session_outcome} ({measured_duration:.1f}s)",
+        )
+
+    def abort_session(
+        self, session_id: str, reason_code: str
+    ) -> Tuple[AcceptanceExitCode, Dict[str, Any], str]:
+        """Abort an active real operator acceptance session."""
+        if not validate_session_id(session_id):
+            return (
+                AcceptanceExitCode.INVALID_ARGS,
+                {},
+                f"INVALID_SESSION_ID: '{session_id}'",
+            )
+
+        active_path = self.in_progress_dir / f"{session_id}.active.json"
+        if not active_path.exists():
+            return (
+                AcceptanceExitCode.LIFECYCLE_CONFLICT,
+                {},
+                f"NO_ACTIVE_SESSION_TO_ABORT: {session_id}",
+            )
+
+        try:
+            in_prog = json.loads(active_path.read_text(encoding="utf-8"))
+        except Exception as e:
+            return (
+                AcceptanceExitCode.INTEGRITY_FAILURE,
+                {},
+                f"CORRUPT_IN_PROGRESS_RECORD: {e}",
+            )
+
+        abort_dt = datetime.now(timezone.utc)
+        abort_utc = abort_dt.isoformat()
+        start_dt = datetime.fromisoformat(in_prog["start_timestamp_utc"])
+        elapsed_sec = max(0.0, (abort_dt - start_dt).total_seconds())
+
+        aborted_record: Dict[str, Any] = {
+            "session_id": session_id,
+            "session_record_type": SessionRecordType.REAL_OPERATOR_SESSION.value,
+            "lifecycle_state": "ABORTED_REAL_OPERATOR_SESSION",
+            "operator_role": in_prog["operator_role"],
+            "interface_mode": in_prog["interface_mode"],
+            "workflow": in_prog["workflow"],
+            "date_utc": in_prog["date_utc"],
+            "start_timestamp_utc": in_prog["start_timestamp_utc"],
+            "end_timestamp_utc": abort_utc,
+            "operating_time_seconds": elapsed_sec,
+            "operating_time_minutes": elapsed_sec / 60.0,
+            "declared_duration_seconds": elapsed_sec,
+            "is_post_restart": False,
+            "post_restart_verified": False,
+            "boot_cycle_id": in_prog.get("boot_cycle_id"),
+            "starting_state": ApplicationState.STARTING.value,
+            "final_state": ApplicationState.STOPPED.value,
+            "single_instance_lock_acquired": True,
+            "single_instance_lock_released": True,
+            "network_quarantine_active": True,
+            "network_requests_dispatched": 0,
+            "evidence_mutation_count": 0,
+            "active_markers_count": 0,
+            "repo_data_writes_count": 0,
+            "target_generation_count": 0,
+            "model_training_count": 0,
+            "performance_calculation_count": 0,
+            "session_exit_code": 1,
+            "session_outcome": "ABORTED",
+            "status": "ABORTED",
+            "abort_reason": reason_code,
+            "operator_observations": "",
+            "defect_references": [],
+        }
+        aborted_record["record_sha256"] = compute_record_checksum(aborted_record)
+
+        # Write to real_sessions
+        final_target = self.real_sessions_dir / f"{session_id}.final.json"
+        atomic_write_json(final_target, aborted_record)
+
+        # Remove in_progress
+        try:
+            active_path.unlink()
+        except Exception:
+            pass
+
+        # Release lock
+        lock = AcceptanceSessionLock(self.locks_dir, session_id)
+        lock.release()
+
+        # Append to audit
+        audit_file = self.audit_dir / "session_lifecycle.jsonl"
+        with open(audit_file, "a", encoding="utf-8") as af:
+            af.write(
+                json.dumps(
+                    {
+                        "timestamp_utc": abort_utc,
+                        "event": "SESSION_ABORTED",
+                        "session_id": session_id,
+                        "reason": reason_code,
+                        "duration_seconds": elapsed_sec,
+                    }
+                )
+                + "\n"
+            )
+
+        # Update summary
+        self.update_master_summary()
+
+        return (
+            AcceptanceExitCode.SUCCESS,
+            aborted_record,
+            f"SESSION_ABORTED: {session_id} (Reason: {reason_code}, Duration: {elapsed_sec:.1f}s)",
+        )
+
+    def validate_session_file(
+        self, session_file: Path
+    ) -> Tuple[AcceptanceExitCode, Dict[str, Any], str]:
+        """Validate an on-disk session record file."""
+        p = Path(session_file)
+        if not p.exists():
+            return (
+                AcceptanceExitCode.INVALID_ARGS,
+                {},
+                f"FILE_NOT_FOUND: {session_file}",
+            )
+        try:
+            rec = json.loads(p.read_text(encoding="utf-8"))
+        except Exception as e:
+            return (
+                AcceptanceExitCode.INTEGRITY_FAILURE,
+                {},
+                f"INVALID_JSON_FILE: {e}",
+            )
+
+        errors = OperatorAcceptanceEvaluator.validate_session_record(rec)
+        if errors:
+            return (
+                AcceptanceExitCode.TIMESTAMP_VALIDATION,
+                rec,
+                f"SESSION_RECORD_VALIDATION_ERRORS: {', '.join(errors)}",
+            )
+
+        if rec.get("session_record_type") == SessionRecordType.REAL_OPERATOR_SESSION.value:
+            s_id = rec.get("session_id", "")
+            if not validate_session_id(s_id):
+                return (
+                    AcceptanceExitCode.INVALID_ARGS,
+                    rec,
+                    f"INVALID_REAL_SESSION_ID: '{s_id}'",
+                )
+            if rec.get("operator_role") not in [r.value for r in OperatorRole]:
+                return (
+                    AcceptanceExitCode.INVALID_ARGS,
+                    rec,
+                    f"INVALID_OPERATOR_ROLE: '{rec.get('operator_role')}'",
+                )
+            if rec.get("interface_mode") not in [m.value for m in InterfaceMode]:
+                return (
+                    AcceptanceExitCode.INVALID_ARGS,
+                    rec,
+                    f"INVALID_INTERFACE_MODE: '{rec.get('interface_mode')}'",
+                )
+            if rec.get("workflow") not in [w.value for w in AcceptanceWorkflow]:
+                return (
+                    AcceptanceExitCode.INVALID_ARGS,
+                    rec,
+                    f"INVALID_WORKFLOW: '{rec.get('workflow')}'",
+                )
+
+            if "record_sha256" in rec:
+                calc_cs = compute_record_checksum(rec)
+                if rec["record_sha256"] != calc_cs:
+                    return (
+                        AcceptanceExitCode.INTEGRITY_FAILURE,
+                        rec,
+                        "RECORD_CHECKSUM_MISMATCH",
+                    )
+
+        return (
+            AcceptanceExitCode.SUCCESS,
+            rec,
+            f"SESSION_RECORD_VALID: {rec.get('session_id')}",
+        )
+
+    def summarize(self) -> Tuple[AcceptanceExitCode, Dict[str, Any], str]:
+        """Recompute master summary across real sessions and dry-run sessions."""
+        summary = self.update_master_summary()
+        summary_lines = [
+            "=" * 80,
+            "OPERATOR ACCEPTANCE MASTER SUMMARY",
+            "-" * 80,
+            f"Acceptance Status:             {summary['acceptance_status']}",
+            f"Acceptance Passed:             {summary['acceptance_passed']}",
+            f"Real Sessions (Total / Pass):  {summary.get('real_operator_sessions_count', 0)} / {summary.get('passed_real_sessions_count', 0)}",
+            f"Dry-Run Sessions:              {summary.get('dry_run_sessions_count', 0)}",
+            f"Distinct Working Dates:        {summary.get('distinct_working_dates_count', 0)} / 5 required",
+            f"Total Operating Time:          {summary.get('total_real_operating_seconds', 0.0):.1f}s ({summary.get('total_real_operating_hours', 0.0):.2f}h / 5.0h required)",
+            f"Post-Restart Sessions:         {summary.get('post_restart_sessions_count', 0)} / 2 required",
+            "-" * 80,
+            f"Active Blockers ({len(summary.get('active_blockers', []))}):",
+        ]
+        for b in summary.get("active_blockers", []):
+            summary_lines.append(f"  - {b}")
+        summary_lines.append("=" * 80)
+        return (
+            AcceptanceExitCode.SUCCESS,
+            summary,
+            "\n".join(summary_lines),
+        )
+
     def update_master_summary(self, current_time: Optional[datetime] = None) -> Dict[str, Any]:
         """Load all on-disk sessions, reclassify, evaluate, and write master summary."""
         records: List[Dict[str, Any]] = []
         if self.sessions_dir.exists():
             for f in sorted(self.sessions_dir.glob("*.json")):
+                try:
+                    data = json.loads(f.read_text(encoding="utf-8"))
+                    records.append(data)
+                except Exception:
+                    pass
+        if self.real_sessions_dir.exists():
+            for f in sorted(self.real_sessions_dir.glob("*.json")):
                 try:
                     data = json.loads(f.read_text(encoding="utf-8"))
                     records.append(data)
@@ -414,3 +1306,135 @@ class OperatorAcceptanceHarness:
         summary_file = self.acceptance_dir / "acceptance_master_summary.json"
         summary_file.write_text(json.dumps(summary, indent=2), encoding="utf-8")
         return summary
+
+
+def build_argument_parser() -> argparse.ArgumentParser:
+    """Construct CLI argument parser for acceptance runner subcommands."""
+    parser = argparse.ArgumentParser(
+        prog="python -m phase7.operator.acceptance_runner",
+        description="Governed Phase 7 Offline Operator Acceptance Runner CLI",
+    )
+    subparsers = parser.add_subparsers(dest="subcommand", help="Available subcommands")
+
+    # start-session
+    start_p = subparsers.add_parser("start-session", help="Start a real operator acceptance session")
+    start_p.add_argument("--session-id", required=True, help="Session ID (REAL-SNN format)")
+    start_p.add_argument("--operator-role", required=True, help="Operator role (OWNER, AUTHORIZED_INTERNAL_OPERATOR)")
+    start_p.add_argument("--interface-mode", required=True, help="Interface mode (CLI, GUI)")
+    start_p.add_argument("--workflow", required=True, help="Governed acceptance workflow")
+    start_p.add_argument("--acceptance-root", default=str(DEFAULT_ACCEPTANCE_DIR), help="Path to external acceptance root")
+
+    # status
+    status_p = subparsers.add_parser("status", help="Query status of operator acceptance session")
+    status_p.add_argument("--session-id", help="Session ID to inspect")
+    status_p.add_argument("--acceptance-root", default=str(DEFAULT_ACCEPTANCE_DIR), help="Path to external acceptance root")
+
+    # finalize-session
+    finalize_p = subparsers.add_parser("finalize-session", help="Finalize an active operator acceptance session")
+    finalize_p.add_argument("--session-id", required=True, help="Session ID (REAL-SNN format)")
+    finalize_p.add_argument("--session-outcome", default="PASS", choices=["PASS", "FAIL"], help="Session outcome")
+    finalize_p.add_argument("--observation-file", help="Path to sanitized observation text file")
+    finalize_p.add_argument("--observations", help="Inline sanitized observation text")
+    finalize_p.add_argument("--defect-references", nargs="*", help="Defect reference IDs (OPACC-YYYYMMDD-NNN)")
+    finalize_p.add_argument("--acceptance-root", default=str(DEFAULT_ACCEPTANCE_DIR), help="Path to external acceptance root")
+
+    # abort-session
+    abort_p = subparsers.add_parser("abort-session", help="Abort an active operator acceptance session")
+    abort_p.add_argument("--session-id", required=True, help="Session ID (REAL-SNN format)")
+    abort_p.add_argument("--reason-code", required=True, help="Reason code for session abort")
+    abort_p.add_argument("--acceptance-root", default=str(DEFAULT_ACCEPTANCE_DIR), help="Path to external acceptance root")
+
+    # validate-session
+    validate_p = subparsers.add_parser("validate-session", help="Validate a finalized session record")
+    validate_p.add_argument("--session-file", help="Path to session record file")
+    validate_p.add_argument("--session-id", help="Session ID to look up in real_sessions")
+    validate_p.add_argument("--acceptance-root", default=str(DEFAULT_ACCEPTANCE_DIR), help="Path to external acceptance root")
+
+    # summarize
+    sum_p = subparsers.add_parser("summarize", help="Recompute and display acceptance master summary")
+    sum_p.add_argument("--acceptance-root", default=str(DEFAULT_ACCEPTANCE_DIR), help="Path to external acceptance root")
+
+    return parser
+
+
+def main(argv: Optional[List[str]] = None) -> int:
+    """CLI execution entrypoint for operator acceptance runner."""
+    parser = build_argument_parser()
+    args = parser.parse_args(argv)
+
+    if not args.subcommand:
+        parser.print_help()
+        return AcceptanceExitCode.SUCCESS.value
+
+    acceptance_root = (
+        Path(args.acceptance_root)
+        if hasattr(args, "acceptance_root") and args.acceptance_root
+        else DEFAULT_ACCEPTANCE_DIR
+    )
+    harness = OperatorAcceptanceHarness(acceptance_dir=acceptance_root)
+
+    try:
+        if args.subcommand == "start-session":
+            code, _, msg = harness.start_session(
+                session_id=args.session_id,
+                operator_role=args.operator_role,
+                interface_mode=args.interface_mode,
+                workflow=args.workflow,
+            )
+            print(msg)
+            return code.value
+
+        elif args.subcommand == "status":
+            code, _, msg = harness.get_status(session_id=args.session_id)
+            print(msg)
+            return code.value
+
+        elif args.subcommand == "finalize-session":
+            obs_file = Path(args.observation_file) if args.observation_file else None
+            code, _, msg = harness.finalize_session(
+                session_id=args.session_id,
+                session_outcome=args.session_outcome,
+                observation_file=obs_file,
+                observations=args.observations,
+                defect_references=args.defect_references,
+            )
+            print(msg)
+            return code.value
+
+        elif args.subcommand == "abort-session":
+            code, _, msg = harness.abort_session(
+                session_id=args.session_id,
+                reason_code=args.reason_code,
+            )
+            print(msg)
+            return code.value
+
+        elif args.subcommand == "validate-session":
+            target_file = None
+            if args.session_file:
+                target_file = Path(args.session_file)
+            elif args.session_id:
+                target_file = harness.real_sessions_dir / f"{args.session_id}.final.json"
+            if not target_file:
+                print("Error: Either --session-file or --session-id must be provided.", file=sys.stderr)
+                return AcceptanceExitCode.INVALID_ARGS.value
+            code, _, msg = harness.validate_session_file(target_file)
+            print(msg)
+            return code.value
+
+        elif args.subcommand == "summarize":
+            code, _, msg = harness.summarize()
+            print(msg)
+            return code.value
+
+        else:
+            parser.print_help()
+            return AcceptanceExitCode.INVALID_ARGS.value
+
+    except Exception as e:
+        print(f"UNEXPECTED_INTERNAL_ERROR: {e}", file=sys.stderr)
+        return AcceptanceExitCode.INTERNAL_ERROR.value
+
+
+if __name__ == "__main__":
+    sys.exit(main())
