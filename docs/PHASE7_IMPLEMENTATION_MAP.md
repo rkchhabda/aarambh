@@ -971,3 +971,45 @@ Milestone 3 delivered the comprehensive Target Engine (`phase7/targets/`), cover
 - External staging master summary status: **`INTERNAL_OFFLINE_OPERATOR_ACCEPTANCE_IN_PROGRESS`** (`acceptance_passed: false`, `real_operator_sessions_count: 0`, `dry_run_sessions_count: 10`).
 - Final status may become **`INTERNAL_OFFLINE_OPERATOR_ACCEPTANCE_PASSED`** strictly on or after `2026-10-16` after genuine real-time execution across 5 working dates.
 - Milestone 5 Quarantine: Strictly **BLOCKED**.
+
+---
+
+## 30. Milestone 4.13B Two-Phase Real Operator Session Lifecycle Deliverables
+
+### 30.1 Architecture and Governed CLI Lifecycle
+- Implemented stateful, two-phase operator acceptance lifecycle in `phase7/operator/acceptance_runner.py`:
+  - `AcceptanceExitCode` enum defining stable exit codes (0: `SUCCESS`, 2: `SCHEMA_VALIDATION_ERROR`, 3: `LIFECYCLE_CONFLICT`, 4: `LOCK_FAILURE`, 5: `TIMESTAMP_OR_DURATION_FAILURE`, 6: `INTEGRITY_FAILURE`, 7: `GOVERNANCE_BOUNDARY_FAILURE`, 8: `SESSION_INCOMPLETE_OR_MINIMUM_DURATION_NOT_MET`, 9: `NETWORK_OR_EVIDENCE_MUTATION_FAILURE`, 10: `UNEXPECTED_INTERNAL_ERROR`).
+  - `OperatorRole` enum (`OWNER`, `AUTHORIZED_INTERNAL_OPERATOR`).
+  - `InterfaceMode` enum (`CLI`, `GUI`, `CORE`).
+  - `AcceptanceWorkflow` enum (10 governed workflows).
+  - `GOVERNED_SESSION_WORKFLOW_MAP`: Mandates workflow binding for `REAL-S01` (`READINESS_DASHBOARD_AND_LIFECYCLE`) and `REAL-S02` (`EVIDENCE_INVENTORY_AND_FILE_HEALTH`).
+  - `AcceptanceSessionLock`: Process file lock under `<acceptance_root>\locks\<ID>.lock` preventing concurrent sessions.
+  - Subcommands:
+    1. `start-session`: Validates session ID (`REAL-S[0-9]{2}`), role, mode, workflow binding; acquires lock; records UTC start timestamp, monotonic start time, host identity, boot timestamp (`GetTickCount64`), and Git commit SHA; creates immutable `.active.json`; logs audit record.
+    2. `status`: Displays non-mutating governed session metadata, reporting `MINIMUM_REAL_DURATION_NOT_YET_MET` when $< 1,800$s.
+    3. `finalize-session`: Validates in-progress checksum and session lock; verifies wall-clock duration and monotonic clock divergence ($\le 5$s); enforces $\ge 1,800$s for `PASS` (exit code 8 if below); validates sanitized observations and defect references (`OPACC-[0-9]{8}-[0-9]{3,}`); enforces zero network requests, evidence mutations, and active markers; writes `.final.json` to `real_sessions/`; cleans in-progress state and lock; updates master summary.
+    4. `abort-session`: Finalizes session with `status: ABORTED`, preserving elapsed time and audit history without contributing to passed totals.
+    5. `validate-session`: Validates on-disk session record checksums and schema integrity.
+    6. `summarize`: Recomputes master summary separating real passed sessions from dry-run, simulated, or aborted records.
+
+### 30.2 Delivered Code and Test Artifacts
+
+| Capability / Requirement | Technical Description | Source Module | Test Module / Artifact | Status |
+|---|---|---|---|---|
+| **Two-Phase Session Runner & CLI** | Governed CLI entry point supporting `start-session`, `status`, `finalize-session`, `abort-session`, `validate-session`, `summarize` | `phase7/operator/acceptance_runner.py` | `tests/phase7/test_operator_acceptance_lifecycle.py` | **VERIFIED** |
+| **Lifecycle Constants & Contracts** | Exit codes, operator roles, interface modes, workflow enums, session/defect ID regexes | `phase7/operator/constants.py`, `phase7/operator/__init__.py` | `tests/phase7/test_operator_acceptance_lifecycle.py` | **VERIFIED** |
+| **System Boot & Monotonic Binding** | Hardware tick count boot timestamp and monotonic vs wall-clock divergence checks | `phase7/operator/acceptance_runner.py` | `tests/phase7/test_operator_acceptance_lifecycle.py` | **VERIFIED** |
+| **Lock Concurrency & In-Progress State** | Cross-process file locks, atomic write helpers, and `.active.json` state tracking | `phase7/operator/acceptance_runner.py` | `tests/phase7/test_operator_acceptance_lifecycle.py` | **VERIFIED** |
+| **Lifecycle Test Battery** | 12 comprehensive unit and integration tests covering all lifecycle transitions and error codes | N/A | `tests/phase7/test_operator_acceptance_lifecycle.py` (12 tests) | **VERIFIED** |
+
+### 30.3 Verification and Current Status
+- Prior test baseline: **825 passing**.
+- New lifecycle tests added: **12 passing** in `tests/phase7/test_operator_acceptance_lifecycle.py`.
+- Total test suite: **837 of 837 passing** (`pytest tests/phase7/ test_phase6_safeguards.py -q`).
+- Focused operator acceptance tests: **43 of 43 passing** (`test_operator_app.py`, `test_operator_acceptance.py`, `test_operator_acceptance_lifecycle.py`).
+- `pip check`: Clean (no broken requirements).
+- `git diff --check`: Clean (zero whitespace errors).
+- Existing 10 dry-run records preserved and unchanged in external staging.
+- Real sessions `REAL-S01` and `REAL-S02` NOT executed during implementation checkpoint.
+- Acceptance Status: **`INTERNAL_OFFLINE_OPERATOR_ACCEPTANCE_IN_PROGRESS`**.
+- Milestone 5 Quarantine: Strictly **BLOCKED**.

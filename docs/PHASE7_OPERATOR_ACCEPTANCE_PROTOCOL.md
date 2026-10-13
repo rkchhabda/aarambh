@@ -155,3 +155,69 @@ As of **2026-10-12**, existing harness demonstration sessions have been preserve
 The final status may become:
 **`INTERNAL_OFFLINE_OPERATOR_ACCEPTANCE_PASSED`**
 strictly on or after **2026-10-16**, after five actual working dates, ten real sessions, five measured operating hours, and two verified post-restart sessions are genuinely completed. Pre-writing or fabricating future sessions is strictly prohibited.
+
+---
+
+## 7. Milestone 4.13B Two-Phase Real Operator Session Lifecycle
+
+Under Project Owner Directive **Milestone 4.13B: Implement Two-Phase Real Operator Session Lifecycle**, the acceptance runner provides an interactive, stateful, auditable two-phase lifecycle CLI to establish genuine non-overlapping operator sessions lasting at least 1,800 measured seconds.
+
+### 7.1 Architecture & Governed CLI Subcommands
+The CLI entry point is invoked via:
+`.venv-phase7\Scripts\python.exe -m phase7.operator.acceptance_runner <subcommand>`
+
+The runner exposes six governed subcommands:
+1. `start-session`: Validates session parameters, acquires the single-instance session process lock, captures internal UTC and monotonic start timestamps, host identity, boot timestamp, and git HEAD, and atomically creates an immutable active in-progress state (`.active.json`).
+2. `status`: Displays governed metadata for active sessions, including elapsed seconds, application state, network quarantine state, and eligibility for finalization (`MINIMUM_REAL_DURATION_NOT_YET_MET` displayed if $< 1,800$s).
+3. `finalize-session`: Validates the active in-progress record checksum, session lock, verifies wall-clock and monotonic duration ($\ge 1,800$s for `PASS`, material divergence $\le 5$s), verifies zero network requests/evidence mutations/active markers, sanitizes observations and defect references, atomically persists the final record to `real_sessions/`, clears in-progress state and lock, and recomputes the master summary.
+4. `abort-session`: Aborts an active session with reason code, captures end timestamp internally, preserves elapsed operating seconds and in-progress audit history, marks record as `status: ABORTED`, releases lock, and updates master summary without contributing to passed totals.
+5. `validate-session`: Cryptographically and structurally validates on-disk session records against the real session schema and governance invariants.
+6. `summarize`: Recomputes the master acceptance summary strictly partitioning `REAL_OPERATOR_SESSION` passed records from dry-run, simulated, or aborted records.
+
+### 7.2 Governed Exit Codes
+All CLI commands return stable, standardized numeric exit codes:
+- `0`: Command completed successfully (`SUCCESS`).
+- `2`: Argument or schema validation failure (`SCHEMA_VALIDATION_ERROR`).
+- `3`: Session lifecycle conflict (`LIFECYCLE_CONFLICT`).
+- `4`: Session lock acquisition or release failure (`LOCK_FAILURE`).
+- `5`: Timestamp or duration validation failure (`TIMESTAMP_OR_DURATION_FAILURE`).
+- `6`: Integrity or checksum validation failure (`INTEGRITY_FAILURE`).
+- `7`: Governance boundary violation (`GOVERNANCE_BOUNDARY_FAILURE`).
+- `8`: Session incomplete or minimum duration not met (`SESSION_INCOMPLETE_OR_MINIMUM_DURATION_NOT_MET`).
+- `9`: Network or evidence-mutation safety failure (`NETWORK_OR_EVIDENCE_MUTATION_FAILURE`).
+- `10`: Unexpected internal error (`UNEXPECTED_INTERNAL_ERROR`).
+
+### 7.3 Governed Identifier & Schema Contracts
+1. **Session Identifiers:** Must match regex `^REAL-S[0-9]{2}$` (`REAL-S01` through `REAL-S99`). Arbitrary strings, paths, and URLs are rejected.
+2. **Operator Roles:** Strictly restricted to `OWNER` and `AUTHORIZED_INTERNAL_OPERATOR`.
+3. **Interface Modes:** Permitted modes are `CLI` and `GUI` (with `CORE` restricted to dry-run/synthetic harnesses).
+4. **Governed Workflows:** Restricted to approved workflow enums:
+   - `READINESS_DASHBOARD_AND_LIFECYCLE` (Bound to `REAL-S01`)
+   - `EVIDENCE_INVENTORY_AND_FILE_HEALTH` (Bound to `REAL-S02`)
+   - `GUI_READINESS_AFTER_RESTART`
+   - `MANIFEST_AND_CHECKSUM_VERIFICATION`
+   - `HALTED_BATCH_INSPECTION`
+   - `OPERATIONAL_DRILL_REVIEW`
+   - `BACKUP_AND_RESTORE_VERIFICATION`
+   - `GOVERNANCE_BLOCKERS_AND_AUTHORIZATION`
+   - `METADATA_ONLY_AUDIT_EXPORT`
+   - `FULL_APPLICATION_QUARANTINE_AND_SHUTDOWN`
+5. **Defect References:** Governed defect identifiers must match `^OPACC-[0-9]{8}-[0-9]{3,}$` (e.g. `OPACC-20261013-001`).
+6. **Operator Observations:** Length-limited (maximum 1,024 characters), stripped of control characters, tokens, passwords, and raw trade/market rows.
+
+### 7.4 External Directory Layout
+All session artifacts reside strictly outside the Git repository in external staging:
+```
+<acceptance_root>\
+    in_progress\
+        REAL-S01.active.json
+    real_sessions\
+        REAL-S01.final.json
+    locks\
+        REAL-S01.lock
+    audit\
+        session_lifecycle.jsonl
+    sessions\
+        session_s01.json ... session_s10.json (preserved 10 dry-run records)
+    acceptance_master_summary.json
+```

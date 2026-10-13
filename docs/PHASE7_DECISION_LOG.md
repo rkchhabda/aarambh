@@ -1167,6 +1167,40 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261013-42: Milestone 4.13B Implementation of Two-Phase Real Operator Session Lifecycle
+- **Date:** 2026-10-13
+- **Decision Authority:** Project Owner / Research Governance Officer
+- **Context & Motivation:** The acceptance harness provided only a synchronous single-pass method (`execute_session`) completing in sub-second duration and could not establish interactive operator sessions lasting at least 1,800 measured seconds. This checkpoint implements a governed CLI and stateful two-phase lifecycle architecture supporting `start-session`, `status`, `finalize-session`, `abort-session`, `validate-session`, and `summarize`.
+- **Exact Decision:**
+  1. **Two-Phase Lifecycle Implementation:** Support stateful session lifecycle via governed CLI commands (`start-session`, `status`, `finalize-session`, `abort-session`, `validate-session`, `summarize`).
+  2. **Governed Identifiers:** Enforce `SESSION_ID_PATTERN` (`^REAL-S[0-9]{2}$`). Reject planned IDs like `S01`, paths, URLs, or invalid formats.
+  3. **Role & Mode Whitelist:** Enforce approved roles (`OWNER`, `AUTHORIZED_INTERNAL_OPERATOR`) and interface modes (`CLI`, `GUI`, with `CORE` restricted).
+  4. **Workflow Governance:** Enforce 10 approved workflow enums with mandatory binding for `REAL-S01` (`READINESS_DASHBOARD_AND_LIFECYCLE`) and `REAL-S02` (`EVIDENCE_INVENTORY_AND_FILE_HEALTH`).
+  5. **Session Lock Concurrency:** Acquire cross-process file lock (`<acceptance_root>\locks\<ID>.lock`) during session start; reject concurrent active sessions; release on finalize/abort.
+  6. **Internal Timing & Monotonic Checks:** Capture start/end timestamps and monotonic clocks internally; reject caller-supplied duration; enforce wall-clock vs monotonic divergence $\le 5$s; enforce measured duration $\ge 1,800$s for `PASS` (exit code 8 if not met).
+  7. **Host & Boot Cycle Identification:** Capture sanitized host identity and Windows system boot timestamp via `GetTickCount64` to establish verifiable boot cycles without trusting caller assertions.
+  8. **Safety & Quarantine Verification:** Enforce 0 network requests, 0 evidence mutations, 0 active authorization markers, 0 Git repository market data writes, 0 target generation, 0 model training, and 0 performance calculation.
+  9. **Defect & Observation Handling:** Support size-limited (1,024 char) sanitized observations and governed defect references (`^OPACC-[0-9]{8}-[0-9]{3,}$`).
+  10. **Preservation of Existing Records:** The 10 existing dry-run records (`acceptance_4_13\sessions\`) remain strictly preserved and excluded from real acceptance totals.
+  11. **Prohibition of Real Execution During Implementation:** Execution of real sessions `REAL-S01` and `REAL-S02` is strictly prohibited during this implementation checkpoint.
+  12. **Status Invariant:** Acceptance status remains `INTERNAL_OFFLINE_OPERATOR_ACCEPTANCE_IN_PROGRESS`.
+- **Impacted Modules:**
+  - `phase7/operator/constants.py`
+  - `phase7/operator/__init__.py`
+  - `phase7/operator/acceptance_runner.py`
+  - `tests/phase7/test_operator_acceptance_lifecycle.py`
+  - `docs/PHASE7_OPERATOR_ACCEPTANCE_PROTOCOL.md`
+  - `docs/PHASE7_DECISION_LOG.md`
+  - `docs/PHASE7_IMPLEMENTATION_MAP.md`
+- **Verification Criteria:**
+  - 12 focused lifecycle tests in `tests/phase7/test_operator_acceptance_lifecycle.py` passing cleanly.
+  - Complete test suite passing (837 of 837 tests passing).
+  - CLI dry-run verified in synthetic directories.
+  - Acceptance status remains `INTERNAL_OFFLINE_OPERATOR_ACCEPTANCE_IN_PROGRESS`.
+  - Zero external network requests; zero market data written to Git.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:
