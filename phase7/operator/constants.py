@@ -77,7 +77,22 @@ class AcceptanceWorkflow(str, Enum):
 GOVERNED_SESSION_WORKFLOW_MAP = {
     "REAL-S01": AcceptanceWorkflow.READINESS_DASHBOARD_AND_LIFECYCLE,
     "REAL-S02": AcceptanceWorkflow.EVIDENCE_INVENTORY_AND_FILE_HEALTH,
+    "REAL-S11": AcceptanceWorkflow.READINESS_DASHBOARD_AND_LIFECYCLE,
 }
+
+GOVERNED_SESSION_REPLACEMENT_MAP = {
+    "REAL-S11": {
+        "replaces_session_id": "REAL-S01",
+        "replacement_reason": "STALE_UNATTENDED_SESSION",
+        "original_outcome": "ABORTED",
+        "original_accepted_seconds": 0,
+        "replacement_authorized_by": "OWNER",
+        "replacement_authorization_date": "2026-10-14",
+        "replacement_reuse_prohibited": True,
+    }
+}
+
+PROHIBITED_REUSE_SESSION_IDS = {"REAL-S01"}
 
 SESSION_ID_PATTERN = r"^REAL-S([0-9]{2})$"
 DEFECT_ID_PATTERN = r"^OPACC-[0-9]{8}-[0-9]{3,}$"

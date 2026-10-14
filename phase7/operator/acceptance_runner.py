@@ -49,6 +49,8 @@ from phase7.operator.__init__ import (
     InterfaceMode,
     OperatorRole,
     GOVERNED_SESSION_WORKFLOW_MAP,
+    GOVERNED_SESSION_REPLACEMENT_MAP,
+    PROHIBITED_REUSE_SESSION_IDS,
     SESSION_ID_PATTERN,
     DEFECT_ID_PATTERN,
 )
@@ -73,6 +75,7 @@ REJECTION_PREMATURE_CLOSURE = "PREMATURE_CLOSURE_REJECTED"
 REJECTION_CHECK_IN_OUT_OF_ORDER = "CHECK_IN_TIMESTAMP_OUT_OF_ORDER"
 REJECTION_ACTIVE_OPERATING_MISMATCH = "ACTIVE_OPERATING_SECONDS_MISMATCH"
 REJECTION_INSUFFICIENT_ACTIVE_SECONDS = "INSUFFICIENT_ACTIVE_OPERATING_SECONDS_FOR_PASS"
+REJECTION_FOREIGN_CHECK_IN = "CHECK_IN_SESSION_ID_MISMATCH"
 
 MAX_CHECK_IN_GAP_SECONDS = 300.0
 MINIMUM_QUALIFYING_SECONDS = 1800.0
@@ -85,11 +88,12 @@ def compute_active_operating_seconds(
     """Compute verified active operating seconds from an ordered sequence of check-in checkpoints.
 
     Rules:
-    1. Checkpoints must be ordered by timestamp.
+    1. Checkpoints must be ordered by timestamp. Checkpoint 0 is SESSION_START (activity point zero).
     2. Intervals between consecutive checkpoints <= 300.0 seconds are qualifying.
     3. Intervals > 300.0 seconds represent unmonitored/unattended gaps and contribute 0.0 seconds.
-    4. If end_timestamp_utc is provided, the interval between the last check-in and end is evaluated
-       using the same <= 300.0s rule.
+    4. Explicit check-ins alone determine active operating time.
+    5. Finalization does not automatically add the interval since the last check-in unless
+       a final explicit check-in occurred (trailing unmonitored time is excluded).
     """
     if not check_ins:
         return 0.0
@@ -107,13 +111,6 @@ def compute_active_operating_seconds(
                 gap = (checkpoints[i + 1] - checkpoints[i]).total_seconds()
                 if 0.0 < gap <= MAX_CHECK_IN_GAP_SECONDS:
                     total_active += gap
-
-        if end_timestamp_utc and checkpoints:
-            end_dt = datetime.fromisoformat(end_timestamp_utc)
-            last_dt = checkpoints[-1]
-            final_gap = (end_dt - last_dt).total_seconds()
-            if 0.0 < final_gap <= MAX_CHECK_IN_GAP_SECONDS:
-                total_active += final_gap
 
     except Exception:
         return 0.0
@@ -355,11 +352,14 @@ class OperatorAcceptanceEvaluator:
                         continue
                     if cur_dt > now:
                         errors.append(REJECTION_FUTURE_TIMESTAMP)
-                    if last_chk_dt is not None and cur_dt < last_chk_dt:
+                    if last_chk_dt is not None and cur_dt <= last_chk_dt:
                         errors.append(REJECTION_CHECK_IN_OUT_OF_ORDER)
+                    chk_sid = chk.get("session_id")
+                    if chk_sid and record.get("session_id") and chk_sid != record.get("session_id"):
+                        errors.append(REJECTION_FOREIGN_CHECK_IN)
                     last_chk_dt = cur_dt
 
-                calc_active = compute_active_operating_seconds(check_ins, record.get("end_timestamp_utc"))
+                calc_active = compute_active_operating_seconds(check_ins)
                 rec_active = record.get("active_operating_seconds")
                 if rec_active is not None and (record.get("status") == "PASS" or record.get("session_outcome") == "PASS"):
                     if abs(rec_active - calc_active) > 1.0:
@@ -724,6 +724,86 @@ class OperatorAcceptanceHarness:
                     f"WORKFLOW_MISMATCH: {session_id} requires {expected_wf}, got {workflow}",
                 )
 
+        # Replacement session governance
+        if session_id in GOVERNED_SESSION_REPLACEMENT_MAP:
+            repl_meta = GOVERNED_SESSION_REPLACEMENT_MAP[session_id]
+            replaces_id = repl_meta["replaces_session_id"]
+            if session_id == replaces_id:
+                return (
+                    AcceptanceExitCode.LIFECYCLE_CONFLICT,
+                    {},
+                    f"REPLACEMENT_SESSION_ID_MUST_BE_DISTINCT: Replacement session {session_id} cannot have the same ID as original {replaces_id}",
+                )
+
+            # Workflow must match original governed workflow
+            orig_wf = GOVERNED_SESSION_WORKFLOW_MAP.get(replaces_id)
+            if orig_wf:
+                orig_wf_val = orig_wf.value if hasattr(orig_wf, "value") else orig_wf
+                if workflow != orig_wf_val:
+                    return (
+                        AcceptanceExitCode.INVALID_ARGS,
+                        {},
+                        f"REPLACEMENT_WORKFLOW_MISMATCH: Replacement {session_id} requires {orig_wf_val}, got {workflow}",
+                    )
+
+            # Only one replacement may be authorized for the same aborted session
+            if self.in_progress_dir.exists():
+                for act_p in self.in_progress_dir.glob("*.active.json"):
+                    if act_p.name != f"{session_id}.active.json":
+                        try:
+                            act_d = json.loads(act_p.read_text(encoding="utf-8"))
+                            if act_d.get("replacement_metadata", {}).get("replaces_session_id") == replaces_id:
+                                return (
+                                    AcceptanceExitCode.LIFECYCLE_CONFLICT,
+                                    {},
+                                    f"REPLACEMENT_ALREADY_ACTIVE: Another replacement session {act_d.get('session_id')} for {replaces_id} is already active",
+                                )
+                        except Exception:
+                            pass
+            if self.real_sessions_dir.exists():
+                for fin_p in self.real_sessions_dir.glob("*.final.json"):
+                    if fin_p.name != f"{session_id}.final.json":
+                        try:
+                            fin_d = json.loads(fin_p.read_text(encoding="utf-8"))
+                            if fin_d.get("replacement_metadata", {}).get("replaces_session_id") == replaces_id:
+                                return (
+                                    AcceptanceExitCode.LIFECYCLE_CONFLICT,
+                                    {},
+                                    f"REPLACEMENT_ALREADY_FINALIZED: A replacement session {fin_d.get('session_id')} for {replaces_id} is already finalized",
+                                )
+                        except Exception:
+                            pass
+
+        # Prohibited reuse check: if this session is replaced by an active/finalized replacement session, reject
+        for repl_meta in GOVERNED_SESSION_REPLACEMENT_MAP.values():
+            if repl_meta.get("replaces_session_id") == session_id:
+                if self.in_progress_dir.exists():
+                    for act_p in self.in_progress_dir.glob("*.active.json"):
+                        if act_p.name != f"{session_id}.active.json":
+                            try:
+                                act_d = json.loads(act_p.read_text(encoding="utf-8"))
+                                if act_d.get("replacement_metadata", {}).get("replaces_session_id") == session_id:
+                                    return (
+                                        AcceptanceExitCode.LIFECYCLE_CONFLICT,
+                                        {},
+                                        f"PROHIBITED_SESSION_REUSE: {session_id} has active replacement {act_d.get('session_id')}",
+                                    )
+                            except Exception:
+                                pass
+                if self.real_sessions_dir.exists():
+                    for fin_p in self.real_sessions_dir.glob("*.final.json"):
+                        if fin_p.name != f"{session_id}.final.json":
+                            try:
+                                fin_d = json.loads(fin_p.read_text(encoding="utf-8"))
+                                if fin_d.get("replacement_metadata", {}).get("replaces_session_id") == session_id:
+                                    return (
+                                        AcceptanceExitCode.LIFECYCLE_CONFLICT,
+                                        {},
+                                        f"PROHIBITED_SESSION_REUSE: {session_id} has finalized replacement {fin_d.get('session_id')}",
+                                    )
+                            except Exception:
+                                pass
+
         # 6. Verify acceptance status is IN_PROGRESS
         summary_file = self.acceptance_dir / "acceptance_master_summary.json"
         if summary_file.exists():
@@ -738,9 +818,19 @@ class OperatorAcceptanceHarness:
             except Exception:
                 pass
 
-        # 7. Check if already finalized
+        # 7. Check if already finalized or aborted
         final_file = self.real_sessions_dir / f"{session_id}.final.json"
         if final_file.exists():
+            try:
+                fin_data = json.loads(final_file.read_text(encoding="utf-8"))
+                if fin_data.get("session_outcome") == "ABORTED" or fin_data.get("lifecycle_state") == "ABORTED_REAL_OPERATOR_SESSION":
+                    return (
+                        AcceptanceExitCode.LIFECYCLE_CONFLICT,
+                        {},
+                        f"ABORTED_SESSION_CANNOT_RESTART: {session_id} is permanently preserved as aborted audit history",
+                    )
+            except Exception:
+                pass
             return (
                 AcceptanceExitCode.LIFECYCLE_CONFLICT,
                 {},
@@ -800,6 +890,7 @@ class OperatorAcceptanceHarness:
             "check_ins": [
                 {
                     "check_in_index": 0,
+                    "session_id": session_id,
                     "timestamp_utc": now_utc,
                     "monotonic_seconds": mono_start,
                     "gap_seconds": 0.0,
@@ -808,6 +899,9 @@ class OperatorAcceptanceHarness:
                 }
             ],
         }
+        if session_id in GOVERNED_SESSION_REPLACEMENT_MAP:
+            in_progress_record["replacement_metadata"] = dict(GOVERNED_SESSION_REPLACEMENT_MAP[session_id])
+
         in_progress_record["checksum_sha256"] = compute_record_checksum(in_progress_record)
 
         # 11. Write atomic in-progress record
@@ -921,6 +1015,7 @@ class OperatorAcceptanceHarness:
 
         new_entry = {
             "check_in_index": new_index,
+            "session_id": session_id,
             "timestamp_utc": now_utc,
             "monotonic_seconds": mono_now,
             "gap_seconds": gap_sec,
@@ -1198,10 +1293,29 @@ class OperatorAcceptanceHarness:
                     f"DURATION_DIVERGENCE: wallclock={measured_duration:.2f}s monotonic={mono_duration:.2f}s",
                 )
 
+        # Check overwrite safeguards
+        final_target = self.real_sessions_dir / f"{session_id}.final.json"
+        if final_target.exists():
+            return (
+                AcceptanceExitCode.LIFECYCLE_CONFLICT,
+                {},
+                f"CANNOT_OVERWRITE_FINAL_RECORD: {final_target.name} already exists",
+            )
+        if session_id in GOVERNED_SESSION_REPLACEMENT_MAP:
+            replaces_id = GOVERNED_SESSION_REPLACEMENT_MAP[session_id]["replaces_session_id"]
+            orig_final = self.real_sessions_dir / f"{replaces_id}.final.json"
+            if orig_final.exists() and orig_final.resolve() == final_target.resolve():
+                return (
+                    AcceptanceExitCode.LIFECYCLE_CONFLICT,
+                    {},
+                    f"CANNOT_OVERWRITE_ABORTED_RECORD: Replacement {session_id} cannot overwrite {replaces_id}.final.json",
+                )
+
         # Duration requirement for PASS
         check_ins = in_prog.get("check_ins", [])
         if check_ins:
-            active_duration = compute_active_operating_seconds(check_ins, end_timestamp_utc=end_utc)
+            # Trailing gap after last check-in contributes 0.0 unless explicit final check-in occurred
+            active_duration = compute_active_operating_seconds(check_ins)
         else:
             active_duration = 0.0
 
@@ -1294,10 +1408,12 @@ class OperatorAcceptanceHarness:
             "operator_observations": clean_obs,
             "defect_references": defect_references or [],
         }
+        if "replacement_metadata" in in_prog:
+            final_record["replacement_metadata"] = in_prog["replacement_metadata"]
+
         final_record["record_sha256"] = compute_record_checksum(final_record)
 
         # Write to real_sessions atomically
-        final_target = self.real_sessions_dir / f"{session_id}.final.json"
         atomic_write_json(final_target, final_record)
 
         # Remove in_progress
@@ -1407,10 +1523,19 @@ class OperatorAcceptanceHarness:
             "operator_observations": "",
             "defect_references": [],
         }
+        if "replacement_metadata" in in_prog:
+            aborted_record["replacement_metadata"] = in_prog["replacement_metadata"]
+
         aborted_record["record_sha256"] = compute_record_checksum(aborted_record)
 
         # Write to real_sessions
         final_target = self.real_sessions_dir / f"{session_id}.final.json"
+        if final_target.exists():
+            return (
+                AcceptanceExitCode.LIFECYCLE_CONFLICT,
+                {},
+                f"CANNOT_OVERWRITE_FINAL_RECORD: {final_target.name} already exists",
+            )
         atomic_write_json(final_target, aborted_record)
 
         # Remove in_progress

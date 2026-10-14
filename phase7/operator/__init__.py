@@ -19,6 +19,8 @@ from phase7.operator.constants import (
     InterfaceMode,
     OperatorRole,
     GOVERNED_SESSION_WORKFLOW_MAP,
+    GOVERNED_SESSION_REPLACEMENT_MAP,
+    PROHIBITED_REUSE_SESSION_IDS,
     SESSION_ID_PATTERN,
     DEFECT_ID_PATTERN,
 )
@@ -49,6 +51,8 @@ __all__ = [
     "InterfaceMode",
     "OperatorRole",
     "GOVERNED_SESSION_WORKFLOW_MAP",
+    "GOVERNED_SESSION_REPLACEMENT_MAP",
+    "PROHIBITED_REUSE_SESSION_IDS",
     "SESSION_ID_PATTERN",
     "DEFECT_ID_PATTERN",
     "NetworkOperationBlockedError",
