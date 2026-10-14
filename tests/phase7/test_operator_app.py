@@ -187,9 +187,9 @@ def test_screen_1_readiness_dashboard():
     data = core.get_readiness_dashboard()
 
     assert data["classification"] == READINESS_CLASSIFICATION
-    assert data["test_summary"]["total_passing"] == 794
+    assert data["test_summary"]["total_passing"] == 837
     assert data["test_summary"]["baseline_passing"] == 544
-    assert data["test_summary"]["new_passing"] == 250
+    assert data["test_summary"]["new_passing"] == 293
     assert data["drill_summary"]["passed_drills"] == 16
     assert data["drill_summary"]["total_drills"] == 16
 

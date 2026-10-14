@@ -70,7 +70,7 @@ class OperatorCore:
         scorecard = ReadinessScorecard()
         # Seed 15 domains based on Milestone 4.11 evaluation
         evaluations = [
-            ("test_integrity", "Test Integrity", "PASS", "794 total passing tests (544 existing + 250 new); 0 failures, 0 skipped."),
+            ("test_integrity", "Test Integrity", "PASS", "837 total passing tests (544 existing + 293 new); 0 failures, 0 skipped."),
             ("persistence_durability", "Persistence Durability", "PASS", "atomic_write_bytes verified with flush, fsync, SHA-256 validation, and overwrite refusal."),
             ("manifest_integrity", "Manifest Integrity", "PASS", "Cryptographic verification of raw/normalized evidence paths and checksums; zero-row rejected."),
             ("checkpoint_integrity", "Checkpoint Integrity", "PASS", "Conservation equation (S = N + R) verified; impossible summary totals rejected."),
@@ -97,8 +97,8 @@ class OperatorCore:
             "state_message": self.state_message,
             "test_summary": {
                 "baseline_passing": 544,
-                "new_passing": 250,
-                "total_passing": 794,
+                "new_passing": 293,
+                "total_passing": 837,
                 "failed": 0,
                 "skipped": 0,
                 "status": "ALL_TESTS_PASSING",
