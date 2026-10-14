@@ -1013,3 +1013,35 @@ Milestone 3 delivered the comprehensive Target Engine (`phase7/targets/`), cover
 - Real sessions `REAL-S01` and `REAL-S02` NOT executed during implementation checkpoint.
 - Acceptance Status: **`INTERNAL_OFFLINE_OPERATOR_ACCEPTANCE_IN_PROGRESS`**.
 - Milestone 5 Quarantine: Strictly **BLOCKED**.
+
+---
+
+## 31. Milestone 4.13C Governed Operator Active-Operation Accounting & Stale REAL-S01 Remediation
+
+### 31.1 Architecture & Governance Directives
+- **Stale Session Abort:** Aborted unattended overnight session `REAL-S01` (`STALE_UNATTENDED_SESSION`), preserving wall-clock interval for audit while crediting 0.0 operating seconds and releasing session lock.
+- **Defect OPACC-20261014-001:** Preserved in external acceptance defect register; refreshed Screen 1 readiness dashboard test count baseline to 837 passing tests.
+- **Governed Active Check-In Protocol:**
+  - Implemented `check-in` subcommand:
+    `python -m phase7.operator.acceptance_runner check-in --session-id <SESSION_ID> --acceptance-root "<ACCEPTANCE_ROOT>"`
+  - Maximum qualifying gap between checkpoints: 300 seconds.
+  - Gaps > 300 seconds excluded (0.0 active seconds added).
+  - Minimum qualifying duration for PASS: 1,800 active seconds.
+  - Separation of wall-clock duration (`wall_clock_duration_seconds`) and accepted active operating duration (`active_operating_seconds`).
+  - Strict offline execution: 0 network calls, 0 evidence mutations.
+
+### 31.2 Delivered Code and Test Artifacts
+
+| Capability / Requirement | Technical Description | Source Module | Test Module / Artifact | Status |
+|---|---|---|---|---|
+| **Active Check-In Command & Accounting** | Governed `check-in` CLI subcommand, interval bounding ($\le 300$s), and active seconds calculation | `phase7/operator/acceptance_runner.py` | `tests/phase7/test_operator_active_checkins.py` | **VERIFIED** |
+| **Active Time Validation & Enforcement** | Finalization rejection when active seconds $< 1,800$s; integrity and monotonic check-in validation | `phase7/operator/acceptance_runner.py` | `tests/phase7/test_operator_active_checkins.py` | **VERIFIED** |
+| **Check-In Test Battery** | 10 focused tests covering overnight gaps, interval exclusion, tamper rejection, and network/evidence safety | N/A | `tests/phase7/test_operator_active_checkins.py` (10 tests) | **VERIFIED** |
+
+### 31.3 Verification and Current Status
+- Focused operator test suite: **53 of 53 passing** (`test_operator_app.py`, `test_operator_acceptance.py`, `test_operator_acceptance_lifecycle.py`, `test_operator_active_checkins.py`).
+- Staged REAL-S01 aborted and validated (0.0 accepted operating seconds).
+- Active Operation Accounting Status: **`OPERATOR_ACTIVE_TIME_ACCOUNTING_READY`**.
+- Acceptance Status: **`INTERNAL_OFFLINE_OPERATOR_ACCEPTANCE_IN_PROGRESS`**.
+- Milestone 5: **BLOCKED**.
+

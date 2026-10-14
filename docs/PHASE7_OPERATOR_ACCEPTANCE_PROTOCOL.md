@@ -217,7 +217,29 @@ All session artifacts reside strictly outside the Git repository in external sta
         REAL-S01.lock
     audit\
         session_lifecycle.jsonl
+        defect_register.jsonl
+    defects\
+        OPACC-20261014-001.json
+        defect_register.json
     sessions\
         session_s01.json ... session_s10.json (preserved 10 dry-run records)
     acceptance_master_summary.json
 ```
+
+### 7.5 Governed Active-Operation Accounting & Check-In Protocol
+To ensure genuine operator engagement and strictly prevent overnight or unattended idle automation from qualifying as operator acceptance:
+
+1. **Separation of Durations:** Session wall-clock duration (`wall_clock_duration_seconds`) and accepted active duration (`active_operating_seconds`) must never be conflated.
+2. **Explicit Operator Check-Ins:** Accepted operating time is derived solely from bounded intervals supported by explicit operator check-in CLI commands:
+   ```bash
+   python -m phase7.operator.acceptance_runner check-in \
+       --session-id <SESSION_ID> \
+       --acceptance-root "<ACCEPTANCE_ROOT>"
+   ```
+3. **Maximum Qualifying Gap:** The maximum permitted gap between consecutive checkpoints (start checkpoint, operator check-ins, and finalization) is strictly **300 seconds** (5 minutes).
+4. **Exclusion of Unattended Gaps:** Any interval exceeding 300 seconds is treated as unmonitored idle time and contributes **0.0 seconds** to active operating time.
+5. **Finalization Threshold:** A session outcome of `PASS` strictly requires at least **1,800 qualifying active seconds** (`active_operating_seconds >= 1800.0s`).
+6. **Immutable Audit & Integrity:** Each check-in generates its UTC timestamp internally, validates session lock and active state, appends to `audit/session_lifecycle.jsonl`, updates the active record's `check_ins` array, and recomputes the SHA-256 record checksum.
+7. **Prohibited Mechanisms:** Passive surveillance, mouse/keyboard tracking, screen capture, background daemon automation, and synthetic heartbeat generation are prohibited.
+8. **Aborted Session Accounting:** Aborted sessions preserve full elapsed wall-clock time for audit purposes but contribute strictly **0.0 accepted operating seconds** and 0 passed sessions to the master summary.
+

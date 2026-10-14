@@ -1201,6 +1201,35 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261014-43: Governed Active Operator Acceptance Time Accounting and Stale REAL-S01 Abort
+- **Date:** 2026-10-14
+- **Decision Authority:** Project Owner / Research Governance Officer
+- **Context & Motivation:** `REAL-S01` remained in an active unfinalized state overnight (>75,000 elapsed seconds). Idle overnight wall-clock time must strictly never be credited as genuine human operator activity. Furthermore, inspection revealed a dashboard defect (`OPACC-20261014-001`) where test counts reflected a stale 794 passing baseline rather than the 837 passing baseline.
+- **Exact Decision:**
+  1. **Stale Session Abort:** Abort `REAL-S01` using `abort-session` with reason code `STALE_UNATTENDED_SESSION`. Preserve elapsed wall-clock duration for audit only; credit 0.0 accepted operating seconds and 0 passed sessions. Release `REAL-S01.lock`.
+  2. **Defect Registration:** Preserve defect `OPACC-20261014-001` in the external acceptance defect register (`<acceptance_root>\defects\`).
+  3. **Dashboard Test Baseline Refresh:** Update Screen 1 test scorecard from 794 to 837 passing tests (544 baseline + 293 new).
+  4. **Active-Operation Accounting:** Implement explicit CLI `check-in` command. Maximum qualifying interval between consecutive checkpoints is 300 seconds. Gaps > 300s contribute 0.0s. Session PASS requires $\ge 1,800$ qualifying active seconds.
+  5. **Wall-Clock vs Active Time Separation:** Wall-clock duration and active operating time must remain strictly distinct in all records, summaries, and displays.
+  6. **Prohibited Surveillance:** Keyboard logging, mouse tracking, screen recording, and automated heartbeat fabrication are strictly prohibited.
+  7. **Status Invariant:** Acceptance status remains `INTERNAL_OFFLINE_OPERATOR_ACCEPTANCE_IN_PROGRESS`.
+- **Impacted Modules:**
+  - `phase7/operator/core.py`
+  - `phase7/operator/acceptance_runner.py`
+  - `tests/phase7/test_operator_app.py`
+  - `tests/phase7/test_operator_acceptance_lifecycle.py`
+  - `tests/phase7/test_operator_active_checkins.py`
+  - `docs/PHASE7_OPERATOR_ACCEPTANCE_PROTOCOL.md`
+  - `docs/PHASE7_DECISION_LOG.md`
+  - `docs/PHASE7_IMPLEMENTATION_MAP.md`
+- **Verification Criteria:**
+  - 10 focused check-in accounting tests passing in `tests/phase7/test_operator_active_checkins.py`.
+  - Staged `REAL-S01` validated with outcome `ABORTED` and 0 operating seconds in master summary.
+  - Acceptance status remains `INTERNAL_OFFLINE_OPERATOR_ACCEPTANCE_IN_PROGRESS`.
+  - Clean working tree, zero network requests, zero evidence mutations.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:
