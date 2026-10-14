@@ -1230,6 +1230,40 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261014-44: Reconcile Current Test Baseline and Govern Replacement Session REAL-S11
+- **Date:** 2026-10-14
+- **Decision Authority:** Project Owner / Research Governance Officer
+- **Context & Motivation:** Following the governed abort of stale session `REAL-S01` and discovery of test baseline discrepancies, operator acceptance required formal governance for replacement sessions, check-in interval finalization rules, and decoupled baseline presentation distinguishing historical qualified closure baselines from verified regression baselines.
+- **Exact Decision:**
+  1. **Decoupled Baseline Presentation:** Screen 1 Readiness Dashboard decouples from hard-coded totals; loads read-only governed metadata record `readiness_baseline.json` distinguishing Milestone 4.12 Qualified Baseline (811/811 at commit `48c5748`), Milestone 4.13B Qualified Baseline (837/837 at commit `ee01c25`), and Current Verified Regression Baseline (862/862 at commit `0ee8e1a`). Pytest is never run automatically on dashboard launch.
+  2. **Defect OPACC-20261014-001 Lifecycle Transition:** Status transitioned from `OPEN` to `CORRECTED_PENDING_OPERATOR_RETEST`. Retest required: replacement session `REAL-S11`.
+  3. **Replacement Session Authorization:** Aborted `REAL-S01` permanently preserved as immutable audit history; restarting or reusing `REAL-S01` is strictly prohibited. Replacement session `REAL-S11` authorized and bound strictly to `READINESS_DASHBOARD_AND_LIFECYCLE` with cryptographic metadata linkage.
+  4. **Zero Inheritance & Overwrite Safeguards:** `REAL-S11` inherits zero time and zero check-ins; replacement cannot overwrite `REAL-S01.final.json`; only one replacement permitted for `REAL-S01`.
+  5. **Check-In Integrity Reconciliation:** Bounded intervals ($\le 300$s) determine active time; trailing unmonitored time after last check-in is excluded from finalization credit; recommended check-in cadence is ~4 minutes (240s); duplicate timestamps and foreign check-in injections are rejected.
+  6. **Acceptance Mandate:** The final mandate remains 10 passed real sessions (`REAL-S11` + `REAL-S02`..`REAL-S10`).
+  7. **Status Invariant:** Acceptance status remains `INTERNAL_OFFLINE_OPERATOR_ACCEPTANCE_IN_PROGRESS`.
+- **Impacted Modules:**
+  - `phase7/operator/readiness_baseline.json`
+  - `phase7/operator/constants.py`
+  - `phase7/operator/core.py`
+  - `phase7/operator/cli.py`
+  - `phase7/operator/gui.py`
+  - `phase7/operator/acceptance_runner.py`
+  - `tests/phase7/test_operator_app.py`
+  - `tests/phase7/test_operator_replacement_session.py`
+  - `docs/PHASE7_OPERATOR_ACCEPTANCE_PROTOCOL.md`
+  - `docs/PHASE7_DECISION_LOG.md`
+  - `docs/PHASE7_IMPLEMENTATION_MAP.md`
+- **Verification Criteria:**
+  - 19 operator app tests passing including baseline distinction and non-hardcoded tests.
+  - 13 replacement and check-in integrity tests passing in `tests/phase7/test_operator_replacement_session.py`.
+  - Complete test suite: 862 of 862 tests passing.
+  - External defect `OPACC-20261014-001` transitioned to `CORRECTED_PENDING_OPERATOR_RETEST`.
+  - Staging `REAL-S01` preserved unchanged.
+  - Acceptance status remains `INTERNAL_OFFLINE_OPERATOR_ACCEPTANCE_IN_PROGRESS`.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:

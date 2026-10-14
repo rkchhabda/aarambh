@@ -192,7 +192,7 @@ All CLI commands return stable, standardized numeric exit codes:
 2. **Operator Roles:** Strictly restricted to `OWNER` and `AUTHORIZED_INTERNAL_OPERATOR`.
 3. **Interface Modes:** Permitted modes are `CLI` and `GUI` (with `CORE` restricted to dry-run/synthetic harnesses).
 4. **Governed Workflows:** Restricted to approved workflow enums:
-   - `READINESS_DASHBOARD_AND_LIFECYCLE` (Bound to `REAL-S01`)
+   - `READINESS_DASHBOARD_AND_LIFECYCLE` (Bound to `REAL-S01` and its governed replacement `REAL-S11`)
    - `EVIDENCE_INVENTORY_AND_FILE_HEALTH` (Bound to `REAL-S02`)
    - `GUI_READINESS_AFTER_RESTART`
    - `MANIFEST_AND_CHECKSUM_VERIFICATION`
@@ -202,7 +202,7 @@ All CLI commands return stable, standardized numeric exit codes:
    - `GOVERNANCE_BLOCKERS_AND_AUTHORIZATION`
    - `METADATA_ONLY_AUDIT_EXPORT`
    - `FULL_APPLICATION_QUARANTINE_AND_SHUTDOWN`
-5. **Defect References:** Governed defect identifiers must match `^OPACC-[0-9]{8}-[0-9]{3,}$` (e.g. `OPACC-20261013-001`).
+5. **Defect References:** Governed defect identifiers must match `^OPACC-[0-9]{8}-[0-9]{3,}$` (e.g. `OPACC-20261014-001`).
 6. **Operator Observations:** Length-limited (maximum 1,024 characters), stripped of control characters, tokens, passwords, and raw trade/market rows.
 
 ### 7.4 External Directory Layout
@@ -236,10 +236,37 @@ To ensure genuine operator engagement and strictly prevent overnight or unattend
        --session-id <SESSION_ID> \
        --acceptance-root "<ACCEPTANCE_ROOT>"
    ```
-3. **Maximum Qualifying Gap:** The maximum permitted gap between consecutive checkpoints (start checkpoint, operator check-ins, and finalization) is strictly **300 seconds** (5 minutes).
+3. **Maximum Qualifying Gap:** The maximum permitted gap between consecutive checkpoints (start checkpoint, operator check-ins) is strictly **300 seconds** (5 minutes).
 4. **Exclusion of Unattended Gaps:** Any interval exceeding 300 seconds is treated as unmonitored idle time and contributes **0.0 seconds** to active operating time.
 5. **Finalization Threshold:** A session outcome of `PASS` strictly requires at least **1,800 qualifying active seconds** (`active_operating_seconds >= 1800.0s`).
-6. **Immutable Audit & Integrity:** Each check-in generates its UTC timestamp internally, validates session lock and active state, appends to `audit/session_lifecycle.jsonl`, updates the active record's `check_ins` array, and recomputes the SHA-256 record checksum.
-7. **Prohibited Mechanisms:** Passive surveillance, mouse/keyboard tracking, screen capture, background daemon automation, and synthetic heartbeat generation are prohibited.
-8. **Aborted Session Accounting:** Aborted sessions preserve full elapsed wall-clock time for audit purposes but contribute strictly **0.0 accepted operating seconds** and 0 passed sessions to the master summary.
+6. **Trailing Interval Exclusion:** Finalization does not automatically add the interval since the last check-in unless a final explicit check-in occurred before finalization.
+7. **Recommended Check-In Cadence:** Operators should execute check-ins approximately every **4 minutes (240 seconds)** to provide a safety margin against unexpected human or scheduler delays.
+8. **Immutable Audit & Integrity:** Each check-in generates its UTC timestamp internally, validates session lock and active state, appends to `audit/session_lifecycle.jsonl`, updates the active record's `check_ins` array, and recomputes the SHA-256 record checksum.
+9. **Prohibited Mechanisms:** Passive surveillance, mouse/keyboard tracking, screen capture, background daemon automation, and synthetic heartbeat generation are prohibited.
+10. **Aborted Session Accounting:** Aborted sessions preserve full elapsed wall-clock time for audit purposes but contribute strictly **0.0 accepted operating seconds** and 0 passed sessions to the master summary.
+
+### 7.6 Replacement Session Governance & Test Baseline Reconciliation (Milestone 4.13C)
+1. **Replacement Session Authorization:**
+   - Aborted session `REAL-S01` is permanently preserved as immutable audit history. Restarting or reusing `REAL-S01` is strictly prohibited.
+   - Replacement session `REAL-S11` is authorized and bound strictly to `READINESS_DASHBOARD_AND_LIFECYCLE`.
+   - `REAL-S11` records explicit replacement metadata:
+     - `replaces_session_id`: `REAL-S01`
+     - `replacement_reason`: `STALE_UNATTENDED_SESSION`
+     - `original_outcome`: `ABORTED`
+     - `original_accepted_seconds`: `0`
+     - `replacement_authorized_by`: `OWNER`
+     - `replacement_authorization_date`: `2026-10-14`
+     - `replacement_reuse_prohibited`: `true`
+   - **Zero Inheritance:** `REAL-S11` is an independent session with new start/end timestamps, new lock, zero inherited time, and zero inherited check-ins.
+   - **Acceptance Requirement:** The final mandate remains **10 passed real sessions** (`REAL-S11` + `REAL-S02` through `REAL-S10`).
+2. **Decoupled Test Baseline Architecture:**
+   - Screen 1 Readiness Dashboard is decoupled from hard-coded test totals.
+   - The dashboard reads the read-only governed record `phase7/operator/readiness_baseline.json`, distinguishing:
+     - **Last Qualified Milestone 4.12 Baseline:** 811 / 811 at commit `48c5748`
+     - **Last Qualified Milestone 4.13B Baseline:** 837 / 837 at commit `ee01c25`
+     - **Current Verified Regression Baseline:** 862 / 862 at commit `0ee8e1a`
+   - The application does not invoke pytest automatically on dashboard open.
+3. **Defect OPACC-20261014-001 Lifecycle:**
+   - Status: `CORRECTED_PENDING_OPERATOR_RETEST`.
+   - Closure requires successful completion of operator inspection session `REAL-S11`.
 

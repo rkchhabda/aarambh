@@ -1045,3 +1045,37 @@ Milestone 3 delivered the comprehensive Target Engine (`phase7/targets/`), cover
 - Acceptance Status: **`INTERNAL_OFFLINE_OPERATOR_ACCEPTANCE_IN_PROGRESS`**.
 - Milestone 5: **BLOCKED**.
 
+---
+
+## 32. Milestone 4.13C Reconcile Current Test Baseline and Govern Replacement Session REAL-S11
+
+### 32.1 Architecture & Governance Directives
+- **Decoupled Baseline Architecture:** Decoupled Screen 1 from hard-coded test totals. Loaded read-only governed metadata record `readiness_baseline.json` distinguishing Last Qualified Milestone 4.12 Baseline (811/811 at commit `48c5748`), Last Qualified Milestone 4.13B Baseline (837/837 at commit `ee01c25`), and Current Verified Regression Baseline (862/862 at commit `0ee8e1a`).
+- **Defect OPACC-20261014-001 Transition:** Transitioned status from `OPEN` to `CORRECTED_PENDING_OPERATOR_RETEST` in external register; designated operator retest session as `REAL-S11`.
+- **Governed Replacement Session REAL-S11:**
+  - Preserved aborted `REAL-S01` permanently as immutable audit history. Re-starting or reusing `REAL-S01` is strictly prohibited.
+  - Authorized `REAL-S11` bound strictly to `READINESS_DASHBOARD_AND_LIFECYCLE` with replacement linkage metadata (`replaces_session_id: REAL-S01`, `replacement_reason: STALE_UNATTENDED_SESSION`, `original_outcome: ABORTED`, `original_accepted_seconds: 0`, `replacement_authorized_by: OWNER`, `replacement_authorization_date: 2026-10-14`, `replacement_reuse_prohibited: true`).
+  - Zero inherited time and zero inherited check-ins; overwrite of `REAL-S01.final.json` prohibited; single replacement per aborted session enforced.
+  - Mandate remains 10 passed real sessions (`REAL-S11` + `REAL-S02`..`REAL-S10`).
+- **Check-In Integrity Reconciliation:** Bounded intervals ($\le 300$s) determine active time; trailing unmonitored time after last check-in is excluded from finalization credit; recommended check-in cadence is ~4 minutes (240s); duplicate timestamps and foreign check-in injections are rejected.
+
+### 32.2 Delivered Code and Test Artifacts
+
+| Capability / Requirement | Technical Description | Source Module | Test Module / Artifact | Status |
+|---|---|---|---|---|
+| **Governed Readiness Baseline Record** | Cryptographically verified JSON metadata record distinguishing M4.12, M4.13B, and current regression baselines | `phase7/operator/readiness_baseline.json`, `phase7/operator/core.py` | `tests/phase7/test_operator_app.py` | **VERIFIED** |
+| **Baseline Distinction & Dynamic Loading** | Read-only loading without runtime pytest invocation; distinct display in CLI and GUI | `phase7/operator/core.py`, `phase7/operator/cli.py`, `phase7/operator/gui.py` | `tests/phase7/test_operator_app.py` | **VERIFIED** |
+| **Replacement Governance & Validation** | Session ID pattern, workflow binding, metadata linkage, zero inheritance, single replacement enforcement | `phase7/operator/constants.py`, `phase7/operator/acceptance_runner.py` | `tests/phase7/test_operator_replacement_session.py` | **VERIFIED** |
+| **Check-In Integrity Reconciliation** | Trailing interval exclusion, monotonic timestamp enforcement, duplicate rejection, session ID binding | `phase7/operator/acceptance_runner.py` | `tests/phase7/test_operator_replacement_session.py` | **VERIFIED** |
+| **Replacement & Integrity Test Battery** | 13 comprehensive tests covering replacement rules, zero inheritance, audit preservation, and check-in integrity | N/A | `tests/phase7/test_operator_replacement_session.py` (13 tests) | **VERIFIED** |
+
+### 32.3 Verification and Current Status
+- Focused operator test suite: **68 of 68 passing** (`test_operator_app.py`, `test_operator_acceptance.py`, `test_operator_acceptance_lifecycle.py`, `test_operator_active_checkins.py`, `test_operator_replacement_session.py`).
+- Complete repository test suite: **862 of 862 passing** (`pytest tests/phase7/ test_phase6_safeguards.py -q`).
+- `pip check`: Clean (no broken requirements).
+- `git diff --check`: Clean (zero whitespace errors).
+- External defect `OPACC-20261014-001` transitioned to `CORRECTED_PENDING_OPERATOR_RETEST`.
+- Aborted `REAL-S01` record and checksum intact and untouched.
+- Status: **`OPERATOR_ACCEPTANCE_REPLACEMENT_PLAN_READY`**.
+- Acceptance Status: **`INTERNAL_OFFLINE_OPERATOR_ACCEPTANCE_IN_PROGRESS`**.
+- Milestone 5: **BLOCKED**.
