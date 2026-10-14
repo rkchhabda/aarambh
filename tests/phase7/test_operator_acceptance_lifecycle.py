@@ -78,6 +78,7 @@ def test_cli_help_and_subcommands():
     subcommands = list(subparsers_actions[0].choices.keys())
     assert "start-session" in subcommands
     assert "status" in subcommands
+    assert "check-in" in subcommands
     assert "finalize-session" in subcommands
     assert "abort-session" in subcommands
     assert "validate-session" in subcommands
@@ -217,6 +218,33 @@ def test_finalize_session_success_when_duration_satisfied(temp_acceptance_dir):
     past_start = datetime.now(timezone.utc) - timedelta(seconds=1805)
     in_prog["start_timestamp_utc"] = past_start.isoformat()
     in_prog["monotonic_start_seconds"] = in_prog["monotonic_start_seconds"] - 1805.0
+
+    # Populate verified check-ins every 300s across the interval
+    check_ins = [
+        {
+            "check_in_index": 0,
+            "timestamp_utc": past_start.isoformat(),
+            "monotonic_seconds": in_prog["monotonic_start_seconds"],
+            "gap_seconds": 0.0,
+            "qualifying": True,
+            "type": "SESSION_START",
+        }
+    ]
+    for i in range(1, 7):
+        chk_time = past_start + timedelta(seconds=i * 300)
+        check_ins.append(
+            {
+                "check_in_index": i,
+                "timestamp_utc": chk_time.isoformat(),
+                "monotonic_seconds": in_prog["monotonic_start_seconds"] + (i * 300),
+                "gap_seconds": 300.0,
+                "qualifying": True,
+                "type": "OPERATOR_CHECK_IN",
+            }
+        )
+    in_prog["check_ins"] = check_ins
+    in_prog["active_operating_seconds"] = 1800.0
+    in_prog["check_in_count"] = 6
     in_prog["checksum_sha256"] = compute_record_checksum(in_prog)
     active_file.write_text(json.dumps(in_prog, indent=2), encoding="utf-8")
 

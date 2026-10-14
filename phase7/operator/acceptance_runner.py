@@ -70,6 +70,55 @@ REJECTION_TEN_REAL_SESSIONS = "TEN_REAL_SESSIONS_REQUIRED"
 REJECTION_FIVE_HOURS = "FIVE_HOURS_REQUIRED"
 REJECTION_POST_RESTART = "POST_RESTART_SESSIONS_REQUIRED"
 REJECTION_PREMATURE_CLOSURE = "PREMATURE_CLOSURE_REJECTED"
+REJECTION_CHECK_IN_OUT_OF_ORDER = "CHECK_IN_TIMESTAMP_OUT_OF_ORDER"
+REJECTION_ACTIVE_OPERATING_MISMATCH = "ACTIVE_OPERATING_SECONDS_MISMATCH"
+REJECTION_INSUFFICIENT_ACTIVE_SECONDS = "INSUFFICIENT_ACTIVE_OPERATING_SECONDS_FOR_PASS"
+
+MAX_CHECK_IN_GAP_SECONDS = 300.0
+MINIMUM_QUALIFYING_SECONDS = 1800.0
+
+
+def compute_active_operating_seconds(
+    check_ins: List[Dict[str, Any]],
+    end_timestamp_utc: Optional[str] = None,
+) -> float:
+    """Compute verified active operating seconds from an ordered sequence of check-in checkpoints.
+
+    Rules:
+    1. Checkpoints must be ordered by timestamp.
+    2. Intervals between consecutive checkpoints <= 300.0 seconds are qualifying.
+    3. Intervals > 300.0 seconds represent unmonitored/unattended gaps and contribute 0.0 seconds.
+    4. If end_timestamp_utc is provided, the interval between the last check-in and end is evaluated
+       using the same <= 300.0s rule.
+    """
+    if not check_ins:
+        return 0.0
+
+    total_active = 0.0
+    try:
+        checkpoints: List[datetime] = []
+        for chk in check_ins:
+            ts_str = chk.get("timestamp_utc")
+            if ts_str:
+                checkpoints.append(datetime.fromisoformat(ts_str))
+
+        if len(checkpoints) >= 2:
+            for i in range(len(checkpoints) - 1):
+                gap = (checkpoints[i + 1] - checkpoints[i]).total_seconds()
+                if 0.0 < gap <= MAX_CHECK_IN_GAP_SECONDS:
+                    total_active += gap
+
+        if end_timestamp_utc and checkpoints:
+            end_dt = datetime.fromisoformat(end_timestamp_utc)
+            last_dt = checkpoints[-1]
+            final_gap = (end_dt - last_dt).total_seconds()
+            if 0.0 < final_gap <= MAX_CHECK_IN_GAP_SECONDS:
+                total_active += final_gap
+
+    except Exception:
+        return 0.0
+
+    return max(0.0, total_active)
 
 FORBIDDEN_OBSERVATION_PATTERNS = [
     r"cookie",
@@ -283,8 +332,40 @@ class OperatorAcceptanceEvaluator:
         if record_type == SessionRecordType.REAL_OPERATOR_SESSION.value:
             declared_sec = record.get("declared_duration_seconds")
             if declared_sec is not None:
-                if abs(declared_sec - timestamp_duration) > 2.0:
-                    errors.append(REJECTION_DURATION_MISMATCH)
+                if "check_ins" in record and record.get("active_operating_seconds") is not None and (record.get("status") == "PASS" or record.get("session_outcome") == "PASS"):
+                    if abs(declared_sec - record["active_operating_seconds"]) > 2.0:
+                        errors.append(REJECTION_DURATION_MISMATCH)
+                else:
+                    if abs(declared_sec - timestamp_duration) > 2.0:
+                        errors.append(REJECTION_DURATION_MISMATCH)
+
+            # Check-in sequence validations for real operator sessions
+            if "check_ins" in record:
+                check_ins = record["check_ins"]
+                last_chk_dt = None
+                for idx, chk in enumerate(check_ins):
+                    ts = chk.get("timestamp_utc")
+                    if not ts:
+                        errors.append(f"CHECK_IN_MISSING_TIMESTAMP: index {idx}")
+                        continue
+                    try:
+                        cur_dt = datetime.fromisoformat(ts)
+                    except ValueError:
+                        errors.append(f"CHECK_IN_INVALID_TIMESTAMP: index {idx}")
+                        continue
+                    if cur_dt > now:
+                        errors.append(REJECTION_FUTURE_TIMESTAMP)
+                    if last_chk_dt is not None and cur_dt < last_chk_dt:
+                        errors.append(REJECTION_CHECK_IN_OUT_OF_ORDER)
+                    last_chk_dt = cur_dt
+
+                calc_active = compute_active_operating_seconds(check_ins, record.get("end_timestamp_utc"))
+                rec_active = record.get("active_operating_seconds")
+                if rec_active is not None and (record.get("status") == "PASS" or record.get("session_outcome") == "PASS"):
+                    if abs(rec_active - calc_active) > 1.0:
+                        errors.append(REJECTION_ACTIVE_OPERATING_MISMATCH)
+                    if calc_active < 1800.0:
+                        errors.append(REJECTION_INSUFFICIENT_ACTIVE_SECONDS)
 
         return errors
 
@@ -361,7 +442,7 @@ class OperatorAcceptanceEvaluator:
 
         # Calculate actual timestamp-derived operating time for passed real sessions only
         total_real_operating_seconds = sum(
-            max(0.0, (datetime.fromisoformat(r["end_timestamp_utc"]) - datetime.fromisoformat(r["start_timestamp_utc"])).total_seconds())
+            r.get("active_operating_seconds", max(0.0, (datetime.fromisoformat(r["end_timestamp_utc"]) - datetime.fromisoformat(r["start_timestamp_utc"])).total_seconds()))
             for r in passed_real_sessions
             if "start_timestamp_utc" in r and "end_timestamp_utc" in r
         )
@@ -713,6 +794,18 @@ class OperatorAcceptanceHarness:
             "lock_acquired": True,
             "starting_state": ApplicationState.STARTING.value,
             "application_state": "ACTIVE_REAL_OPERATOR_SESSION",
+            "check_in_count": 0,
+            "active_operating_seconds": 0.0,
+            "check_ins": [
+                {
+                    "check_in_index": 0,
+                    "timestamp_utc": now_utc,
+                    "monotonic_seconds": mono_start,
+                    "gap_seconds": 0.0,
+                    "qualifying": True,
+                    "type": "SESSION_START",
+                }
+            ],
         }
         in_progress_record["checksum_sha256"] = compute_record_checksum(in_progress_record)
 
@@ -740,6 +833,130 @@ class OperatorAcceptanceHarness:
             AcceptanceExitCode.SUCCESS,
             in_progress_record,
             f"SESSION_STARTED: {session_id} in state ACTIVE_REAL_OPERATOR_SESSION",
+        )
+
+    def check_in(
+        self, session_id: str
+    ) -> Tuple[AcceptanceExitCode, Dict[str, Any], str]:
+        """Record an explicit operator activity check-in for an active session."""
+        if not validate_session_id(session_id):
+            return (
+                AcceptanceExitCode.INVALID_ARGS,
+                {},
+                f"INVALID_SESSION_ID: '{session_id}' (must strictly match REAL-S01..REAL-S99)",
+            )
+
+        active_path = self.in_progress_dir / f"{session_id}.active.json"
+        if not active_path.exists():
+            return (
+                AcceptanceExitCode.LIFECYCLE_CONFLICT,
+                {},
+                f"NO_ACTIVE_SESSION_FOR_CHECK_IN: {session_id}",
+            )
+
+        try:
+            in_prog = json.loads(active_path.read_text(encoding="utf-8"))
+        except Exception as e:
+            return (
+                AcceptanceExitCode.INTEGRITY_FAILURE,
+                {},
+                f"CORRUPT_IN_PROGRESS_RECORD: {e}",
+            )
+
+        stored_cs = in_prog.get("checksum_sha256")
+        expected_cs = compute_record_checksum(in_prog)
+        if stored_cs != expected_cs:
+            return (
+                AcceptanceExitCode.INTEGRITY_FAILURE,
+                {},
+                "IN_PROGRESS_RECORD_INTEGRITY_VIOLATION: Checksum mismatch",
+            )
+
+        lock_file = self.locks_dir / f"{session_id}.lock"
+        if not lock_file.exists():
+            return (
+                AcceptanceExitCode.LOCK_FAILURE,
+                {},
+                f"SESSION_LOCK_MISSING: {session_id}.lock",
+            )
+
+        now_dt = datetime.now(timezone.utc)
+        now_utc = now_dt.isoformat()
+        mono_now = time.monotonic()
+
+        check_ins = in_prog.get("check_ins")
+        if not check_ins:
+            check_ins = [
+                {
+                    "check_in_index": 0,
+                    "timestamp_utc": in_prog["start_timestamp_utc"],
+                    "monotonic_seconds": in_prog.get("monotonic_start_seconds"),
+                    "gap_seconds": 0.0,
+                    "qualifying": True,
+                    "type": "SESSION_START",
+                }
+            ]
+
+        last_chk = check_ins[-1]
+        try:
+            last_dt = datetime.fromisoformat(last_chk["timestamp_utc"])
+        except Exception:
+            return (
+                AcceptanceExitCode.INTEGRITY_FAILURE,
+                {},
+                "CORRUPT_CHECK_IN_HISTORY: Invalid timestamp in prior check-in",
+            )
+
+        if now_dt <= last_dt:
+            return (
+                AcceptanceExitCode.TIMESTAMP_VALIDATION,
+                {},
+                f"CHECK_IN_TIMESTAMP_NON_INCREASING: {now_utc} <= {last_chk['timestamp_utc']}",
+            )
+
+        gap_sec = (now_dt - last_dt).total_seconds()
+        is_qualifying = 0.0 < gap_sec <= MAX_CHECK_IN_GAP_SECONDS
+        new_index = len(check_ins)
+
+        new_entry = {
+            "check_in_index": new_index,
+            "timestamp_utc": now_utc,
+            "monotonic_seconds": mono_now,
+            "gap_seconds": gap_sec,
+            "qualifying": is_qualifying,
+            "type": "OPERATOR_CHECK_IN",
+        }
+        check_ins.append(new_entry)
+        in_prog["check_ins"] = check_ins
+
+        active_sec = compute_active_operating_seconds(check_ins)
+        in_prog["active_operating_seconds"] = active_sec
+        in_prog["check_in_count"] = len(check_ins) - 1
+
+        in_prog["checksum_sha256"] = compute_record_checksum(in_prog)
+        atomic_write_json(active_path, in_prog)
+
+        audit_file = self.audit_dir / "session_lifecycle.jsonl"
+        with open(audit_file, "a", encoding="utf-8") as af:
+            af.write(
+                json.dumps(
+                    {
+                        "timestamp_utc": now_utc,
+                        "event": "OPERATOR_CHECK_IN",
+                        "session_id": session_id,
+                        "check_in_index": new_index,
+                        "gap_seconds": gap_sec,
+                        "qualifying": is_qualifying,
+                        "total_active_seconds": active_sec,
+                    }
+                )
+                + "\n"
+            )
+
+        return (
+            AcceptanceExitCode.SUCCESS,
+            new_entry,
+            f"CHECK_IN_RECORDED: {session_id} (Index: {new_index}, Gap: {gap_sec:.1f}s, Qualifying: {is_qualifying}, Total Active: {active_sec:.1f}s)",
         )
 
     def get_status(
@@ -775,7 +992,22 @@ class OperatorAcceptanceHarness:
             start_dt = datetime.fromisoformat(rec["start_timestamp_utc"])
             elapsed_sec = max(0.0, (now - start_dt).total_seconds())
             elapsed_min = elapsed_sec / 60.0
-            eligible_for_pass = elapsed_sec >= 1800.0
+
+            check_ins = rec.get("check_ins", [])
+            if check_ins:
+                active_sec = compute_active_operating_seconds(check_ins, end_timestamp_utc=now.isoformat())
+                check_in_count = len(check_ins) - 1
+                last_chk = check_ins[-1]
+                last_dt = datetime.fromisoformat(last_chk["timestamp_utc"])
+                current_gap = max(0.0, (now - last_dt).total_seconds())
+                is_overdue = current_gap > MAX_CHECK_IN_GAP_SECONDS
+            else:
+                active_sec = 0.0
+                check_in_count = 0
+                current_gap = elapsed_sec
+                is_overdue = elapsed_sec > MAX_CHECK_IN_GAP_SECONDS
+
+            eligible_for_pass = active_sec >= MINIMUM_QUALIFYING_SECONDS
 
             status_dict = {
                 "session_id": target_id,
@@ -787,6 +1019,12 @@ class OperatorAcceptanceHarness:
                 "start_timestamp_utc": rec.get("start_timestamp_utc"),
                 "current_elapsed_seconds": elapsed_sec,
                 "current_elapsed_minutes": elapsed_min,
+                "wall_clock_elapsed_seconds": elapsed_sec,
+                "active_operating_seconds": active_sec,
+                "active_operating_minutes": active_sec / 60.0,
+                "check_in_count": check_in_count,
+                "check_in_gap_seconds": current_gap,
+                "check_in_overdue": is_overdue,
                 "minimum_duration_met": eligible_for_pass,
                 "network_quarantine_active": rec.get("network_quarantine_active", True),
                 "repo_head": rec.get("repo_head"),
@@ -796,22 +1034,27 @@ class OperatorAcceptanceHarness:
             }
 
             msg_lines = [
-                f"Session ID:            {target_id}",
-                f"Record Type:           {rec.get('session_record_type')}",
-                f"Lifecycle State:       {rec.get('lifecycle_state')}",
-                f"Operator Role:         {rec.get('operator_role')}",
-                f"Interface Mode:        {rec.get('interface_mode')}",
-                f"Workflow:              {rec.get('workflow')}",
-                f"Start Timestamp (UTC): {rec.get('start_timestamp_utc')}",
-                f"Current Elapsed Time:  {elapsed_sec:.1f}s ({elapsed_min:.1f}m)",
-                f"Quarantine Active:     {rec.get('network_quarantine_active')}",
-                f"Repo HEAD:             {rec.get('repo_head')}",
-                f"Boot Timestamp (UTC):  {rec.get('boot_timestamp_utc')}",
-                f"Session Lock:          {'HELD' if status_dict['session_lock_held'] else 'NOT_FOUND'}",
-                f"Finalization Eligible: {'YES' if eligible_for_pass else 'NO (MINIMUM_REAL_DURATION_NOT_YET_MET)'}",
+                f"Session ID:                 {target_id}",
+                f"Record Type:                {rec.get('session_record_type')}",
+                f"Lifecycle State:            {rec.get('lifecycle_state')}",
+                f"Operator Role:              {rec.get('operator_role')}",
+                f"Interface Mode:             {rec.get('interface_mode')}",
+                f"Workflow:                   {rec.get('workflow')}",
+                f"Start Timestamp (UTC):      {rec.get('start_timestamp_utc')}",
+                f"Wall-Clock Elapsed Time:    {elapsed_sec:.1f}s ({elapsed_min:.1f}m)",
+                f"Verified Active Time:       {active_sec:.1f}s ({active_sec / 60.0:.1f}m)",
+                f"Check-In Count:             {check_in_count}",
+                f"Current Gap from Check-In:  {current_gap:.1f}s",
+                f"Quarantine Active:          {rec.get('network_quarantine_active')}",
+                f"Repo HEAD:                  {rec.get('repo_head')}",
+                f"Boot Timestamp (UTC):       {rec.get('boot_timestamp_utc')}",
+                f"Session Lock:               {'HELD' if status_dict['session_lock_held'] else 'NOT_FOUND'}",
+                f"Finalization Eligible:      {'YES' if eligible_for_pass else 'NO (MINIMUM_REAL_DURATION_NOT_YET_MET)'}",
             ]
+            if is_overdue and check_ins:
+                msg_lines.append(f"\n[WARNING] CHECK_IN_OVERDUE: {current_gap:.1f}s since last check-in (>300s max allowed gap). Operator active time paused.")
             if not eligible_for_pass:
-                msg_lines.append("\n[WARNING] MINIMUM_REAL_DURATION_NOT_YET_MET (>=1800s required for PASS)")
+                msg_lines.append(f"\n[WARNING] MINIMUM_REAL_DURATION_NOT_YET_MET (verified active: {active_sec:.1f}s < 1800.0s required for PASS)")
 
             return (
                 AcceptanceExitCode.SUCCESS,
@@ -955,12 +1198,25 @@ class OperatorAcceptanceHarness:
                 )
 
         # Duration requirement for PASS
-        if session_outcome == "PASS" and measured_duration < 1800.0:
-            return (
-                AcceptanceExitCode.DURATION_NOT_MET,
-                {},
-                f"MINIMUM_DURATION_NOT_MET: {measured_duration:.1f}s < 1800.0s required for PASS",
-            )
+        check_ins = in_prog.get("check_ins", [])
+        if check_ins:
+            active_duration = compute_active_operating_seconds(check_ins, end_timestamp_utc=end_utc)
+        else:
+            active_duration = 0.0
+
+        if session_outcome == "PASS":
+            if measured_duration < 1800.0:
+                return (
+                    AcceptanceExitCode.DURATION_NOT_MET,
+                    {},
+                    f"MINIMUM_DURATION_NOT_MET: {measured_duration:.1f}s < 1800.0s required for PASS",
+                )
+            if active_duration < 1800.0:
+                return (
+                    AcceptanceExitCode.DURATION_NOT_MET,
+                    {},
+                    f"MINIMUM_ACTIVE_DURATION_NOT_MET: verified active={active_duration:.1f}s < 1800.0s required for PASS (wall-clock: {measured_duration:.1f}s)",
+                )
 
         # Check for overlaps with already finalized real sessions
         for existing_f in self.real_sessions_dir.glob("*.final.json"):
@@ -1009,9 +1265,13 @@ class OperatorAcceptanceHarness:
             "date_utc": in_prog["date_utc"],
             "start_timestamp_utc": in_prog["start_timestamp_utc"],
             "end_timestamp_utc": end_utc,
-            "operating_time_seconds": measured_duration,
-            "operating_time_minutes": measured_duration / 60.0,
-            "declared_duration_seconds": measured_duration,
+            "operating_time_seconds": active_duration if session_outcome == "PASS" else measured_duration,
+            "operating_time_minutes": (active_duration if session_outcome == "PASS" else measured_duration) / 60.0,
+            "active_operating_seconds": active_duration,
+            "wall_clock_duration_seconds": measured_duration,
+            "declared_duration_seconds": active_duration if session_outcome == "PASS" else measured_duration,
+            "check_in_count": len(check_ins) - 1 if check_ins else 0,
+            "check_ins": check_ins,
             "is_post_restart": post_restart_verified,
             "post_restart_verified": post_restart_verified,
             "boot_cycle_id": in_prog.get("boot_cycle_id"),
@@ -1106,7 +1366,7 @@ class OperatorAcceptanceHarness:
         abort_utc = abort_dt.isoformat()
         start_dt = datetime.fromisoformat(in_prog["start_timestamp_utc"])
         elapsed_sec = max(0.0, (abort_dt - start_dt).total_seconds())
-
+        check_ins = in_prog.get("check_ins", [])
         aborted_record: Dict[str, Any] = {
             "session_id": session_id,
             "session_record_type": SessionRecordType.REAL_OPERATOR_SESSION.value,
@@ -1119,7 +1379,11 @@ class OperatorAcceptanceHarness:
             "end_timestamp_utc": abort_utc,
             "operating_time_seconds": elapsed_sec,
             "operating_time_minutes": elapsed_sec / 60.0,
+            "active_operating_seconds": 0.0,
+            "wall_clock_duration_seconds": elapsed_sec,
             "declared_duration_seconds": elapsed_sec,
+            "check_in_count": len(check_ins) - 1 if check_ins else 0,
+            "check_ins": check_ins,
             "is_post_restart": False,
             "post_restart_verified": False,
             "boot_cycle_id": in_prog.get("boot_cycle_id"),
@@ -1350,6 +1614,11 @@ def build_argument_parser() -> argparse.ArgumentParser:
     validate_p.add_argument("--session-id", help="Session ID to look up in real_sessions")
     validate_p.add_argument("--acceptance-root", default=str(DEFAULT_ACCEPTANCE_DIR), help="Path to external acceptance root")
 
+    # check-in
+    checkin_p = subparsers.add_parser("check-in", help="Record explicit operator activity check-in")
+    checkin_p.add_argument("--session-id", required=True, help="Session ID (REAL-SNN format)")
+    checkin_p.add_argument("--acceptance-root", default=str(DEFAULT_ACCEPTANCE_DIR), help="Path to external acceptance root")
+
     # summarize
     sum_p = subparsers.add_parser("summarize", help="Recompute and display acceptance master summary")
     sum_p.add_argument("--acceptance-root", default=str(DEFAULT_ACCEPTANCE_DIR), help="Path to external acceptance root")
@@ -1381,6 +1650,11 @@ def main(argv: Optional[List[str]] = None) -> int:
                 interface_mode=args.interface_mode,
                 workflow=args.workflow,
             )
+            print(msg)
+            return code.value
+
+        elif args.subcommand == "check-in":
+            code, _, msg = harness.check_in(session_id=args.session_id)
             print(msg)
             return code.value
 
