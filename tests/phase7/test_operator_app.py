@@ -188,9 +188,9 @@ def test_screen_1_readiness_dashboard():
 
     assert data["classification"] == READINESS_CLASSIFICATION
     assert data["test_summary"]["total_passing"] == data["test_baselines"]["current_verified"]["passed_tests"]
-    assert data["test_summary"]["total_passing"] == 847
+    assert data["test_summary"]["total_passing"] == 862
     assert data["test_summary"]["baseline_passing"] == 837
-    assert data["test_summary"]["new_passing"] == 10
+    assert data["test_summary"]["new_passing"] == 25
     assert data["test_summary"]["is_hardcoded"] is False
     assert data["drill_summary"]["passed_drills"] == 16
     assert data["drill_summary"]["total_drills"] == 16
@@ -224,9 +224,9 @@ def test_dashboard_distinguishes_qualified_and_current_test_baselines():
     assert m413b["qualification_status"] == "QUALIFIED_MILESTONE_4_13B_CLOSURE"
 
     curr = baselines["current_verified"]
-    assert curr["passed_tests"] == 847
-    assert curr["collected_tests"] == 847
-    assert curr["repository_commit"] == "066ead0"
+    assert curr["passed_tests"] == 862
+    assert curr["collected_tests"] == 862
+    assert curr["repository_commit"] == "0ee8e1a"
     assert curr["qualification_status"] == "CURRENT_VERIFIED_REGRESSION"
 
 

@@ -25,14 +25,14 @@
   },
   "current_verified": {
     "baseline_name": "Current Verified Regression Baseline",
-    "repository_commit": "066ead0",
-    "collected_tests": 847,
-    "passed_tests": 847,
+    "repository_commit": "0ee8e1a",
+    "collected_tests": 862,
+    "passed_tests": 862,
     "failed_tests": 0,
     "skipped_tests": 0,
-    "verification_timestamp_utc": "2026-10-14T02:04:46+00:00",
+    "verification_timestamp_utc": "2026-10-14T02:25:13+00:00",
     "test_command_identifier": ".venv-phase7/Scripts/python.exe -m pytest tests/phase7/ test_phase6_safeguards.py -q",
     "qualification_status": "CURRENT_VERIFIED_REGRESSION",
-    "record_checksum": "2c72f5d5e7a9cc4c1a4700cde4f672274d332d1b2776a4cd1a0a9c363fddeabf"
+    "record_checksum": "82ca1310bccc20a93069585609c1e1a869f0281889f21b1f655532e2bc3cdc1d"
   }
 }
