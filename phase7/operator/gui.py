@@ -121,7 +121,15 @@ class OperatorGUI:
         ttk.Label(top_frame, text=data["classification"], font=("Segoe UI", 11, "bold"), foreground="#006400").grid(row=0, column=1, sticky="w", padx=10)
 
         t_sum = data["test_summary"]
-        t_text = f"{t_sum['total_passing']} passing ({t_sum['baseline_passing']} baseline + {t_sum['new_passing']} new), 0 failed, 0 skipped"
+        t_base = data.get("test_baselines", {})
+        m412 = t_base.get("milestone_4_12", {})
+        m413b = t_base.get("milestone_4_13b", {})
+        curr = t_base.get("current_verified", {})
+        t_text = (
+            f"Current Verified: {curr.get('passed_tests', t_sum['total_passing'])} / {curr.get('collected_tests', t_sum['collected'])} ({curr.get('repository_commit', 'HEAD')}) | "
+            f"M4.13B: {m413b.get('passed_tests', 837)} / {m413b.get('collected_tests', 837)} ({m413b.get('repository_commit', 'ee01c25')}) | "
+            f"M4.12: {m412.get('passed_tests', 811)} / {m412.get('collected_tests', 811)} ({m412.get('repository_commit', '48c5748')})"
+        )
         ttk.Label(top_frame, text="Automated Tests:", font=("Segoe UI", 10, "bold")).grid(row=1, column=0, sticky="w")
         ttk.Label(top_frame, text=t_text).grid(row=1, column=1, sticky="w", padx=10)
 

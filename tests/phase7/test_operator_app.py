@@ -187,9 +187,11 @@ def test_screen_1_readiness_dashboard():
     data = core.get_readiness_dashboard()
 
     assert data["classification"] == READINESS_CLASSIFICATION
-    assert data["test_summary"]["total_passing"] == 837
-    assert data["test_summary"]["baseline_passing"] == 544
-    assert data["test_summary"]["new_passing"] == 293
+    assert data["test_summary"]["total_passing"] == data["test_baselines"]["current_verified"]["passed_tests"]
+    assert data["test_summary"]["total_passing"] == 847
+    assert data["test_summary"]["baseline_passing"] == 837
+    assert data["test_summary"]["new_passing"] == 10
+    assert data["test_summary"]["is_hardcoded"] is False
     assert data["drill_summary"]["passed_drills"] == 16
     assert data["drill_summary"]["total_drills"] == 16
 
@@ -197,6 +199,82 @@ def test_screen_1_readiness_dashboard():
     assert len(domains) == 15
     for d_id, sc in domains.items():
         assert sc["status"] == "PASS"
+
+
+def test_dashboard_distinguishes_qualified_and_current_test_baselines():
+    """Verify Screen 1 distinguishes M4.12, M4.13B, and current verified regression baselines."""
+    core = OperatorCore()
+    data = core.get_readiness_dashboard()
+
+    baselines = data.get("test_baselines", {})
+    assert "milestone_4_12" in baselines
+    assert "milestone_4_13b" in baselines
+    assert "current_verified" in baselines
+
+    m412 = baselines["milestone_4_12"]
+    assert m412["passed_tests"] == 811
+    assert m412["collected_tests"] == 811
+    assert m412["repository_commit"] == "48c5748"
+    assert m412["qualification_status"] == "QUALIFIED_MILESTONE_4_12_CLOSURE"
+
+    m413b = baselines["milestone_4_13b"]
+    assert m413b["passed_tests"] == 837
+    assert m413b["collected_tests"] == 837
+    assert m413b["repository_commit"] == "ee01c25"
+    assert m413b["qualification_status"] == "QUALIFIED_MILESTONE_4_13B_CLOSURE"
+
+    curr = baselines["current_verified"]
+    assert curr["passed_tests"] == 847
+    assert curr["collected_tests"] == 847
+    assert curr["repository_commit"] == "066ead0"
+    assert curr["qualification_status"] == "CURRENT_VERIFIED_REGRESSION"
+
+
+def test_dashboard_does_not_use_hardcoded_current_test_total(tmp_path):
+    """Verify Screen 1 reads baseline dynamically from the governed record rather than a hard-coded constant."""
+    custom_baseline = {
+        "milestone_4_12": {
+            "baseline_name": "M4.12",
+            "repository_commit": "48c5748",
+            "collected_tests": 811,
+            "passed_tests": 811,
+            "failed_tests": 0,
+            "skipped_tests": 0,
+            "qualification_status": "QUALIFIED_MILESTONE_4_12_CLOSURE",
+        },
+        "milestone_4_13b": {
+            "baseline_name": "M4.13B",
+            "repository_commit": "ee01c25",
+            "collected_tests": 837,
+            "passed_tests": 837,
+            "failed_tests": 0,
+            "skipped_tests": 0,
+            "qualification_status": "QUALIFIED_MILESTONE_4_13B_CLOSURE",
+        },
+        "current_verified": {
+            "baseline_name": "Current Verified",
+            "repository_commit": "abc1234",
+            "collected_tests": 855,
+            "passed_tests": 855,
+            "failed_tests": 0,
+            "skipped_tests": 0,
+            "qualification_status": "CURRENT_VERIFIED_REGRESSION",
+        },
+    }
+    for v in custom_baseline.values():
+        canon = json.dumps(v, sort_keys=True, separators=(",", ":"))
+        v["record_checksum"] = hashlib.sha256(canon.encode("utf-8")).hexdigest()
+
+    custom_file = tmp_path / "custom_baseline.json"
+    custom_file.write_text(json.dumps(custom_baseline), encoding="utf-8")
+
+    core = OperatorCore(baseline_file=custom_file)
+    data = core.get_readiness_dashboard()
+
+    assert data["test_summary"]["is_hardcoded"] is False
+    assert data["test_summary"]["total_passing"] == 855
+    assert data["test_summary"]["collected"] == 855
+    assert data["test_baselines"]["current_verified"]["repository_commit"] == "abc1234"
 
 
 # =============================================================================

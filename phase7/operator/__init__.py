@@ -35,7 +35,7 @@ from phase7.operator.read_only_guard import (
     ReadOnlyEvidenceGuard,
     ReadOnlyViolationError,
 )
-from phase7.operator.core import OperatorCore
+from phase7.operator.core import OperatorCore, load_readiness_baselines
 
 __all__ = [
     "BANNER_INTERNAL_USE",
@@ -59,4 +59,5 @@ __all__ = [
     "ReadOnlyEvidenceGuard",
     "ReadOnlyViolationError",
     "OperatorCore",
+    "load_readiness_baselines",
 ]

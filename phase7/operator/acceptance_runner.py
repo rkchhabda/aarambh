@@ -581,7 +581,8 @@ class OperatorAcceptanceHarness:
                 checks["total_passing_tests"] = dash["test_summary"]["total_passing"]
                 checks["passed_drills"] = dash["drill_summary"]["passed_drills"]
                 assert dash["classification"] == READINESS_CLASSIFICATION
-                assert dash["test_summary"]["total_passing"] == 837
+                assert dash["test_summary"]["total_passing"] == dash["test_baselines"]["current_verified"]["passed_tests"]
+                assert dash["test_baselines"]["milestone_4_13b"]["passed_tests"] == 837
                 assert dash["drill_summary"]["passed_drills"] == 16
 
             elif session_id == "S03":

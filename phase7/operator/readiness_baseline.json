@@ -1,0 +1,38 @@
+{
+  "milestone_4_12": {
+    "baseline_name": "Last Qualified Milestone 4.12 Baseline",
+    "repository_commit": "48c5748",
+    "collected_tests": 811,
+    "passed_tests": 811,
+    "failed_tests": 0,
+    "skipped_tests": 0,
+    "verification_timestamp_utc": "2026-10-12T16:00:00+00:00",
+    "test_command_identifier": "pytest tests/phase7/ test_phase6_safeguards.py",
+    "qualification_status": "QUALIFIED_MILESTONE_4_12_CLOSURE",
+    "record_checksum": "afe6161e0ba3bdf7c1fb0ed3513adcbd5d62508d087f000f654252ec7eed47b8"
+  },
+  "milestone_4_13b": {
+    "baseline_name": "Last Qualified Milestone 4.13B Baseline",
+    "repository_commit": "ee01c25",
+    "collected_tests": 837,
+    "passed_tests": 837,
+    "failed_tests": 0,
+    "skipped_tests": 0,
+    "verification_timestamp_utc": "2026-10-13T03:30:00+00:00",
+    "test_command_identifier": "pytest tests/phase7/ test_phase6_safeguards.py",
+    "qualification_status": "QUALIFIED_MILESTONE_4_13B_CLOSURE",
+    "record_checksum": "f99ebfdf08a07421d3b797d5465cd61d9f3885b1b030c69290c0eef58ad1ffd3"
+  },
+  "current_verified": {
+    "baseline_name": "Current Verified Regression Baseline",
+    "repository_commit": "066ead0",
+    "collected_tests": 847,
+    "passed_tests": 847,
+    "failed_tests": 0,
+    "skipped_tests": 0,
+    "verification_timestamp_utc": "2026-10-14T02:04:46+00:00",
+    "test_command_identifier": ".venv-phase7/Scripts/python.exe -m pytest tests/phase7/ test_phase6_safeguards.py -q",
+    "qualification_status": "CURRENT_VERIFIED_REGRESSION",
+    "record_checksum": "2c72f5d5e7a9cc4c1a4700cde4f672274d332d1b2776a4cd1a0a9c363fddeabf"
+  }
+}

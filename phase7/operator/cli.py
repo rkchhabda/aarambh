@@ -72,12 +72,21 @@ class OperatorCLI:
     # Screen 1
     def _format_screen_1_dashboard(self) -> List[str]:
         data = self.core.get_readiness_dashboard()
+        t_sum = data["test_summary"]
+        t_base = data.get("test_baselines", {})
+        m412 = t_base.get("milestone_4_12", {})
+        m413b = t_base.get("milestone_4_13b", {})
+        curr = t_base.get("current_verified", {})
+
         lines = [
             "SCREEN 1: READINESS DASHBOARD",
             "-" * 80,
             f"Overall Status: {data['classification']}",
             f"Evaluated At:   {data['timestamp_utc']}",
-            f"Tests:          {data['test_summary']['total_passing']} of {data['test_summary']['total_passing']} passing ({data['test_summary']['baseline_passing']} baseline + {data['test_summary']['new_passing']} new)",
+            f"Tests:          {t_sum['total_passing']} of {t_sum['collected']} passing ({t_sum['status']})",
+            f"  Last Qualified Milestone 4.12 Baseline:  {m412.get('passed_tests', 811)} / {m412.get('collected_tests', 811)} at commit {m412.get('repository_commit', '48c5748')}",
+            f"  Last Qualified Milestone 4.13B Baseline: {m413b.get('passed_tests', 837)} / {m413b.get('collected_tests', 837)} at commit {m413b.get('repository_commit', 'ee01c25')}",
+            f"  Current Verified Regression Baseline:    {curr.get('passed_tests', t_sum['total_passing'])} / {curr.get('collected_tests', t_sum['collected'])} at commit {curr.get('repository_commit', 'HEAD')}",
             f"Drills:         {data['drill_summary']['passed_drills']} of {data['drill_summary']['total_drills']} passed (100%)",
             "-" * 80,
             "15-DOMAIN READINESS SCORECARD:",
