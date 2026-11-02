@@ -1079,3 +1079,56 @@ Milestone 3 delivered the comprehensive Target Engine (`phase7/targets/`), cover
 - Status: **`OPERATOR_ACCEPTANCE_REPLACEMENT_PLAN_READY`**.
 - Acceptance Status: **`INTERNAL_OFFLINE_OPERATOR_ACCEPTANCE_IN_PROGRESS`**.
 - Milestone 5: **BLOCKED**.
+
+
+---
+
+## 33. Milestone 4.14 Quarantined Paper-Observation Policy and Parameter Integration Deliverables & Closure
+
+### 33.1 Architecture & Governance Directives
+- **Quarantined Pure Implementation:** Established `phase7/paper_policy/` containing pure, deterministic, offline evaluation policies and parameter schemas under governed parameter set ID `GOVERNED_PAPER_OBSERVATION_POLICY_V1` (version `1.0.0`).
+- **Source Mode Integrity:** Enforced source mode validation distinguishing `SYNTHETIC_LAB`, `RECORDED_FIXTURE_LAB`, and `LIVE_PROD_REJECTED`. Any synthetic payload masquerading as production or missing explicit synthetic/fixture markings is rejected fail-closed.
+- **Cryptographic Provenance Contracts:** Verified SHA-256 payload digests and source attribution contracts before policy evaluation.
+- **Freshness Bounds:** Rejection of stale quote (>60s) and stale VWAP (>300s) timestamps; rejection of future-dated timestamps (>5s skew).
+- **Formula Type Distinction:** True trade-level tick VWAP (`TICK_EXACT_VWAP`) vs candle-aggregated approximations (`CANDLE_TYPICAL_PRICE_APPROXIMATION`). Approximations restricted to display-only and rejected for signal or trigger generation.
+- **Opening Range Window Governance:** Explicit evaluation of 09:15–09:30 IST window with 30-second post-interval settlement buffer (earliest evaluation 09:30:30 IST).
+- **Price/OI State Quadrants:** Bounded 4-state classification (`LONG_BUILDUP`, `SHORT_BUILDUP`, `SHORT_COVERING`, `LONG_UNWINDING`) with neutral band filtering (0.2% price change, 1.0% OI change). Strictly labeled `PRICE_OI_STATE`; forbidden from outputting "institutional positioning" claims.
+- **Options Wall Quality:** Filtered to $\pm 15\%$ spot price strikes, maximum call OI (resistance) and maximum put OI (support), with explicit conflict metadata disclosure when multiple strikes tie.
+- **Put-Call Ratio (PCR):** Evaluated strictly on single expiry and single observation date; zero-denominator rejected fail-closed.
+- **Paper Risk Position Estimates:** Evaluated paper-only sizing (`PAPER_POSITION_ESTIMATE`) capped at maximum account risk (1.0%) and maximum position limit (5.0%). Strictly forbidden from generating order or broker execution commands.
+- **Centralized Gating Engine (G01–G24):** Sequential fail-closed evaluation of 24 distinct gates producing deterministic outcome `POLICY_SIMULATION_COMPLETE` or explicit `PolicyReasonCode`.
+- **Operator Integration (Screen 11):** Implemented Paper Policy Lab screen in Operator Core, CLI interactive menu, app launcher, and optional GUI tab (`include_lab=True`).
+
+### 33.2 Delivered Code and Test Artifacts
+
+| Capability / Requirement | Technical Description | Source Module | Test Module / Artifact | Status |
+|---|---|---|---|---|
+| **Policy Constants & Reason Codes** | Governed parameter set metadata, reason codes, banners, and Gate descriptions G01–G24 | `phase7/paper_policy/constants.py`, `phase7/paper_policy/reason_codes.py` | `tests/phase7/test_paper_policy.py` | **VERIFIED** |
+| **Fail-Closed Policy Configurations** | Thresholds, time intervals, strike filters, risk caps, and master configuration dataclasses | `phase7/paper_policy/config.py` | `tests/phase7/test_paper_policy.py` | **VERIFIED** |
+| **Source Mode & Masquerade Guard** | Permitted source mode validation; fail-closed rejection of unapproved or disguised sources | `phase7/paper_policy/source_mode.py` | `tests/phase7/test_paper_policy.py` | **VERIFIED** |
+| **Cryptographic Provenance Contract** | SHA-256 payload verification, source attribution, and pipeline version contract | `phase7/paper_policy/provenance.py` | `tests/phase7/test_paper_policy.py` | **VERIFIED** |
+| **Freshness & Timestamp Policy** | Quote freshness ($\le 60$s), VWAP freshness ($\le 300$s), clock skew detection | `phase7/paper_policy/freshness.py` | `tests/phase7/test_paper_policy.py` | **VERIFIED** |
+| **VWAP Policy & Formula Separation** | Trade-level vs candle approximation distinction; display-only restriction enforcement | `phase7/paper_policy/vwap_policy.py` | `tests/phase7/test_paper_policy.py` | **VERIFIED** |
+| **Opening Range Policy** | 09:15–09:30 IST window validation, 30s settlement buffer, break-out/break-down detection | `phase7/paper_policy/opening_range.py` | `tests/phase7/test_paper_policy.py` | **VERIFIED** |
+| **Price/OI State Policy** | 4-quadrant state classification with neutral bands; institutional claim prohibition | `phase7/paper_policy/price_oi_state.py` | `tests/phase7/test_paper_policy.py` | **VERIFIED** |
+| **Options Wall Quality Policy** | $\pm 15\%$ strike filter, support/resistance identification, conflict disclosure | `phase7/paper_policy/options_quality.py` | `tests/phase7/test_paper_policy.py` | **VERIFIED** |
+| **Put-Call Ratio (PCR) Policy** | Single expiry/date validation, zero-denominator guard, bounded PCR evaluation | `phase7/paper_policy/pcr_policy.py` | `tests/phase7/test_paper_policy.py` | **VERIFIED** |
+| **Paper Risk Position Estimator** | Paper-only sizing estimate, 1% risk / 5% position caps, order term prohibition | `phase7/paper_policy/paper_risk.py` | `tests/phase7/test_paper_policy.py` | **VERIFIED** |
+| **Centralized Eligibility Gate (G01–G24)** | Sequential gate pipeline, fail-closed rejection, deterministic simulation results | `phase7/paper_policy/eligibility_gate.py` | `tests/phase7/test_paper_policy.py` | **VERIFIED** |
+| **View Models & Screen 11 Lab** | Operator presentation, formatted summary, CLI and GUI integration | `phase7/paper_policy/view_models.py`, `phase7/operator/core.py`, `phase7/operator/cli.py`, `phase7/operator/gui.py` | `tests/phase7/test_paper_policy.py` | **VERIFIED** |
+| **Focused Test Battery** | 55 comprehensive unit tests covering all gates, policies, configurations, and boundaries | N/A | `tests/phase7/test_paper_policy.py` (55 tests) | **VERIFIED** |
+
+### 33.3 Verification and Current Status
+- Focused operator test suite: **123 of 123 passing** (`test_operator_app.py`, `test_operator_acceptance.py`, `test_operator_acceptance_lifecycle.py`, `test_operator_active_checkins.py`, `test_operator_replacement_session.py`, `test_paper_policy.py`).
+- Complete repository test suite: **917 of 917 passing** (`pytest tests/phase7/ test_phase6_safeguards.py -q`).
+- `pip check`: Clean (no broken requirements).
+- `git diff --check`: Clean (zero whitespace errors).
+- Milestone 4.14 Status: **`QUARANTINED_PAPER_POLICY_INTEGRATION_COMPLETE`**.
+- Operating Mode: **`SYNTHETIC_AND_GOVERNED_FIXTURE_POLICY_LAB`**.
+- Operating Status: **`SYNTHETIC_AND_GOVERNED_FIXTURE_POLICY_LAB_READY`**.
+- External Acquisition Mode: **`EXTERNAL_EVIDENCE_ACQUISITION_DEFERRED_BY_OWNER`**.
+- Analytical Status: **`ANALYTICAL_EXECUTION_BLOCKED_BY_GATE1`**.
+- Modeling Status: **`MODEL_EXECUTION_BLOCKED_BY_MILESTONE5`**.
+- Order Status: **`ORDER_EXECUTION_DISABLED`**.
+- Operator Acceptance Status: **`INTERNAL_OFFLINE_OPERATOR_ACCEPTANCE_IN_PROGRESS`** (Milestone 4.13 acceptance records untouched).
+- Milestone 5 Quarantine: Strictly **BLOCKED**.

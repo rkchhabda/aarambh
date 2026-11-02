@@ -1264,6 +1264,66 @@ No decision recorded herein may be deleted, retroactively edited, or overwritten
 
 ---
 
+### DEC-20261102-01: Quarantined Paper-Observation Policy and Parameter Integration [Milestone 4.14]
+- **Date:** 2026-11-02
+- **Decision Authority:** Project Owner / Research Governance Officer
+- **Context & Motivation:** Integration of quarantined, fail-closed paper observation policies and parameter governance schemas (parameter set `GOVERNED_PAPER_OBSERVATION_POLICY_V1`, version `1.0.0`) derived from the Antigravity NSE engineering design into GaurviDEEP. Evaluation is strictly confined to synthetic and recorded fixture evaluations in an offline lab environment.
+- **Exact Decision:**
+  1. **Quarantined Pure Implementation:** Authorize creation of package `phase7/paper_policy/` containing pure, deterministic, offline evaluation policies and parameter schemas:
+     - Policy constants, reason codes, and fail-closed configurations (`constants.py`, `reason_codes.py`, `config.py`).
+     - Source mode contracts and anti-masquerade guards (`source_mode.py`).
+     - Cryptographic SHA-256 provenance contracts (`provenance.py`).
+     - Freshness and timestamp validation rules (`freshness.py`).
+     - VWAP formula type checking and candle approximation display-only restriction (`vwap_policy.py`).
+     - Opening range time window evaluation (09:15–09:30 IST with 30s buffer) (`opening_range.py`).
+     - Four-quadrant Price/OI state classification with neutral band filtering, strictly labeled `PRICE_OI_STATE` with prohibition of institutional claim semantics (`price_oi_state.py`).
+     - Options wall identification with $\pm 15\%$ strike filter and conflict disclosure (`options_quality.py`).
+     - Single-expiry/date Put-Call Ratio (PCR) calculation with zero-denominator rejection (`pcr_policy.py`).
+     - Paper risk position sizing estimates strictly labeled `PAPER_POSITION_ESTIMATE` with caps and absolute prohibition of order/broker terminology (`paper_risk.py`).
+     - Centralized eligibility gate evaluating gates G01 through G24 returning `POLICY_SIMULATION_COMPLETE` or fail-closed rejection (`eligibility_gate.py`).
+     - View models and formatting for Screen 11 (`view_models.py`).
+  2. **Operator Application Integration (Screen 11):** Integrated Paper Policy Lab into the offline operator core (`core.py`), CLI interactive navigation (`cli.py`), app dispatch (`app.py`), and optional GUI tab (`gui.py` with `include_lab=True`, preserving default 10-tab index for M4.12 backward compatibility).
+  3. **Strict Non-Authorization Invariants:**
+     - External network requests: Zero authorized; zero live quote or bhavcopy acquisitions.
+     - Target generation, model training, return calculation, ranking, backtesting: Strictly prohibited.
+     - Telegram/email alerts, commercial/public distribution, broker integration, order placement: Strictly prohibited.
+     - Milestone 5 status: Strictly `BLOCKED`.
+     - Gate 1 status: Strictly `ANALYTICAL_EXECUTION_BLOCKED_BY_GATE1`.
+     - Modeling status: Strictly `MODEL_EXECUTION_BLOCKED_BY_MILESTONE5`.
+     - Order status: Strictly `ORDER_EXECUTION_DISABLED`.
+     - Milestone 4.13 operator acceptance: Retained unchanged and in progress; zero modification of staging records under `gaurvideep_phase7_staging\nse500\acceptance_4_13`.
+  4. **Operating Status:** Set to `SYNTHETIC_AND_GOVERNED_FIXTURE_POLICY_LAB_READY` with milestone status `QUARANTINED_PAPER_POLICY_INTEGRATION_COMPLETE`.
+- **Impacted Modules:**
+  - `phase7/paper_policy/__init__.py`
+  - `phase7/paper_policy/constants.py`
+  - `phase7/paper_policy/reason_codes.py`
+  - `phase7/paper_policy/config.py`
+  - `phase7/paper_policy/source_mode.py`
+  - `phase7/paper_policy/provenance.py`
+  - `phase7/paper_policy/freshness.py`
+  - `phase7/paper_policy/vwap_policy.py`
+  - `phase7/paper_policy/opening_range.py`
+  - `phase7/paper_policy/price_oi_state.py`
+  - `phase7/paper_policy/options_quality.py`
+  - `phase7/paper_policy/pcr_policy.py`
+  - `phase7/paper_policy/paper_risk.py`
+  - `phase7/paper_policy/eligibility_gate.py`
+  - `phase7/paper_policy/view_models.py`
+  - `phase7/operator/core.py`
+  - `phase7/operator/cli.py`
+  - `phase7/operator/app.py`
+  - `phase7/operator/gui.py`
+  - `tests/phase7/test_paper_policy.py`
+  - `docs/PHASE7_DECISION_LOG.md`
+  - `docs/PHASE7_IMPLEMENTATION_MAP.md`
+- **Verification Criteria:**
+  - 55 new focused unit tests passing in `tests/phase7/test_paper_policy.py`.
+  - Complete repository test suite: 917 of 917 passing (862 baseline + 55 new).
+  - Clean `pip check` and `git diff --check`.
+  - Zero network requests dispatched, zero acceptance evidence modified, zero Phase 6 vault access.
+
+---
+
 ## 3. Log Schema for Future Amendments
 
 All future amendments to this decision log must adhere to the following schema:
