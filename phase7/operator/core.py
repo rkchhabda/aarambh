@@ -773,3 +773,100 @@ class OperatorCore:
                 "records": demo_records,
                 "timestamp_utc": datetime.now(timezone.utc).isoformat(),
             }
+
+    # ------------------------------------------------------------------------
+    # Screen 11: Paper Policy Lab [Milestone 4.14]
+    # -----------------------------------------------------------------------
+    def get_paper_policy_lab(self) -> Dict[str, Any]:
+        """Execute quarantined synthetic paper policy evaluation (Screen 11)."""
+        from phase7.paper_policy import (
+            SCREEN_11_MANDATORY_BANNERS,
+            PaperPolicyMasterConfig,
+            evaluate_central_eligibility_gates,
+        )
+
+        cfg = PaperPolicyMasterConfig()
+        cfg.validate()
+
+
+        eval_time = datetime.now(timezone.utc)
+        eval_date_str = eval_time.strftime("%Y-%m-%d")
+
+        payload = {
+            "observation_id": f"OBS-SYN-{eval_date_str}-001",
+            "source_mode": "SYNTHETIC_TEST",
+            "symbol": "NIFTY50_SYNTHETIC",
+            "series": "EQ",
+            "listing_status": "ACTIVE",
+            "business_date": eval_date_str,
+            "quote": {
+                "price": 24500.0,
+                "volume": 1250000,
+                "exchange_timestamp_utc": eval_time.isoformat(),
+            },
+            "vwap": {
+                "formula_type": "SOURCE_REPORTED_VWAP",
+                "vwap_value": 24480.0,
+                "cumulative_volume": 2500000,
+                "timestamp_utc": eval_time.isoformat(),
+                "exchange": "NSE",
+                "session_start": "09:15:00",
+            },
+            "opening_range": {
+                "high": 24550.0,
+                "low": 24420.0,
+                "volume": 350000,
+                "finalized": True,
+            },
+            "evaluation_time_ist": "09:35:00",
+            "provenance": {
+                "source_identifier": "GOVERNED_OFFLINE_LAB",
+                "source_mode": "SYNTHETIC_TEST",
+                "record_hash": "DOTY_SYNTHETIC_HASH",
+                "dataset_label": "NSE500_SYNTHETIC_LAB",
+            },
+            "price_oi": {
+                "prev_price": 24400.0,
+                "curr_price": 24500.0,
+                "prev_oi": 50000,
+                "curr_oi": 52500,
+            },
+            "options_strikes": [
+                {
+                    "strike_price": 24600.0,
+                    "option_type": "CE",
+                    "open_interest": 45000,
+                    "volume": 12000,
+                    "trade_count": 850,
+                    "bid_price": 120.0,
+                    "ask_price": 122.0,
+                },
+                {
+                    "strike_price": 24400.0,
+                    "option_type": "PE",
+                    "open_interest": 52000,
+                    "volume": 15000,
+                    "trade_count": 920,
+                    "bid_price": 115.0,
+                    "ask_price": 117.0,
+                },
+            ],
+            "risk_parameters": {
+                "entry_price": 24500.0,
+                "stop_loss_price": 24200.0,
+                "take_profit_price": 25100.0,
+                "portfolio_capital": 500000.0,
+                "open_observations_count": 1,
+                "current_sector_exposure_pct": 5.0,
+            },
+        }
+
+        gate_res = evaluate_central_eligibility_gates(payload, eval_time, config=cfg)
+        return {
+            "screen": 11,
+            "title": "PAPER POLICY LAB",
+            "banners": SCREEN_11_MANDATORY_BANNERS,
+            "config": cfg.to_dict(),
+            "evaluation_result": gate_res.to_dict(),
+            "timestamp_utc": eval_time.isoformat(),
+        }

@@ -36,10 +36,12 @@ class OperatorCLI:
         self.core = core or OperatorCore()
 
     def render_screen(self, screen_number: int) -> str:
-        """Render a specific screen (1-10) and return formatted string output."""
+        """Render a specific screen (1-11) and return formatted string output."""
+        from phase7.paper_policy.constants import SCREEN_11_MANDATORY_BANNERS
+        banners = SCREEN_11_MANDATORY_BANNERS if screen_number == 11 else MANDATORY_BANNERS
         out_lines: List[str] = []
         out_lines.append("=" * 80)
-        for b in MANDATORY_BANNERS:
+        for b in banners:
             out_lines.append(f" [BANNER] {b}")
         out_lines.append("=" * 80)
 
@@ -63,8 +65,10 @@ class OperatorCLI:
             out_lines.extend(self._format_screen_9_export())
         elif screen_number == 10:
             out_lines.extend(self._format_screen_10_demo())
+        elif screen_number == 11:
+            out_lines.extend(self._format_screen_11_paper_policy())
         else:
-            out_lines.append(f"ERROR: Unknown screen number {screen_number}. Valid options: 1 to 10.")
+            out_lines.append(f"ERROR: Unknown screen number {screen_number}. Valid options: 1 to 11.")
 
         out_lines.append("=" * 80)
         return "\n".join(out_lines)
@@ -274,10 +278,69 @@ class OperatorCLI:
         return lines
 
 
+    # Screen 11
+    def _format_screen_11_paper_policy(self) -> List[str]:
+        data = self.core.get_paper_policy_lab()
+        eval_dict = data["evaluation_result"]
+        details = eval_dict.get("evaluation_details", {})
+        q_det = details.get("quote", {})
+        v_det = details.get("vwap", {})
+        or_det = details.get("opening_range", {})
+        poi_det = details.get("price_oi", {})
+        opt_det = details.get("options_wall", {})
+        risk = eval_dict.get("paper_risk_estimate")
+        from phase7.paper_policy.constants import GATE_DESCRIPTIONS, PARAMETER_SET_ID, PARAMETER_SET_VERSION
+
+        lines = [
+            "SCREEN 11: PAPER POLICY LAB [Milestone 4.14]",
+            "-" * 80,
+            f"Parameter Set ID:      {PARAMETER_SET_ID}",
+            f"Parameter Version:     {PARAMETER_SET_VERSION}",
+            f"Source Mode:           {details.get('source_mode', 'SYNTHETIC_TEST')}",
+            f"Target Symbol:         {details.get('symbol', 'NIFTY50_SYNTHETIC')}",
+            "-" * 80,
+            f"Quote Freshness:       Age: {q_det.get('age_seconds', 0.0):.1f}s | TS: {q_det.get('quote_ts', 'VALID_SYNTHETIC')}",
+            f"VWAP Evaluation:       Formula: {v_det.get('formula_type', 'SOURCE_REPORTED_VWAP')} | Status: {v_det.get('display_status', 'DECISION_ELIGIBLE_FORMULA')}",
+            f"Opening Range:         Outcome: {or_det.get('outcome', 'OPENING_RANGE_READY')} | Spread: {or_det.get('range_spread_pct', 0.0)}%",
+            f"Price/OI State:        {poi_det.get('state', 'LONG_BUILDUP')} (Price: {poi_det.get('price_change_pct', 0.0):+.2f}%, OI: {poi_det.get('oi_change_pct', 0.0):+.2f}%)",
+            f"Options Wall Quality:  Confidence: {opt_det.get('confidence', 'HIGH_CONFIDENCE')} | Call Wall: {opt_det.get('call_wall_strike')} | Put Wall: {opt_det.get('put_wall_strike')}",
+            "-" * 80,
+            f"Central Gates:         {eval_dict.get('passed_gates_count', 24)} / {eval_dict.get('total_gates_count', 24)} Passed",
+        ]
+        gate_statuses = eval_dict.get("gate_statuses", {})
+        gate_reasons = eval_dict.get("gate_reasons", {})
+        for gid in sorted(gate_statuses.keys()):
+            passed = gate_statuses[gid]
+            mark = "[PASS]" if passed else "[FAIL]"
+            desc = GATE_DESCRIPTIONS.get(gid, "Governed Gate")
+            reason = f" ({gate_reasons[gid]})" if not passed and gate_reasons.get(gid) else ""
+            lines.append(f"  {gid} {mark:<6} {desc[:50]:<50}{reason}")
+
+        failed_codes = eval_dict.get("failed_reason_codes", [])
+        if failed_codes:
+            lines.append(f"Failed Reason Codes:   {', '.join(failed_codes)}")
+        else:
+            lines.append("Failed Reason Codes:   NONE (All evaluation gates passed)")
+        lines.append("-" * 80)
+
+        if risk:
+            lines.append(f"Paper Risk Output:     {risk.get('output_type')} (Value: INR {risk.get('paper_position_value', 0.0):,.2f} | {risk.get('paper_position_pct', 0.0)}% of capital)")
+            lines.append(f"  Risk Parameters:     Risk/Obs: {risk.get('capital_at_risk')} | Stop: {risk.get('stop_distance_pct')}% | R:R: {risk.get('reward_risk_ratio')}")
+        else:
+            lines.append("Paper Risk Output:     BLOCKED (Gate rejections or live source exclusion)")
+        lines.append("-" * 80)
+
+        lines.append(f"Policy Outcome:        {eval_dict.get('overall_simulation_outcome')}")
+        for k, v in eval_dict.get("governance_statuses", {}).items():
+            lines.append(f"  - {k:<22}: {v}")
+        lines.append("-" * 80)
+        lines.append("DISCLAIMER: OFFLINE SYNTHETIC SIMULATION ONLY. NEVER A TRADE RECOMMENDATION.")
+        return lines
+
 def main() -> None:
     """CLI Entry Point."""
     parser = argparse.ArgumentParser(description="Phase 7 Offline Operator CLI Application")
-    parser.add_argument("--screen", type=int, choices=range(1, 11), default=1, help="Screen number to display (1-10)")
+    parser.add_argument("--screen", type=int, choices=range(1, 12), default=1, help="Screen number to display (1-11)")
     parser.add_argument("--all", action="store_true", help="Display all 10 screens sequentially")
     parser.add_argument("--demo", action="store_true", help="Execute Screen 10 Synthetic Demonstration")
     parser.add_argument("--export", action="store_true", help="Execute Screen 9 Metadata Audit Export")
@@ -291,24 +354,25 @@ def main() -> None:
     elif args.export:
         print(cli.render_screen(9))
     elif args.all:
-        for s in range(1, 11):
+        for s in range(1, 12):
             print(cli.render_screen(s))
             print("\n")
     elif args.interactive:
         while True:
             print_banner_header()
-            print("Select Screen to View (1-10) or 'q' to quit:")
+            print("Select Screen to View (1-11) or 'q' to quit:")
             print(" 1. Readiness Dashboard       2. Evidence Inventory")
             print(" 3. Manifest Verifier         4. Batch-State Viewer")
             print(" 5. Operational-Drill Viewer  6. Backup and Restore Verifier")
             print(" 7. Governance & Blockers     8. Authorization Registry")
             print(" 9. Metadata Audit Export    10. Synthetic Demonstration")
-            choice = input("Enter selection [1-10, q]: ").strip()
+            print("11. Paper Policy Lab")
+            choice = input("Enter selection [1-11, q]: ").strip()
             if choice.lower() in ("q", "quit", "exit"):
                 break
             try:
                 sn = int(choice)
-                if 1 <= sn <= 10:
+                if 1 <= sn <= 11:
                     print(cli.render_screen(sn))
                 else:
                     print("Invalid selection. Must be 1 to 10.")

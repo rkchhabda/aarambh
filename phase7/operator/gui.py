@@ -30,9 +30,10 @@ from phase7.operator.network_quarantine import (
 class OperatorGUI:
     """Tkinter-based Offline Operator Application."""
 
-    def __init__(self, root: tk.Tk, core: Optional[OperatorCore] = None) -> None:
+    def __init__(self, root: tk.Tk, core: Optional[OperatorCore] = None, include_lab: bool = False) -> None:
         self.root = root
         self.core = core or OperatorCore()
+        self.include_lab = include_lab
         self.root.title("Phase 7 Internal Offline Operator Application [Milestone 4.12]")
         self.root.geometry("1100x750")
         self.root.minsize(900, 600)
@@ -110,6 +111,11 @@ class OperatorGUI:
         self._populate_tab_8()
         self._populate_tab_9()
         self._populate_tab_10()
+
+        if self.include_lab:
+            self.tab11 = ttk.Frame(self.notebook)
+            self.notebook.add(self.tab11, text="11. Paper Policy Lab")
+            self._populate_tab_11()
 
     # 1. Readiness Dashboard
     def _populate_tab_1(self) -> None:
@@ -399,6 +405,28 @@ class OperatorGUI:
         res = self.core.run_synthetic_demonstration()
         self.demo_text.delete("1.0", tk.END)
         self.demo_text.insert(tk.END, json.dumps(res, indent=2))
+
+    # 11. Paper Policy Lab
+    def _populate_tab_11(self) -> None:
+        frame = ttk.Frame(self.tab11, padding=10)
+        frame.pack(fill=tk.BOTH, expand=True)
+
+        ttk.Label(frame, text="SCREEN 11: PAPER POLICY LAB [Milestone 4.14]", font=("Segoe UI", 11, "bold")).pack(anchor="w")
+
+        btn = ttk.Button(frame, text="Run Paper Policy Simulation", command=self._handle_paper_policy_eval)
+        btn.pack(anchor="w", pady=5)
+
+        self.policy_text = tk.Text(frame, wrap=tk.WORD, font=("Consolas", 10), bg="#F5F5F5", relief=tk.SOLID, borderwidth=1)
+        self.policy_text.pack(fill=tk.BOTH, expand=True, pady=10)
+        self._handle_paper_policy_eval()
+
+    def _handle_paper_policy_eval(self) -> None:
+        res = self.core.get_paper_policy_lab()
+        from phase7.operator.cli import OperatorCLI
+        cli = OperatorCLI(core=self.core)
+        rendered = cli.render_screen(11)
+        self.policy_text.delete("1.0", tk.END)
+        self.policy_text.insert(tk.END, rendered)
 
     def _build_status_bar(self) -> None:
         bar = ttk.Frame(self.root, padding=4)

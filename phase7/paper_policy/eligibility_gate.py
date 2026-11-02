@@ -119,7 +119,7 @@ def evaluate_central_eligibility_gates(
     # G04: Underlying Symbol Identity
     # -------------------------------------------------------------------------
     symbol = payload.get("symbol", "")
-    sym_ok = bool(symbol and isinstance(symbol, str) and symbol.isalnum() and not payload.get("wrong_symbol", False))
+    sym_ok = bool(symbol and isinstance(symbol, str) and symbol.replace("_", "").isalnum() and not payload.get("wrong_symbol", False))
     sym_reason = None if sym_ok else PolicyReasonCode.WRONG_SYMBOL_NO_DECISION.value
     record_gate("G04", sym_ok, sym_reason)
 
