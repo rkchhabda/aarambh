@@ -93,6 +93,7 @@ The operator console implements 10 views coordinated by `OperatorCore` in [phase
 | **08** | **Authorization Registry** | Acquisition Gates | Catalogs all consumed markers, verifies 0 active markers, and strictly prohibits marker generation or replay. |
 | **09** | **Metadata Audit Export** | Compliance Audit | Exports sanitized JSON bundle containing inventory hashes, scorecard, and blockers; verifies zero trade prices, quotes, or secrets are exported. |
 | **10** | **Synthetic Demo Mode** | Demonstration Mode | Runs an isolated 5-ticker synthetic demonstration outside staging, demonstrating clean processing and fail-closed tamper detection. |
+| **11** | **Paper Policy Lab** | Policy Simulation | Evaluates quarantined paper-observation policies and parameters across 24 central eligibility gates ($G01$ to $G24$) using synthetic and governed offline fixtures. |
 
 ---
 
@@ -100,20 +101,24 @@ The operator console implements 10 views coordinated by `OperatorCore` in [phase
 
 The application supports dual presentation modes:
 1. **Standard-Library CLI/TUI ([phase7/operator/cli.py](file:///c:/Users/r_chh/OneDrive%20-%20optgbrc/Apps/GaurviDEEP/phase7/operator/cli.py)):**
-   - Headless navigation via `--screen 1..10`, `--all`, `--demo`, `--export`.
-   - Interactive terminal menu via `--interactive`.
+   - Headless navigation via `--screen 1..11`, `--all` (intentionally prints all 11 screens), `--demo`, `--export`.
+   - Direct launch of Screen 11 via `--screen 11`.
+   - Interactive terminal menu via `--interactive` with explicit choice `11. Paper Policy Lab`.
    - Formatted ASCII tables with all 4 mandatory banners.
 2. **Tkinter Desktop GUI ([phase7/operator/gui.py](file:///c:/Users/r_chh/OneDrive%20-%20optgbrc/Apps/GaurviDEEP/phase7/operator/gui.py)):**
    - Launched via `--gui`.
    - Bold banner header, tabbed notebook navigation (`ttk.Notebook`), Treeview grids.
+   - Exposes Screen 11 as "11. Paper Policy Lab" without renumbering Screens 1 through 10 (`include_lab=True`).
    - Built-in "Simulate Network Call" button to verify quarantine dialog.
 
 ---
 
 ## 8. Verification Results
 
-- **Operator Test Battery:** 17 tests added in [tests/phase7/test_operator_app.py](file:///c:/Users/r_chh/OneDrive%20-%20optgbrc/Apps/GaurviDEEP/tests/phase7/test_operator_app.py) (100% passing).
-- **Total Test Suite:** **811 of 811 passing** (`544 baseline + 250 Milestone 4.11 + 17 Milestone 4.12`).
+- **Operator Test Battery:** 19 tests in [tests/phase7/test_operator_app.py](file:///c:/Users/r_chh/OneDrive%20-%20optgbrc/Apps/GaurviDEEP/tests/phase7/test_operator_app.py) (100% passing) and 68 operator tests overall.
+- **Paper Policy Lab Integration (Screen 11):** 55 tests in [tests/phase7/test_paper_policy.py](file:///c:/Users/r_chh/OneDrive%20-%20optgbrc/Apps/GaurviDEEP/tests/phase7/test_paper_policy.py) (100% passing).
+- **Total Test Suite:** **917 of 917 passing** (`811 Milestone 4.12 baseline + 26 Milestone 4.13B + 25 Milestone 4.13C + 55 Milestone 4.14`).
 - **Dependencies:** Clean (`pip check` verified).
-- **Network Requests:** Exactly 0.
+- **Network Requests:** Exactly 0 (OS-level socket quarantine active).
 - **Repository Market Data Writes:** Exactly 0.
+- **Order Execution:** Fully disabled (`ORDER_EXECUTION_DISABLED`).
